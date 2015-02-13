@@ -1,0 +1,294 @@
+<!doctype html>
+<!--==== The html below comes from http://demo.nginx.com/status.html ====-->
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>nginx vhost traffic status monitor</title>
+        <style>
+            body {
+                background:  white;
+                color:       black;
+                font-family: Helvetica, Arial, sans-serif;
+            }
+
+            h1 {
+                margin: .5em 0 0 0;
+            }
+
+            h2 {
+                margin: .8em 0 .3em 0;
+            }
+
+            h3 {
+                margin: .5em 0 .3em 0;
+            }
+
+            table {
+                font-size: .8em;
+                margin: .5em 0;
+                border-collapse: collapse;
+                border-bottom: 1px #DED solid;
+            }
+
+            thead th {
+                font-size: 1em;
+                background: #DED;
+                padding: .1em .3em;
+                border: .2em solid #FFF;
+            }
+
+            tbody tr.odd {
+                background: #F5F5F5;
+            }
+
+            tbody th {
+                text-align: left;
+            }
+
+            tbody td {
+                height: 1.2em;
+                text-align: right;
+            }
+
+            tbody td.key {
+                font-size: 1em;
+                background: #DED;
+                padding: .1em .3em;
+                border: .2em solid #FFF;
+            }
+
+        </style>
+    </head>
+
+    <body>
+
+        <h1>
+            Nginx Vhost Traffic Status
+        </h1>
+
+        <div id="monitor"></div> 
+
+        <script>
+			var vtsStatusURI = "{{uri}}/format/json", vtsUpdateInterval = 1000;
+            var aPs = (function() {
+                var data = [];
+                var msec = {
+                    last: undefined,
+                    period: undefined
+                };
+
+                return {
+                    getValue: function(key, value) {
+                        if (typeof data[key] === 'undefined') {
+                            data[key] = value;
+                            return 'n/a';
+                        } else {
+                            var increase = value - data[key];
+                            data[key] = value;
+                            return Math.floor(increase * 1000 / msec.period);
+                        }
+                    },
+
+                    refresh: function(time) {
+                        msec.period = time - msec.last;
+                        msec.last = time;
+                    }
+                };
+
+            })();
+
+            function mTh(msec) {
+                var ms = 1000, m = 60, h = m * m, d = h * 24, s = '';
+
+                if (msec < ms) {
+                return msec + 'ms';
+                }
+
+                if (msec < (ms * 100)) {
+                return Math.floor(msec / ms) + '.' + Math.floor((msec % ms) / 10) + 's';
+                }
+
+                var days = Math.floor(msec / (d * ms));
+                if (days) {
+                s += days + "d ";
+                }
+
+                var hours = Math.floor((msec % (d * ms)) / (h * ms));
+                if (days || hours) {
+                s += hours + "h ";
+                }
+
+                var minutes = Math.floor(((msec % (d * ms)) % (h * ms)) / (m * ms));
+                if (days || hours || minutes) {
+                s += minutes + "m ";
+                }
+
+                var seconds = Math.floor((((msec % (d * ms)) % (h * ms)) % (m * ms)) / ms);
+
+                return s + seconds + "s";
+            }
+
+
+            function bTh(b) {
+                var kb = 1024;
+                if (typeof b !== 'number') {
+                    return b;
+                }
+
+                if (b < kb) {
+                    return b + ' B';
+                }
+
+                if (b < (kb * kb)) {
+                    return (b / kb).toFixed(1) + ' KiB';
+                }
+
+                if (b < (kb * kb * kb)) {
+                    return (b / (kb * kb)).toFixed(1) + ' MiB';
+                }
+
+                return (b / (kb * kb * kb)).toFixed(2) + ' GiB';
+            }
+
+            function sTh(b,d) {
+                var s;
+                if (!b && !d) {
+                    s = "up";
+                } else if (d) {
+                    s = "down";	
+                } else {
+                    s = "backup";	
+                }
+                return s;
+            }
+
+            function template(it) {
+                aPs.refresh(it.nowMsec);
+                var out = '<div id="serverInfos"><h2>Server main</h2><table><thead><tr><th rowspan="2">Version</th><th rowspan="2">Uptime</th><th colspan="4">Connections</th><th colspan="5">Requests</th></tr><tr><th>active</th><th>reading</th><th>writing</th><th>waiting</th><th>accepted</th><th>handled</th><th>Total</th><th>Req/s</th></tr></thead><tbody>';
+                out+='<tr> <td>' + it.nginxVersion + '</td><td>' + mTh(it.nowMsec - it.loadMsec) + '</td><td>' +
+                        it.connections.active + '</td><td>' + 
+                        it.connections.reading + '</td><td>' + 
+                        it.connections.writing + '</td><td>' +
+                        it.connections.waiting + '</td><td>' +
+                        it.connections.accepted + '</td><td>' +
+                        it.connections.handled + '</td><td>' +
+                        it.connections.requests + '</td><td>' +
+                        aPs.getValue('serverInfos.connections.requests', it.connections.requests) + '</td></tr>';
+                out+='</tbody></table></div>';
+
+                out+='<div id="serverZones"><h2>Server zones</h2><table><thead><tr><th rowspan="2">Zone</th><th colspan="2">Requests</th><th colspan="6">Responses</th><th colspan="4">Traffic</th></tr><tr><th>Total</th><th>Req/s</th><th>1xx</th><th>2xx</th><th>3xx</th><th>4xx</th><th>5xx</th><th>Total</th><th>Sent</th><th>Rcvd</th><th>Sent/s</th><th>Rcvd/s</th></tr></thead><tbody> ';
+                var n = 0;
+                for(var name in it.serverZones) {
+                    var zone = it.serverZones[name];
+                    out+='<tr ';
+                    out+=( (n++ % 2) ? 'class="odd"' : '');
+                    out+='><th>';
+                    out+=(name);
+                    out+='</th><td>';
+                    out+=(zone.requestCounter);
+                    out+='</td><td>';
+                    out+=(aPs.getValue('serverZones.' + name + '.requestCounter', zone.requestCounter));
+                    out+='</td> ';
+                    for(var code in zone.responses) {
+                        out+='<td>';
+                        out+=(zone.responses[code]);
+                        out+='</td>';
+                    }
+
+                    var responseTotal = 0;
+                    for(var code in zone.responses) {
+                        responseTotal += zone.responses[code];
+                    }
+
+                    out+='<td>' + responseTotal  + '</td>';
+                    out+='<td>';
+                    out+=(bTh(zone.outBytes));
+                    out+='</td><td>';
+                    out+=(bTh(zone.inBytes));
+                    out+='</td><td>';
+                    out+=(bTh(aPs.getValue('serverZones.' + name + '.outBytes', zone.outBytes)));
+                    out+='</td><td>';
+                    out+=(bTh(aPs.getValue('serverZones.' + name + '.inBytes', zone.inBytes)));
+                    out+='</td></tr>'; 
+                }
+                out+=' </table></div>';
+
+                if ('upstreamZones' in it) {
+                    out+='<div id="upstreamZones"><h2>Upstreams</h2>';
+                    for (var ups in it.upstreamZones) {
+                        out += '<h3>' +  (ups) + '</h3>';
+
+                        out += '<table><thead><tr><th rowspan="2">Server</th><th rowspan="2">State</th><th rowspan="2">Response Time</th><th rowspan="2">Weight</th><th rowspan="2">MaxFails</th><th rowspan="2">FailTimeout</th><th colspan="2">Requests</th><th colspan="6">Responses</th><th colspan="4">Traffic</th></tr><tr><th>Total</th><th>Req/s</th><th>1xx</th><th>2xx</th><th>3xx</th><th>4xx</th><th>5xx</th><th>Total</th><th>Sent</th><th>Rcvd</th><th>Sent/s</th><th>Rcvd/s</th></tr></thead><tbody>';
+
+                        var arr = it.upstreamZones[ups];
+                        if (arr) {
+                            var peer, n = -1,
+                            l1 = arr.length - 1;
+                            while (n < l1) {
+                                peer = arr[n += 1];
+
+                                out+='<tr ';
+                                out += ((n % 2) ? 'class="odd"' : '');
+                                out+='><th>';
+                                out+=(peer.server);
+                                out+='</th>';
+
+                                out += '<td>' + sTh(peer.backup, peer.down) + '</td>';
+                                out += '<td>' + mTh(peer.responeMsec) + '</td>';
+                                out += '<td>' + peer.weight + '</td>';
+                                out += '<td>' + peer.maxFails + '</td>';
+                                out += '<td>' + peer.failTimeout + '</td>';
+                                out += '<td>' + peer.requestCounter + '</td>';
+                                out += '<td>' + (aPs.getValue('upstreamZones.' + ups + '.' + peer.server + '.requestCounter', peer.requestCounter)) + '</td>';
+                    
+                                out+='</td> ';
+                                for(var code in peer.responses) {
+                                    out+='<td>';
+                                    out+=(peer.responses[code]);
+                                    out+='</td>';
+                                }
+
+                                var responseTotal = 0;
+                                for(var code in peer.responses) {
+                                    responseTotal += peer.responses[code];
+                                }
+
+                                out+='<td>' + responseTotal  + '</td>';
+                                out+='<td>';
+                                out+=(bTh(peer.outBytes));
+                                out+='</td><td>';
+                                out+=(bTh(peer.inBytes));
+                                out+='</td><td>';
+                                out+=(bTh(aPs.getValue('serverZones.' + ups + '.' + peer.server + '.outBytes', peer.outBytes)));
+                                out+='</td><td>';
+                                out+=(bTh(aPs.getValue('serverZones.' + ups + '.' + peer.server + '.inBytes', peer.inBytes)));
+                                out+='</td></tr> '; 
+                            }
+                        }
+                        out += '</tbody></table>';
+                    }
+                }
+                return out;
+            }
+
+            var monitor = document.getElementById('monitor');
+
+            function vtsGetData() {
+                var request = new XMLHttpRequest;
+                request.onload = function() {
+                if (this.status != 200) {
+                return;
+                }
+                monitor.innerHTML = template(JSON.parse(this.responseText));
+                }
+                request.open('GET', vtsStatusURI);
+                request.send();
+            };
+
+            vtsGetData();
+            setInterval(vtsGetData, vtsUpdateInterval);
+        </script>
+
+    </body>
+
+</html>
