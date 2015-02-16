@@ -98,6 +98,22 @@ JSON document contains as follows:
 
 The directive `vhost_traffic_status_display_format` sets the default ouput format that is one of json or html. (Default: json)
 
+Traffic calculation as follows:
+
+* ServerZones
+ * in += requested_bytes
+ * out += sent_bytes
+* UpstreamZones
+ * in += requested_bytes via the ServerZones
+ * out += sent_bytes via the ServerZones
+  
+All calculations are working in log processing phase of Nginx.
+Internal redirects(X-Accel-Redirect or error_page) does not calculate in the UpstreamZones. 
+
+`Caveats:` this module relies on nginx logging system, so the traffic may be
+in certain cirumstances different that real bandwidth traffic.
+Websocket, canceled downloads may be cause of inaccuracies.
+
 ## Directives
 
 ### vhost_traffic_status
