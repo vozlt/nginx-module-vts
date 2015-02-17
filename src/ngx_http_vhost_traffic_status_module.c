@@ -627,8 +627,8 @@ static void ngx_vhost_traffic_status_node_init(ngx_http_request_t *r,
 
     vtsn->stat_upstream.type = NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_NO;
     vtsn->stat_request_counter = 1;
-    vtsn->stat_in_bytes = r->request_length;
-    vtsn->stat_out_bytes = r->connection->sent;
+    vtsn->stat_in_bytes = (ngx_atomic_t) r->request_length;
+    vtsn->stat_out_bytes = (ngx_atomic_t) r->connection->sent;
     vtsn->stat_1xx_counter = 0;
     vtsn->stat_2xx_counter = 0;
     vtsn->stat_3xx_counter = 0;
@@ -644,8 +644,8 @@ static void ngx_vhost_traffic_status_node_set(ngx_http_request_t *r,
     ngx_uint_t status = r->headers_out.status;
 
     vtsn->stat_request_counter++;
-    vtsn->stat_in_bytes += r->request_length;
-    vtsn->stat_out_bytes += r->connection->sent;
+    vtsn->stat_in_bytes += (ngx_atomic_t) r->request_length;
+    vtsn->stat_out_bytes += (ngx_atomic_t) r->connection->sent;
 
     ngx_vhost_traffic_status_add_rc(status, vtsn);
 }
