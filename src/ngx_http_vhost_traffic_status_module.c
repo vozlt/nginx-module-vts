@@ -770,7 +770,7 @@ ngx_http_vhost_traffic_status_display_set_upstream_group(ngx_http_request_t *r,
         len = ngx_max(uscf->host.len, len);
     }
 
-    key.len = len + sizeof("@xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:65535") - 1;
+    key.len = len + sizeof("@[ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255]:65535") - 1;
     key.data = ngx_pnalloc(r->pool, key.len);
     if (key.data == NULL) {
         return buf;
