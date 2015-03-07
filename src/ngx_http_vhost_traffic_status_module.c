@@ -251,7 +251,6 @@ ngx_module_t ngx_http_vhost_traffic_status_module = {
 static ngx_int_t
 ngx_http_vhost_traffic_status_handler(ngx_http_request_t *r)
 {
-    ngx_int_t                                   rc;
     ngx_http_vhost_traffic_status_ctx_t         *ctx;
     ngx_http_vhost_traffic_status_loc_conf_t    *vtscf;
     ngx_http_core_srv_conf_t                    *cscf;
@@ -268,9 +267,9 @@ ngx_http_vhost_traffic_status_handler(ngx_http_request_t *r)
 
     cscf = ngx_http_get_module_srv_conf(r, ngx_http_core_module);
 
-    rc = ngx_http_vhost_traffic_status_shm_add_server(r, ctx, cscf);
+    ngx_http_vhost_traffic_status_shm_add_server(r, ctx, cscf);
 
-    rc = ngx_http_vhost_traffic_status_shm_add_upstream(r, ctx, cscf);
+    ngx_http_vhost_traffic_status_shm_add_upstream(r, ctx, cscf);
 
     return NGX_DECLINED;
 }
@@ -289,7 +288,7 @@ ngx_http_vhost_traffic_status_shm_add_server(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t        *vtsn;
 
     key = cscf->server_name;
- 
+
     hash = ngx_crc32_short(key.data, key.len);
 
     shpool = (ngx_slab_pool_t *) ctx->shm_zone->shm.addr;
@@ -339,12 +338,11 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r,
     uint32_t                                    hash;
     ngx_uint_t                                  i;
     ngx_msec_int_t                              ms;
-    ngx_str_t                                   *host, key;
+    ngx_str_t                                   key;
     ngx_slab_pool_t                             *shpool;
     ngx_rbtree_node_t                           *node;
     ngx_http_vhost_traffic_status_node_t        *vtsn;
-    ngx_http_upstream_main_conf_t               *umcf;
-    ngx_http_upstream_srv_conf_t                *uscf, **uscfp;
+    ngx_http_upstream_srv_conf_t                *uscf;
     ngx_http_upstream_t                         *u;
     ngx_http_upstream_state_t                   *state;
 
@@ -354,19 +352,15 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r,
 
     u = r->upstream;
 
-    umcf = ngx_http_get_module_main_conf(r, ngx_http_upstream_module);
-    uscfp = umcf->upstreams.elts;
-
     if (u->resolved == NULL) {
         uscf = u->conf->upstream;
     } else {
         return NGX_ERROR;
     }
 
-    host = &u->resolved->host;
     state = r->upstream_states->elts;
     key.len = (uscf->port ? 0 : uscf->host.len) + sizeof("@") - 1 + state[0].peer->len;
- 
+
     key.data = ngx_pnalloc(r->pool, key.len);
     if (key.data == NULL) {
         return NGX_ERROR;
@@ -1144,11 +1138,9 @@ static void *
 ngx_http_vhost_traffic_status_create_loc_conf(ngx_conf_t *cf)
 {
     ngx_time_t                                  *tp;
-    ngx_msec_t                                  now;
     ngx_http_vhost_traffic_status_loc_conf_t    *conf;
 
     tp = ngx_timeofday();
-    now = (ngx_msec_t) (tp->sec * 1000 + tp->msec);
 
     conf = ngx_pcalloc(cf->pool, sizeof(ngx_http_vhost_traffic_status_loc_conf_t));
     if (conf == NULL) {
