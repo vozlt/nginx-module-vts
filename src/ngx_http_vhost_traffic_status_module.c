@@ -134,13 +134,17 @@ typedef struct {
     ngx_msec_t                              start_msec;
     ngx_str_t                               display;
     ngx_flag_t                              format;
+    ngx_http_vhost_traffic_status_node_t   *vtsn_server;
+    ngx_http_vhost_traffic_status_node_t   *vtsn_upstream;
 } ngx_http_vhost_traffic_status_loc_conf_t;
 
 
 static ngx_int_t ngx_http_vhost_traffic_status_shm_add_server(ngx_http_request_t *r,
-        ngx_http_vhost_traffic_status_ctx_t *ctx, ngx_http_core_srv_conf_t *cscf);
+        ngx_http_vhost_traffic_status_ctx_t *ctx, ngx_http_core_srv_conf_t *cscf,
+        ngx_http_vhost_traffic_status_loc_conf_t *vtscf);
 static ngx_int_t ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r,
-        ngx_http_vhost_traffic_status_ctx_t *ctx, ngx_http_core_srv_conf_t *cscf);
+        ngx_http_vhost_traffic_status_ctx_t *ctx, ngx_http_core_srv_conf_t *cscf,
+        ngx_http_vhost_traffic_status_loc_conf_t *vtscf);
 
 static ngx_rbtree_node_t *ngx_http_vhost_traffic_status_node_lookup(ngx_rbtree_t *rbtree,
         ngx_str_t *key, uint32_t hash);
@@ -267,9 +271,9 @@ ngx_http_vhost_traffic_status_handler(ngx_http_request_t *r)
 
     cscf = ngx_http_get_module_srv_conf(r, ngx_http_core_module);
 
-    ngx_http_vhost_traffic_status_shm_add_server(r, ctx, cscf);
+    ngx_http_vhost_traffic_status_shm_add_server(r, ctx, cscf, vtscf);
 
-    ngx_http_vhost_traffic_status_shm_add_upstream(r, ctx, cscf);
+    ngx_http_vhost_traffic_status_shm_add_upstream(r, ctx, cscf, vtscf);
 
     return NGX_DECLINED;
 }
@@ -278,7 +282,8 @@ ngx_http_vhost_traffic_status_handler(ngx_http_request_t *r)
 static ngx_int_t
 ngx_http_vhost_traffic_status_shm_add_server(ngx_http_request_t *r,
         ngx_http_vhost_traffic_status_ctx_t *ctx,
-        ngx_http_core_srv_conf_t *cscf)
+        ngx_http_core_srv_conf_t *cscf,
+        ngx_http_vhost_traffic_status_loc_conf_t *vtscf)
 {
     size_t                                      size;
     uint32_t                                    hash;
@@ -287,11 +292,20 @@ ngx_http_vhost_traffic_status_shm_add_server(ngx_http_request_t *r,
     ngx_rbtree_node_t                           *node;
     ngx_http_vhost_traffic_status_node_t        *vtsn;
 
+    shpool = (ngx_slab_pool_t *) ctx->shm_zone->shm.addr;
+
+    if (vtscf->vtsn_server) {
+        ngx_shmtx_lock(&shpool->mutex);
+
+        ngx_vhost_traffic_status_node_set(r, vtscf->vtsn_server);
+
+        ngx_shmtx_unlock(&shpool->mutex);
+        return NGX_OK;
+    }
+
     key = cscf->server_name;
 
     hash = ngx_crc32_short(key.data, key.len);
-
-    shpool = (ngx_slab_pool_t *) ctx->shm_zone->shm.addr;
 
     ngx_shmtx_lock(&shpool->mutex);
 
@@ -322,6 +336,8 @@ ngx_http_vhost_traffic_status_shm_add_server(ngx_http_request_t *r,
         ngx_vhost_traffic_status_node_set(r, vtsn);
     }
 
+    vtscf->vtsn_server = vtsn;
+
     ngx_shmtx_unlock(&shpool->mutex);
 
     return NGX_OK;
@@ -331,7 +347,8 @@ ngx_http_vhost_traffic_status_shm_add_server(ngx_http_request_t *r,
 static ngx_int_t
 ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r,
         ngx_http_vhost_traffic_status_ctx_t *ctx,
-        ngx_http_core_srv_conf_t *cscf)
+        ngx_http_core_srv_conf_t *cscf,
+        ngx_http_vhost_traffic_status_loc_conf_t *vtscf)
 {
     u_char                                      *p;
     size_t                                      size;
@@ -356,6 +373,20 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r,
         uscf = u->conf->upstream;
     } else {
         return NGX_ERROR;
+    }
+
+    shpool = (ngx_slab_pool_t *) ctx->shm_zone->shm.addr;
+
+    if (vtscf->vtsn_upstream) {
+        ngx_shmtx_lock(&shpool->mutex);
+
+        ngx_vhost_traffic_status_node_set(r, vtscf->vtsn_upstream);
+
+        vtsn->stat_upstream.rtms = (ngx_msec_t) (vtsn->stat_upstream.rtms + ms) / 2 +
+            (vtsn->stat_upstream.rtms + ms) % 2;
+
+        ngx_shmtx_unlock(&shpool->mutex);
+        return NGX_OK;
     }
 
     state = r->upstream_states->elts;
@@ -390,8 +421,6 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r,
     ms = ngx_max(ms, 0);
 
     hash = ngx_crc32_short(key.data, key.len);
-
-    shpool = (ngx_slab_pool_t *) ctx->shm_zone->shm.addr;
 
     ngx_shmtx_lock(&shpool->mutex);
 
@@ -431,6 +460,8 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r,
         vtsn->stat_upstream.rtms = (ngx_msec_t) (vtsn->stat_upstream.rtms + ms) / 2 +
             (vtsn->stat_upstream.rtms + ms) % 2;
     }
+
+    vtscf->vtsn_upstream = vtsn;
 
     ngx_shmtx_unlock(&shpool->mutex);
 
@@ -1151,6 +1182,8 @@ ngx_http_vhost_traffic_status_create_loc_conf(ngx_conf_t *cf)
     conf->enable = NGX_CONF_UNSET;
     conf->shm_zone = NGX_CONF_UNSET_PTR;
     conf->format = NGX_CONF_UNSET;
+    conf->vtsn_server = NULL;
+    conf->vtsn_upstream = NULL;
 
     return conf;
 }
