@@ -255,6 +255,7 @@ ngx_module_t ngx_http_vhost_traffic_status_module = {
 static ngx_int_t
 ngx_http_vhost_traffic_status_handler(ngx_http_request_t *r)
 {
+    ngx_int_t                                   rc;
     ngx_http_vhost_traffic_status_ctx_t         *ctx;
     ngx_http_vhost_traffic_status_loc_conf_t    *vtscf;
     ngx_http_core_srv_conf_t                    *cscf;
@@ -271,9 +272,17 @@ ngx_http_vhost_traffic_status_handler(ngx_http_request_t *r)
 
     cscf = ngx_http_get_module_srv_conf(r, ngx_http_core_module);
 
-    ngx_http_vhost_traffic_status_shm_add_server(r, ctx, cscf, vtscf);
+    rc = ngx_http_vhost_traffic_status_shm_add_server(r, ctx, cscf, vtscf);
+    if (rc != NGX_OK) {
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                "shm_add_server failed");
+    }
 
-    ngx_http_vhost_traffic_status_shm_add_upstream(r, ctx, cscf, vtscf);
+    rc = ngx_http_vhost_traffic_status_shm_add_upstream(r, ctx, cscf, vtscf);
+    if (rc != NGX_OK) {
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                "shm_add_upstream failed");
+    }
 
     return NGX_DECLINED;
 }
