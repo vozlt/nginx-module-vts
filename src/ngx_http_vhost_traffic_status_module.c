@@ -387,12 +387,13 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r,
     shpool = (ngx_slab_pool_t *) ctx->shm_zone->shm.addr;
 
     if (vtscf->vtsn_upstream) {
+        ms = 0;
         ngx_shmtx_lock(&shpool->mutex);
 
         ngx_vhost_traffic_status_node_set(r, vtscf->vtsn_upstream);
 
-        vtsn->stat_upstream.rtms = (ngx_msec_t) (vtsn->stat_upstream.rtms + ms) / 2 +
-            (vtsn->stat_upstream.rtms + ms) % 2;
+        vtscf->vtsn_upstream->stat_upstream.rtms = (ngx_msec_t) (vtscf->vtsn_upstream->stat_upstream.rtms + ms) / 2 +
+            (vtscf->vtsn_upstream->stat_upstream.rtms + ms) % 2;
 
         ngx_shmtx_unlock(&shpool->mutex);
         return NGX_OK;
