@@ -384,10 +384,24 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r,
         return NGX_ERROR;
     }
 
+    state = r->upstream_states->elts;
+
+    i = 0;
+    ms = 0;
+    for ( ;; ) {
+        if (state[i].status) {
+            ms += (ngx_msec_int_t)
+                (state[i].response_sec * 1000 + state[i].response_msec);
+        }
+        if (++i == r->upstream_states->nelts) {
+            break;
+        }
+    }
+    ms = ngx_max(ms, 0);
+
     shpool = (ngx_slab_pool_t *) ctx->shm_zone->shm.addr;
 
     if (vtscf->vtsn_upstream) {
-        ms = 0;
         ngx_shmtx_lock(&shpool->mutex);
 
         ngx_vhost_traffic_status_node_set(r, vtscf->vtsn_upstream);
@@ -399,9 +413,7 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r,
         return NGX_OK;
     }
 
-    state = r->upstream_states->elts;
     key.len = (uscf->port ? 0 : uscf->host.len) + sizeof("@") - 1 + state[0].peer->len;
-
     key.data = ngx_pnalloc(r->pool, key.len);
     if (key.data == NULL) {
         return NGX_ERROR;
@@ -416,19 +428,6 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r,
         *p++ = '@';
         p = ngx_cpymem(p, state[0].peer->data, state[0].peer->len);
     }
-
-    i = 0;
-    ms = 0;
-    for ( ;; ) {
-        if (state[i].status) {
-            ms += (ngx_msec_int_t)
-                (state[i].response_sec * 1000 + state[i].response_msec);
-        }
-        if (++i == r->upstream_states->nelts) {
-            break;
-        }
-    }
-    ms = ngx_max(ms, 0);
 
     hash = ngx_crc32_short(key.data, key.len);
 
