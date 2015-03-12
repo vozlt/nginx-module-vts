@@ -97,7 +97,6 @@
 
 typedef struct {
     ngx_rbtree_t    *rbtree;
-    ngx_shm_zone_t  *shm_zone;
     ngx_flag_t      enable;
     ngx_str_t       shm_name;
     ssize_t         shm_size;
@@ -266,7 +265,7 @@ ngx_http_vhost_traffic_status_handler(ngx_http_request_t *r)
     if (!ctx->enable || !vtscf->enable) {
         return NGX_DECLINED;
     }
-    if (ctx->shm_zone == NULL) {
+    if (vtscf->shm_zone == NULL) {
         return NGX_DECLINED;
     }
 
@@ -301,7 +300,7 @@ ngx_http_vhost_traffic_status_shm_add_server(ngx_http_request_t *r,
     ngx_rbtree_node_t                           *node;
     ngx_http_vhost_traffic_status_node_t        *vtsn;
 
-    shpool = (ngx_slab_pool_t *) ctx->shm_zone->shm.addr;
+    shpool = (ngx_slab_pool_t *) vtscf->shm_zone->shm.addr;
 
     if (vtscf->vtsn_server) {
         ngx_shmtx_lock(&shpool->mutex);
@@ -399,7 +398,7 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r,
     }
     ms = ngx_max(ms, 0);
 
-    shpool = (ngx_slab_pool_t *) ctx->shm_zone->shm.addr;
+    shpool = (ngx_slab_pool_t *) vtscf->shm_zone->shm.addr;
 
     if (vtscf->vtsn_upstream) {
         ngx_shmtx_lock(&shpool->mutex);
@@ -584,7 +583,7 @@ ngx_http_vhost_traffic_status_display_handler(ngx_http_request_t *r)
     }
 
     if (format == NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSON) {
-        shpool = (ngx_slab_pool_t *) ctx->shm_zone->shm.addr;
+        shpool = (ngx_slab_pool_t *) vtscf->shm_zone->shm.addr;
         ngx_shmtx_lock(&shpool->mutex);
         b->last = ngx_http_vhost_traffic_status_display_set(r, ctx->rbtree, b->last, vtscf);
         ngx_shmtx_unlock(&shpool->mutex);
@@ -1229,7 +1228,6 @@ ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf, void *parent, void 
 
     conf->shm_zone = shm_zone;
     conf->shm_name = name;
-    ctx->shm_zone = shm_zone;
 
     return NGX_CONF_OK;
 }
