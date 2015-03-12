@@ -363,11 +363,11 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r,
     size_t                                      size;
     uint32_t                                    hash;
     ngx_uint_t                                  i;
-    ngx_msec_int_t                              ms;
+    ngx_msec_int_t                              ms = 0;
     ngx_str_t                                   key;
     ngx_slab_pool_t                             *shpool;
     ngx_rbtree_node_t                           *node;
-    ngx_http_vhost_traffic_status_node_t        *vtsn;
+    ngx_http_vhost_traffic_status_node_t        *vtsn = 0;
     ngx_http_upstream_srv_conf_t                *uscf;
     ngx_http_upstream_t                         *u;
     ngx_http_upstream_state_t                   *state;
