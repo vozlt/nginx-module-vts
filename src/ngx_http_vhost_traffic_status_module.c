@@ -1194,7 +1194,7 @@ ngx_http_vhost_traffic_status_create_loc_conf(ngx_conf_t *cf)
     conf->format = NGX_CONF_UNSET;
     conf->vtsn_server = NULL;
     conf->vtsn_upstream = NULL;
-    conf->vtsn_hash = NGX_CONF_UNSET;
+    conf->vtsn_hash = 0;
 
     return conf;
 }
