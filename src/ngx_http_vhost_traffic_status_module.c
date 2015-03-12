@@ -133,8 +133,9 @@ typedef struct {
     ngx_msec_t                              start_msec;
     ngx_str_t                               display;
     ngx_flag_t                              format;
-    ngx_http_vhost_traffic_status_node_t   *vtsn_server;
-    ngx_http_vhost_traffic_status_node_t   *vtsn_upstream;
+    ngx_http_vhost_traffic_status_node_t    *vtsn_server;
+    ngx_http_vhost_traffic_status_node_t    *vtsn_upstream;
+    uint32_t                                vtsn_hash;
 } ngx_http_vhost_traffic_status_loc_conf_t;
 
 
@@ -400,18 +401,6 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r,
 
     shpool = (ngx_slab_pool_t *) vtscf->shm_zone->shm.addr;
 
-    if (vtscf->vtsn_upstream) {
-        ngx_shmtx_lock(&shpool->mutex);
-
-        ngx_vhost_traffic_status_node_set(r, vtscf->vtsn_upstream);
-
-        vtscf->vtsn_upstream->stat_upstream.rtms = (ngx_msec_t) (vtscf->vtsn_upstream->stat_upstream.rtms + ms) / 2 +
-            (vtscf->vtsn_upstream->stat_upstream.rtms + ms) % 2;
-
-        ngx_shmtx_unlock(&shpool->mutex);
-        return NGX_OK;
-    }
-
     key.len = (uscf->port ? 0 : uscf->host.len) + sizeof("@") - 1 + state[0].peer->len;
     key.data = ngx_pnalloc(r->pool, key.len);
     if (key.data == NULL) {
@@ -429,6 +418,18 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r,
     }
 
     hash = ngx_crc32_short(key.data, key.len);
+
+    if (vtscf->vtsn_upstream && vtscf->vtsn_hash == hash) {
+        ngx_shmtx_lock(&shpool->mutex);
+
+        ngx_vhost_traffic_status_node_set(r, vtscf->vtsn_upstream);
+
+        vtscf->vtsn_upstream->stat_upstream.rtms = (ngx_msec_t) (vtscf->vtsn_upstream->stat_upstream.rtms + ms) / 2 +
+            (vtscf->vtsn_upstream->stat_upstream.rtms + ms) % 2;
+
+        ngx_shmtx_unlock(&shpool->mutex);
+        return NGX_OK;
+    }
 
     ngx_shmtx_lock(&shpool->mutex);
 
@@ -470,6 +471,7 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r,
     }
 
     vtscf->vtsn_upstream = vtsn;
+    vtscf->vtsn_hash = hash;
 
     ngx_shmtx_unlock(&shpool->mutex);
 
@@ -1192,6 +1194,7 @@ ngx_http_vhost_traffic_status_create_loc_conf(ngx_conf_t *cf)
     conf->format = NGX_CONF_UNSET;
     conf->vtsn_server = NULL;
     conf->vtsn_upstream = NULL;
+    conf->vtsn_hash = NGX_CONF_UNSET;
 
     return conf;
 }
