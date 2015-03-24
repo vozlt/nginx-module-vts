@@ -718,14 +718,31 @@ ngx_http_vhost_traffic_status_display_set_server(ngx_http_request_t *r,
         const char *fmt, u_char *buf,
         ngx_http_vhost_traffic_status_loc_conf_t *vtscf)
 {
+    u_char                                  *p;
+    ngx_str_t                               key;
     ngx_http_vhost_traffic_status_node_t    *vtsn;
 
     if (node != sentinel) {
         vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
 
         if (vtsn->stat_upstream.type == NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_NO) {
+            key.len = ngx_strlen(vtsn->data) * 6;
+            key.data = ngx_pcalloc(r->pool, key.len);
+            if (key.data == NULL) {
+                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                        "ngx_pcalloc() failed");
+                key.len = ngx_strlen(vtsn->data);
+                key.data = vtsn->data;
+                p = NULL;
+                goto just_start;
+            }
+            p = key.data;
+            p = (u_char *) ngx_escape_json(p, vtsn->data, ngx_strlen(vtsn->data));
+
+just_start:
+
             buf = ngx_sprintf(buf, fmt,
-                    vtsn->data, vtsn->stat_request_counter, vtsn->stat_in_bytes, vtsn->stat_out_bytes,
+                    key.data, vtsn->stat_request_counter, vtsn->stat_in_bytes, vtsn->stat_out_bytes,
                     vtsn->stat_1xx_counter, vtsn->stat_2xx_counter, vtsn->stat_3xx_counter,
                     vtsn->stat_4xx_counter, vtsn->stat_5xx_counter);
 
@@ -737,6 +754,10 @@ ngx_http_vhost_traffic_status_display_set_server(ngx_http_request_t *r,
             vtscf->stats.stat_3xx_counter += vtsn->stat_3xx_counter;
             vtscf->stats.stat_4xx_counter += vtsn->stat_4xx_counter;
             vtscf->stats.stat_5xx_counter += vtsn->stat_5xx_counter;
+
+            if (p != NULL) {
+                ngx_pfree(r->pool, key.data);
+            }
         }
 
         buf = ngx_http_vhost_traffic_status_display_set_server(r, node->left, sentinel, fmt, buf, vtscf);
