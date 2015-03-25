@@ -138,6 +138,9 @@ typedef struct {
     uint32_t                                vtsn_hash;
 } ngx_http_vhost_traffic_status_loc_conf_t;
 
+#if !defined(nginx_version) || nginx_version < 1007009
+uintptr_t ngx_http_vhost_traffic_status_escape_json(u_char *dst, u_char *src, size_t size);
+#endif
 
 static ngx_int_t ngx_http_vhost_traffic_status_shm_add_server(ngx_http_request_t *r,
         ngx_http_vhost_traffic_status_ctx_t *ctx, ngx_http_core_srv_conf_t *cscf,
@@ -251,6 +254,59 @@ ngx_module_t ngx_http_vhost_traffic_status_module = {
     NGX_MODULE_V1_PADDING
 };
 
+/* from src/core/ngx_string.c in v1.7.9 */
+#if !defined(nginx_version) || nginx_version < 1007009
+uintptr_t
+ngx_http_vhost_traffic_status_escape_json(u_char *dst, u_char *src, size_t size)
+{
+    u_char      ch;
+    ngx_uint_t  len;
+
+    if (dst == NULL) {
+        len = 0;
+
+        while (size) {
+            ch = *src++;
+
+            if (ch == '\\' || ch == '"') {
+                len++;
+
+            } else if (ch <= 0x1f) {
+                len += sizeof("\\u001F") - 2;
+            }
+
+            size--;
+        }
+
+        return (uintptr_t) len;
+    }
+
+    while (size) {
+        ch = *src++;
+
+        if (ch > 0x1f) {
+
+            if (ch == '\\' || ch == '"') {
+                *dst++ = '\\';
+            }
+
+            *dst++ = ch;
+
+        } else {
+            *dst++ = '\\'; *dst++ = 'u'; *dst++ = '0'; *dst++ = '0';
+            *dst++ = '0' + (ch >> 4);
+
+            ch &= 0xf;
+
+            *dst++ = (ch < 10) ? ('0' + ch) : ('A' + ch - 10);
+        }
+
+        size--;
+    }
+
+    return (uintptr_t) dst;
+}
+#endif
 
 static ngx_int_t
 ngx_http_vhost_traffic_status_handler(ngx_http_request_t *r)
@@ -737,7 +793,12 @@ ngx_http_vhost_traffic_status_display_set_server(ngx_http_request_t *r,
                 goto just_start;
             }
             p = key.data;
+
+#if !defined(nginx_version) || nginx_version < 1007009
+            p = (u_char *) ngx_http_vhost_traffic_status_escape_json(p, vtsn->data, ngx_strlen(vtsn->data));
+#else
             p = (u_char *) ngx_escape_json(p, vtsn->data, ngx_strlen(vtsn->data));
+#endif
 
 just_start:
 
