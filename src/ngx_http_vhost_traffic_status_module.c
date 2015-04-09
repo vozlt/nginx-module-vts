@@ -369,6 +369,10 @@ ngx_http_vhost_traffic_status_shm_add_server(ngx_http_request_t *r,
     }
 
     key = cscf->server_name;
+    if (key.len == 0) {
+        key.len = 1;
+        key.data = (u_char *) "_";
+    }
 
     hash = ngx_crc32_short(key.data, key.len);
 
