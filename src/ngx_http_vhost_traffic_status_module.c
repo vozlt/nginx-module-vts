@@ -424,11 +424,12 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r,
     uint32_t                                    hash;
     ngx_uint_t                                  i;
     ngx_msec_int_t                              ms;
-    ngx_str_t                                   key;
+    ngx_str_t                                   *host, key;
     ngx_slab_pool_t                             *shpool;
     ngx_rbtree_node_t                           *node;
     ngx_http_vhost_traffic_status_node_t        *vtsn;
-    ngx_http_upstream_srv_conf_t                *uscf;
+    ngx_http_upstream_srv_conf_t                *uscf, **uscfp;
+    ngx_http_upstream_main_conf_t               *umcf;
     ngx_http_upstream_t                         *u;
     ngx_http_upstream_state_t                   *state;
 
@@ -441,8 +442,29 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r,
     if (u->resolved == NULL) {
         uscf = u->conf->upstream;
     } else {
+        host = &u->resolved->host;
+
+        umcf = ngx_http_get_module_main_conf(r, ngx_http_upstream_module);
+
+        uscfp = umcf->upstreams.elts;
+
+        for (i = 0; i < umcf->upstreams.nelts; i++) {
+
+            uscf = uscfp[i];
+
+            if (uscf->host.len == host->len
+                    && ((uscf->port == 0 && u->resolved->no_port)
+                        || uscf->port == u->resolved->port)
+                    && ngx_strncasecmp(uscf->host.data, host->data, host->len) == 0)
+            {
+                goto found;
+            }
+        }
+
         return NGX_ERROR;
     }
+
+found:
 
     state = r->upstream_states->elts;
 
