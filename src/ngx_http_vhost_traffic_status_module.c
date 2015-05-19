@@ -472,8 +472,12 @@ found:
     ms = 0;
     for ( ;; ) {
         if (state[i].status) {
+#if !defined(nginx_version) || nginx_version < 1009001
             ms += (ngx_msec_int_t)
                 (state[i].response_sec * 1000 + state[i].response_msec);
+#else
+            ms += state[i].response_time;
+#endif
         }
         if (++i == r->upstream_states->nelts) {
             break;

@@ -9,8 +9,11 @@ Nginx virtual host traffic status module
 * [nginx](http://nginx.org)
 
 ## Compatibility
+* 1.9.x (last tested: 1.9.0)
+* 1.8.x (last tested: 1.8.0)
 * 1.7.x (last tested: 1.7.10)
 * 1.6.x (last tested: 1.6.2)
+* 1.4.x (last tested: 1.4.5)
 
 Earlier versions is not tested.
 
