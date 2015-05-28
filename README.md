@@ -5,6 +5,25 @@ Nginx virtual host traffic status module
 
 Nginx virtual host traffic status module
 
+Table of Contents
+=================
+
+* [Version](#version)
+* [Dependencies](#dependencies)
+* [Screenshots](#screenshots)
+* [Installation](#installation)
+* [Synopsis](#synopsis)
+* [Description](#description)
+* [Directives](#directives)
+ * [vhost_traffic_status](#vhost_traffic_status)
+ * [vhost_traffic_status_zone](#vhost_traffic_status_zone)
+ * [vhost_traffic_status_display](#vhost_traffic_status_display)
+ * [vhost_traffic_status_display_format](#vhost_traffic_status_display_format)
+* [Author](#author)
+
+## Version
+This document describes nginx-module-vts `v0.1.0` released on 28 May 2015.
+
 ## Dependencies
 * [nginx](http://nginx.org)
 
