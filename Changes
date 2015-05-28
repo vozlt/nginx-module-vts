@@ -1,4 +1,7 @@
 
+v0.1.1 [Thu May 28 2015 YoungJoo.Kim <vozlt@vozlt.com>]
+    * Feature: cache status support when using the proxy_cache directive.
+
 v0.1.0 [Thu May 28 2015 YoungJoo.Kim <vozlt@vozlt.com>]
     * The first version.
 

@@ -22,7 +22,7 @@ Table of Contents
 * [Author](#author)
 
 ## Version
-This document describes nginx-module-vts `v0.1.0` released on 28 May 2015.
+This document describes nginx-module-vts `v0.1.1` released on 28 May 2015.
 
 ## Dependencies
 * [nginx](http://nginx.org)
@@ -38,7 +38,7 @@ Earlier versions is not tested.
 
 ## Screenshots
 
-![nginx-module-vts screenshot](https://cloud.githubusercontent.com/assets/3648408/6163286/55ea810e-b2d3-11e4-93e4-72e9b402c12d.png)
+![nginx-module-vts screenshot](https://cloud.githubusercontent.com/assets/3648408/7854611/1386f3b2-0556-11e5-8323-7c624da0fcb3.png)
 
 ## Installation
 
@@ -75,8 +75,9 @@ http {
 
 ## Description
 This is an Nginx module that provides access to virtual host status information.
+It contains the current status such as servers, upstreams, caches.
 This is similar to the live activity monitoring of nginx plus.
-The built-in html is also taken from the demo page.
+The built-in html is also taken from the demo page of old version.
 
 First of all, the directive `vhost_traffic_status_zone` is required,
 and then if the directive `vhost_traffic_status_display` is set, can be access to as follows:
@@ -92,18 +93,85 @@ JSON document contains as follows:
 
 ```Json
 {
-  "nginxVersion": ...,
-  "loadMsec": ...,
-  "nowMsec": ...,
-  "connections": {
-  ...
-  },
-  "serverZones": {
-  ...
-  },
-  "upstreamZones": {
-  ...
-  }
+    "nginxVersion": ...,
+    "loadMsec": ...,
+    "nowMsec": ...,
+    "connections": {
+        "active":...,
+        "reading":...,
+        "writing":...,
+        "waiting":...,
+        "accepted":...,
+        "handled":...,
+        "requests":...
+    },
+    "serverZones": {
+        "...":{  
+            "requestCounter":...,
+            "inBytes":...,
+            "outBytes":...,
+            "responses":{  
+                "1xx":...,
+                "2xx":...,
+                "3xx":...,
+                "4xx":...,
+                "5xx":...,
+                "miss":...,
+                "bypass":...,
+                "expired":...,
+                "stale":...,
+                "updating":...,
+                "revalidated":...,
+                "hit":...,
+                "scarce":...
+            }
+        }
+        ...
+    },
+    "upstreamZones": {
+        "...":[  
+            {  
+                "server":...,
+                "requestCounter":...,
+                "inBytes":...,
+                "outBytes":...,
+                "responses":{  
+                    "1xx":...,
+                    "2xx":...,
+                    "3xx":...,
+                    "4xx":...,
+                    "5xx":...
+                },
+                "responeMsec":...,
+                "weight":...,
+                "maxFails":...,
+                "failTimeout":...,
+                "backup":...,
+                "down":...
+            }
+            ...
+        ],
+        ...
+    }
+    "cacheZones": {
+        "...":{  
+            "maxSize":...,
+            "usedSize":...,
+            "inBytes":...,
+            "outBytes":...,
+            "responses":{  
+                "miss":...,
+                "bypass":...,
+                "expired":...,
+                "stale":...,
+                "updating":...,
+                "revalidated":...,
+                "hit":...,
+                "scarce":...
+            }
+        },
+        ...
+    }
 }
 ```
 
@@ -112,11 +180,13 @@ JSON document contains as follows:
 * connections
  * Total connections and requests(same as stub_status_module in NGINX)
 * serverZones
- * Traffic(in/out) and request and response counts per each server zone
- * Total traffic(In/Out) and request and response counts(It zone name is `*`)
+ * Traffic(in/out) and request and response counts and cache hit ratio per each server zone
+ * Total traffic(In/Out) and request and response counts(It zone name is `*`) and hit ratio
 * upstreamZones
  * Traffic(in/out) and request and response counts per server in each upstream group
  * Current settings(weight, maxfails, failtimeout...) in nginx.conf
+* cacheZones
+ * Traffic(in/out) and size(capacity/used) and hit ratio per each cache zone when using the proxy_cache directive.
 
 The directive `vhost_traffic_status_display_format` sets the default ouput format that is one of json or html. (Default: json)
 
@@ -126,6 +196,9 @@ Traffic calculation as follows:
  * in += requested_bytes
  * out += sent_bytes
 * UpstreamZones
+ * in += requested_bytes via the ServerZones
+ * out += sent_bytes via the ServerZones
+* cacheZones
  * in += requested_bytes via the ServerZones
  * out += sent_bytes via the ServerZones
   
