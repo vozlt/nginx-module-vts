@@ -205,9 +205,11 @@ Traffic calculation as follows:
 All calculations are working in log processing phase of Nginx.
 Internal redirects(X-Accel-Redirect or error_page) does not calculate in the UpstreamZones. 
 
-`Caveats:` this module relies on nginx logging system, so the traffic may be
+`Caveats:` this module relies on nginx logging system(NGX_HTTP_LOG_PHASE:last phase of the nginx http), so the traffic may be
 in certain cirumstances different that real bandwidth traffic.
 Websocket, canceled downloads may be cause of inaccuracies.
+The working of the module doesn't matter at all whether the access_log directive "on" or "off".
+Again, this module works well on "access_log off".
 
 ## Directives
 
