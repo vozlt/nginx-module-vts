@@ -14,6 +14,9 @@ Table of Contents
 * [Installation](#installation)
 * [Synopsis](#synopsis)
 * [Description](#description)
+* [Customizing](#customizing)
+ * [To customize after the module installed](#to-customize-after-the-module-installed)
+ * [To customize before the module installed](#to-customize-before-the-module-installed)
 * [Directives](#directives)
  * [vhost_traffic_status](#vhost_traffic_status)
  * [vhost_traffic_status_zone](#vhost_traffic_status_zone)
@@ -210,6 +213,64 @@ in certain cirumstances different that real bandwidth traffic.
 Websocket, canceled downloads may be cause of inaccuracies.
 The working of the module doesn't matter at all whether the access_log directive "on" or "off".
 Again, this module works well on "access_log off".
+
+## Customizing
+### To customize after the module installed
+1. You need to change the `{{uri}}` string to your status uri in status.template.html as follows:
+ ```
+ shell> vi share/status.template.html
+ ```
+ ```
+ var vtsStatusURI = "yourStatusUri/format/json", vtsUpdateInterval = 1000;
+ ```
+
+2. And then, customizing and copy status.template.html to server root directory as follows:
+ ```
+ shell> cp share/status.template.html /usr/share/nginx/html/status.html
+ ```
+
+4. Configure `nginx.conf`
+ ```
+    server {
+        server_name YOURDOMAIN;
+        root /usr/share/nginx/html;
+
+        # Redirect requests for / to /status.html
+        location = / {
+            return 301 /status.html;
+        }
+
+        location = /status.html {}
+
+        # Everything beginning /status (except for /status.html) is
+        # processed by the status handler
+        location /status {
+            vhost_traffic_status_display;
+            vhost_traffic_status_display_format json;
+        }
+    }
+ ```
+
+4. Access to your html.
+ ```
+ http://YOURDOMAIN/status.html
+ ```
+
+### To customize before the module installed
+1. Modify `share/status.template.html` (Do not change `{{uri}}` string)
+
+2. Recreate the `ngx_http_vhost_traffic_status_module_html.h` as follows:
+ ```
+ shell> util/tplToDefine.sh status.template.html > src/ngx_http_vhost_traffic_status_module_html.h
+ ```
+
+3. Add the module to the build configuration by adding
+  `--add-module=/path/to/nginx-module-vts`
+
+4. Build the nginx binary.
+
+5. Install the nginx binary.
+
 
 ## Directives
 
