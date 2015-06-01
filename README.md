@@ -261,7 +261,8 @@ Again, this module works well on "access_log off".
 
 2. Recreate the `ngx_http_vhost_traffic_status_module_html.h` as follows:
  ```
- shell> util/tplToDefine.sh status.template.html > src/ngx_http_vhost_traffic_status_module_html.h
+ shell> cd util
+ shell> ./tplToDefine.sh ../share/status.template.html > ../src/ngx_http_vhost_traffic_status_module_html.h
  ```
 
 3. Add the module to the build configuration by adding
