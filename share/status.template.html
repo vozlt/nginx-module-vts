@@ -194,28 +194,28 @@
                     out += '><th>';
                     out += (name);
                     out += '</th><td>';
-                    out += (zone.requestCounter);
+                    out += (zone.requestCounter + zone.overCounts['maxIntegerSize'] * zone.overCounts['requestCounter']);
                     out += '</td><td>';
                     out += (aPs.getValue('serverZones.' + name + '.requestCounter', zone.requestCounter));
                     out += '</td>';
                     for(var code in zone.responses) {
                         out += '<td>';
-                        out += (zone.responses[code]);
+                        out += (zone.responses[code] + zone.overCounts['maxIntegerSize'] * zone.overCounts[code]);
                         out += '</td>';
                         if(code == '5xx')break;
                     }
 
                     var responseTotal = 0;
                     for(var code in zone.responses) {
-                        responseTotal += zone.responses[code];
+                        responseTotal += (zone.responses[code] + zone.overCounts['maxIntegerSize'] * zone.overCounts[code]);
                         if(code == '5xx')break;
                     }
 
                     out += '<td>' + responseTotal  + '</td>';
                     out += '<td>';
-                    out += (bTh(zone.outBytes));
+                    out += (bTh(zone.outBytes + zone.overCounts['maxIntegerSize'] * zone.overCounts['outBytes']));
                     out += '</td><td>';
-                    out += (bTh(zone.inBytes));
+                    out += (bTh(zone.inBytes + zone.overCounts['maxIntegerSize'] * zone.overCounts['inBytes']));
                     out += '</td><td>';
                     out += (bTh(aPs.getValue('serverZones.' + name + '.outBytes', zone.outBytes)));
                     out += '</td><td>';
@@ -226,7 +226,7 @@
                         for(var code in zone.responses) {
                             if(i++ < 5)continue;
                             out += '<td>';
-                            out += (zone.responses[code]);
+                            out += (zone.responses[code] + zone.overCounts['maxIntegerSize'] * zone.overCounts[code]);
                             out += '</td>';
                         }
 
@@ -234,7 +234,7 @@
                         i = 0;
                         for(var code in zone.responses) {
                             if(i++ < 5)continue;
-                            cacheTotal += zone.responses[code];
+                            cacheTotal += (zone.responses[code] + zone.overCounts['maxIntegerSize'] * zone.overCounts[code]);
                         }
                         out += '<td>' + cacheTotal + '</td>';
                     }
@@ -260,32 +260,38 @@
                                 out += ((n % 2) ? 'class="odd"' : '');
                                 out += '><th>';
                                 out += (peer.server);
-                                out += '</th>';
+                                out += '</th><td>';
 
-                                out += '<td>' + sTh(peer.backup, peer.down) + '</td>';
-                                out += '<td>' + mTh(peer.responeMsec) + '</td>';
-                                out += '<td>' + peer.weight + '</td>';
-                                out += '<td>' + peer.maxFails + '</td>';
-                                out += '<td>' + peer.failTimeout + '</td>';
-                                out += '<td>' + peer.requestCounter + '</td>';
-                                out += '<td>' + (aPs.getValue('upstreamZones.' + ups + '.' + peer.server + '.requestCounter', peer.requestCounter)) + '</td>';
+                                out += sTh(peer.backup, peer.down);
+                                out += '</td><td>';
+                                out += mTh(peer.responeMsec);
+                                out += '</td><td>';
+                                out += peer.weight;
+                                out += '</td><td>';
+                                out += peer.maxFails;
+                                out += '</td><td>';
+                                out += peer.failTimeout;
+                                out += '</td><td>';
+                                out += (peer.requestCounter + peer.overCounts['maxIntegerSize'] * peer.overCounts['requestCounter']);
+                                out += '</td><td>';
+                                out += (aPs.getValue('upstreamZones.' + ups + '.' + peer.server + '.requestCounter', peer.requestCounter));
                                 out += '</td>';
                                 for(var code in peer.responses) {
                                     out += '<td>';
-                                    out += (peer.responses[code]);
+                                    out += (peer.responses[code] + peer.overCounts['maxIntegerSize'] * peer.overCounts[code]);
                                     out += '</td>';
                                 }
 
                                 var responseTotal = 0;
                                 for(var code in peer.responses) {
-                                    responseTotal += peer.responses[code];
+                                    responseTotal += (peer.responses[code] + peer.overCounts['maxIntegerSize'] * peer.overCounts[code]);
                                 }
 
                                 out += '<td>' + responseTotal  + '</td>';
                                 out += '<td>';
-                                out += (bTh(peer.outBytes));
+                                out += (bTh(peer.outBytes + peer.overCounts['maxIntegerSize'] * peer.overCounts['outBytes']));
                                 out += '</td><td>';
-                                out += (bTh(peer.inBytes));
+                                out += (bTh(peer.inBytes + peer.overCounts['maxIntegerSize'] * peer.overCounts['inBytes']));
                                 out += '</td><td>';
                                 out += (bTh(aPs.getValue('serverZones.' + ups + '.' + peer.server + '.outBytes', peer.outBytes)));
                                 out += '</td><td>';
@@ -314,9 +320,9 @@
                         out += '</td>';
 
                         out += '<td>';
-                        out += (bTh(zone.outBytes));
+                        out += (bTh(zone.outBytes + zone.overCounts['maxIntegerSize'] * zone.overCounts['outBytes']));
                         out += '</td><td>';
-                        out += (bTh(zone.inBytes));
+                        out += (bTh(zone.inBytes + zone.overCounts['maxIntegerSize'] * zone.overCounts['inBytes']));
                         out += '</td><td>';
                         out += (bTh(aPs.getValue('cacheZones.' + name + '.outBytes', zone.outBytes)));
                         out += '</td><td>';
@@ -327,9 +333,9 @@
                         var i = 0;
                         for(var code in zone.responses) {
                             out += '<td>';
-                            out += (zone.responses[code]);
+                            out += (zone.responses[code] + zone.overCounts['maxIntegerSize'] * zone.overCounts[code]);
                             out += '</td>';
-                            cacheTotal += zone.responses[code];
+                            cacheTotal += zone.responses[code] + zone.overCounts['maxIntegerSize'] * zone.overCounts[code];
                         }
                         out += '<td>' + cacheTotal + '</td>';
 
