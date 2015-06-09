@@ -179,7 +179,8 @@ JSON document contains as follows:
 ```
 
 * main
- * Basic version, uptime(nowMsec - loadMsec)
+ * Basic version, uptime((nowMsec - loadMsec)/1000)
+ * nowMsec, loadMsec is a millisecond.
 * connections
  * Total connections and requests(same as stub_status_module in NGINX)
 * serverZones
