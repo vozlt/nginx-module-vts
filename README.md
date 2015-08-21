@@ -22,6 +22,7 @@ Table of Contents
  * [vhost_traffic_status_zone](#vhost_traffic_status_zone)
  * [vhost_traffic_status_display](#vhost_traffic_status_display)
  * [vhost_traffic_status_display_format](#vhost_traffic_status_display_format)
+* [Donation](#donation)
 * [Author](#author)
 
 ## Version
@@ -320,6 +321,8 @@ The cache is shared between all worker processes.
 If you set json, will respond with a JSON document.
 If you set html, will respond with the built-in live dashboard in HTML.
 
+## Donation
+[![License](http://img.shields.io/badge/PAYPAL-DONATE-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=PWWSYKQ9VKH38&lc=KR&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
 
 ## Author
 YoungJoo.Kim(김영주) [<vozlt@vozlt.com>]
