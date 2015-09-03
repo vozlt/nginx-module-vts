@@ -815,7 +815,11 @@ ngx_http_vhost_traffic_status_shm_add_cache(ngx_http_request_t *r,
 
         ngx_vhost_traffic_status_node_set(r, vtscf->vtsn_cache);
 
+        ngx_shmtx_lock(&cache->shpool->mutex);
+
         vtscf->vtsn_cache->stat_cache_used_size = (ngx_atomic_uint_t) (cache->sh->size * cache->bsize);
+
+        ngx_shmtx_unlock(&cache->shpool->mutex);
 
         ngx_shmtx_unlock(&shpool->mutex);
 
@@ -858,8 +862,14 @@ ngx_http_vhost_traffic_status_shm_add_cache(ngx_http_request_t *r,
         ngx_rbtree_insert(ctx->rbtree, node);
     } else {
         vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
+
         ngx_vhost_traffic_status_node_set(r, vtsn);
+
+        ngx_shmtx_lock(&cache->shpool->mutex);
+
         vtsn->stat_cache_used_size = (ngx_atomic_uint_t) (cache->sh->size * cache->bsize);
+
+        ngx_shmtx_unlock(&cache->shpool->mutex);
     }
 
     vtscf->vtsn_cache = vtsn;
