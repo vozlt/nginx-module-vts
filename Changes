@@ -1,3 +1,10 @@
+v0.1.2 [Wed Sep 23 2015 YoungJoo.Kim <vozlt@vozlt.com>]
+    * Bugfix: added cache variable's lock routine in
+      ngx_http_vhost_traffic_status_shm_add_cache() for issues/19
+
+    * Compatibility: added overflow handling routines of variables.
+      It deals with the overflow of both 32bit and 64bit variables
+      but I think that not be useful in 64bit variable(Max:16EB) at this moment.
 
 v0.1.1 [Thu May 28 2015 YoungJoo.Kim <vozlt@vozlt.com>]
     * Feature: cache status support when using the proxy_cache directive.
