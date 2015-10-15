@@ -802,7 +802,7 @@ ngx_http_vhost_traffic_status_shm_add_cache(ngx_http_request_t *r,
 
     u = r->upstream;
 
-    if (u != NULL && u->cache_status != 0) {
+    if (u != NULL && u->cache_status != 0 && r->cache != NULL) {
         c = r->cache;
         cache = c->file_cache;
     } else {
