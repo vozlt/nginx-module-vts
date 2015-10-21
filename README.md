@@ -22,21 +22,23 @@ Table of Contents
  * [vhost_traffic_status_zone](#vhost_traffic_status_zone)
  * [vhost_traffic_status_display](#vhost_traffic_status_display)
  * [vhost_traffic_status_display_format](#vhost_traffic_status_display_format)
+ * [vhost_traffic_status_filter_by_host](#vhost_traffic_status_filter_by_host)
+ * [vhost_traffic_status_filter_by_set_key](#vhost_traffic_status_filter_by_set_key)
 * [Donation](#donation)
 * [Author](#author)
 
 ## Version
-This document describes nginx-module-vts `v0.1.1` released on 28 May 2015.
+This document describes nginx-module-vts `v0.1.3` released on 21 Oct 2015.
 
 ## Dependencies
 * [nginx](http://nginx.org)
 
 ## Compatibility
-* 1.9.x (last tested: 1.9.0)
+* 1.9.x (last tested: 1.9.4)
 * 1.8.x (last tested: 1.8.0)
 * 1.7.x (last tested: 1.7.10)
 * 1.6.x (last tested: 1.6.2)
-* 1.4.x (last tested: 1.4.5)
+* 1.4.x (last tested: 1.4.7)
 
 Earlier versions is not tested.
 
@@ -215,6 +217,8 @@ in certain cirumstances different that real bandwidth traffic.
 Websocket, canceled downloads may be cause of inaccuracies.
 The working of the module doesn't matter at all whether the access_log directive "on" or "off".
 Again, this module works well on "access_log off".
+When using several domains it sets to be first domain(left) of server_name directive.
+If you don't want it, see the `vhost_traffic_status_filter_by_host`, `vhost_traffic_status_filter_by_set_key` directive.
 
 ## Customizing
 ### To customize after the module installed
@@ -232,9 +236,9 @@ Again, this module works well on "access_log off".
  ```
 
 4. Configure `nginx.conf`
- ```
+ ```Nginx
     server {
-        server_name YOURDOMAIN;
+        server_name example.org;
         root /usr/share/nginx/html;
 
         # Redirect requests for / to /status.html
@@ -255,7 +259,7 @@ Again, this module works well on "access_log off".
 
 4. Access to your html.
  ```
- http://YOURDOMAIN/status.html
+ http://example.org/status.html
  ```
 
 ### To customize before the module installed
@@ -318,8 +322,100 @@ The cache is shared between all worker processes.
 **Context** | http, server, location
 
 `Description:` Sets the display handler's output format.
-If you set json, will respond with a JSON document.
-If you set html, will respond with the built-in live dashboard in HTML.
+If you set `json`, will respond with a JSON document.
+If you set `html`, will respond with the built-in live dashboard in HTML.
+
+### vhost_traffic_status_filter_by_host
+
+-   | - 
+--- | ---
+**Syntax**  | vhost_traffic_status_filter_by_host [on\|off]
+**Default** | off
+**Context** | server, location
+
+`Description:` Enables or disables the keys by Host header field.
+If you set `on` and nginx's server_name directive set several or wildcard name starting with an asterisk, e.g. “*.example.org”
+and requested to server with hostname such as (a|b|c).example.org or *.example.org
+then json serverZones is printed as follows:
+
+```Nginx
+server {
+  server_name *.example.org;
+  vhost_traffic_status_filter_by_host on;
+  .
+  .
+}
+```
+
+```Json
+.
+.
+  "serverZones": {
+  .
+  .
+    "a.example.org": {
+	.
+	.
+	},
+	"b.example.org": {
+	.
+	.
+	}
+	"c.example.org": {
+	.
+	.
+	}
+	.
+	.
+```
+
+It provides the same function that set `vhost_traffic_status_filter_by_set_key $host`.
+
+### vhost_traffic_status_filter_by_set_key
+
+-   | - 
+--- | ---
+**Syntax**  | vhost_traffic_status_filter_by_set_key [*key*]
+**Default** | -
+**Context** | server, location
+
+`Description:` Enables the keys by user defined variable.
+The *key* name can contain variables such as $host, $uri.
+The example with geoip module is as follows:
+
+```Nginx
+server {
+  server_name *.example.org;
+  vhost_traffic_status_filter_by_set_key $geoip_country_code@$host;
+  .
+  .
+}
+```
+
+```Json
+.
+.
+  "serverZones": {
+  .
+  .
+    "KR@a.example.org": {
+    .
+    .
+    },
+    "FI@b.example.org": {
+    .
+    .
+    }
+    "US@c.example.org": {
+    .
+    .
+    }
+    .
+    .
+```
+
+This directive is high priority than `vhost_traffic_status_filter_by_host`.
+If it set both, then `vhost_traffic_status_filter_by_host` directive will be ignore.
 
 ## Donation
 [![License](http://img.shields.io/badge/PAYPAL-DONATE-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=PWWSYKQ9VKH38&lc=KR&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
