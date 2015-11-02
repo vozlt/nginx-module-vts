@@ -364,7 +364,7 @@ The following status information is provided in the JSON format:
     * revalidated
       * The number of cache revalidated.
     * hit
-      * The number oo cache hit.
+      * The number of cache hit.
     * scarce
       * The number of cache scare.
 
