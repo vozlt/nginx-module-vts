@@ -1618,7 +1618,14 @@ ngx_http_vhost_traffic_status_filter_get_keys(ngx_http_request_t *r,
         }
 next:
         rc = ngx_http_vhost_traffic_status_filter_get_keys(r, node->left, sentinel, vtscf);
+        if (rc != NGX_OK) {
+            return rc;
+        }
+
         rc = ngx_http_vhost_traffic_status_filter_get_keys(r, node->right, sentinel, vtscf);
+        if (rc != NGX_OK) {
+            return rc;
+        }
     }
 
     return NGX_OK;
@@ -1679,7 +1686,14 @@ ngx_http_vhost_traffic_status_filter_get_nodes(ngx_http_request_t *r,
         }
 next:
         rc = ngx_http_vhost_traffic_status_filter_get_nodes(r, node->left, sentinel, vtscf, name);
+        if (rc != NGX_OK) {
+            return rc;
+        }
+
         rc = ngx_http_vhost_traffic_status_filter_get_nodes(r, node->right, sentinel, vtscf, name);
+        if (rc != NGX_OK) {
+            return rc;
+        }
     }
 
     return NGX_OK;
@@ -1981,7 +1995,7 @@ ngx_http_vhost_traffic_status_display_set_filter(ngx_http_request_t *r,
     const char *fmt, u_char *buf,
     ngx_http_vhost_traffic_status_loc_conf_t *vtscf)
 {
-    ngx_str_t                                     key, node_key;
+    ngx_str_t                                     key;
     ngx_uint_t                                    i, j, n, rc;
     ngx_http_vhost_traffic_status_filter_key_t   *keys;
     ngx_http_vhost_traffic_status_filter_node_t  *nodes;
@@ -2018,8 +2032,6 @@ ngx_http_vhost_traffic_status_display_set_filter(ngx_http_request_t *r,
 
                 nodes = vtscf->nodes->elts;
                 for (j = 0; j < vtscf->nodes->nelts; j++) {
-                    node_key.len = nodes[j].node->len;
-                    node_key.data = nodes[j].node->data;
                     buf = ngx_http_vhost_traffic_status_display_set_filter_node(r,
                               NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER, buf,
                               vtscf, nodes[j].node);
