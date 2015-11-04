@@ -1917,7 +1917,6 @@ ngx_http_vhost_traffic_status_display_set_filter_node(ngx_http_request_t *r,
 
 just_start:
 
-    key.data = vtsn->data;
     p = (u_char *) ngx_strchr(key.data, '@');
 
     if (p != NULL) {
