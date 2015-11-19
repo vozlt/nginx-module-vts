@@ -1,13 +1,31 @@
+v0.1.5 [Fri Nov 20 2015 YoungJoo.Kim <vozlt@vozlt.com>]
+    * Bugfix: fixed issues/26 that the each diffrent proxy
+      caches are used by single zone(key).
+
+    * Bugfix: changed the way for key generation because of
+      the serverZones and cacheZones is likely to duplicate.
+
+    * Feature: added support for implementing a functions
+      to reset, delete, status for zones through an http
+      request on the fly without nginx's restart.
+
+    * Refactor: removed overlapping routine and merged into
+      functions.
+
 v0.1.4 [Mon Nov 02 2015 YoungJoo.Kim <vozlt@vozlt.com>]
     * Feature: added vhost_traffic_status_filter
       to globally enable or disable the filter features.
+
     * Feature: fixed vhost_traffic_status_filter_by_host
       to globally enable or disable.
+
     * Feature: fixed vhost_traffic_status_filter_by_set_key
       to calculate user defined individual stats.
       Basically, country flags image is built-in in HTML.
+
     * Feature: added vhost_traffic_status_filter_check_duplicate
       for deduplication of vhost_traffic_status_filter_by_set_key.
+
     * Feature: added update interval in HTML.
 
 v0.1.3 [Wed Oct 21 2015 YoungJoo.Kim <vozlt@vozlt.com>]

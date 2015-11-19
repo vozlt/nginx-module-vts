@@ -14,7 +14,22 @@ Table of Contents
 * [Installation](#installation)
 * [Synopsis](#synopsis)
 * [Description](#description)
+* [Control](#control)
+ * [To get status of traffic zones on the fly](#to-get-status-of-traffic-zones-on-the-fly)
+    * [To get fully zones](#to-get-fully-zones)
+    * [To get group zones](#to-get-group-zones)
+    * [To get each zones](#to-get-each-zones)
+ * [To reset traffic zones on the fly](#to-reset-traffic-zones-on-the-fly)
+    * [To reset fully zones](#to-reset-fully-zones)
+    * [To reset group zones](#to-reset-group-zones)
+    * [To reset each zones](#to-reset-each-zones)
+ * [To delete traffic zones on the fly](#to-delete-traffic-zones-on-the-fly)
+    * [To delete fully zones](#to-delete-fully-zones)
+    * [To delete group zones](#to-delete-group-zones)
+    * [To delete each zones](#to-delete-each-zones)
 * [JSON](#json)
+ * [Json used by status](#json-used-by-status)
+ * [Json used by control](#json-used-by-control)
 * [Use cases](#use-cases)
  * [To calculate traffic for individual country using GeoIP](#to-calculate-traffic-for-individual-country-using-geoip)
  * [To calculate traffic for individual storage volume](#to-calculate-traffic-for-individual-storage-volume)
@@ -36,7 +51,7 @@ Table of Contents
 * [Author](#author)
 
 ## Version
-This document describes nginx-module-vts `v0.1.4` released on 2 Nov 2015.
+This document describes nginx-module-vts `v0.1.5` released on 20 Nov 2015.
 
 ## Dependencies
 * [nginx](http://nginx.org)
@@ -102,11 +117,16 @@ First of all, the directive `vhost_traffic_status_zone` is required,
 and then if the directive `vhost_traffic_status_display` is set, can be access to as follows:
 
 * /status/format/json
+
 * /status/format/html
+
+* /status/control
 
  * If you request `/status/format/json`, will respond with a JSON document containing the current activity data for using in live dashboards and third-party monitoring tools.
 
  * If you request `/status/format/html`, will respond with the built-in live dashboard in HTML that requests internally to `/status/format/json`.
+
+ * If you request `/status/control`, will respond with a JSON document after it reset or delete zones through a query string. See the [Control](#control).
 
 JSON document contains as follows:
 
@@ -263,10 +283,168 @@ Websocket, canceled downloads may be cause of inaccuracies.
 The working of the module doesn't matter at all whether the access_log directive "on" or "off".
 Again, this module works well on "access_log off".
 When using several domains it sets to be first domain(left) of server_name directive.
-If you don't want it, see the `vhost_traffic_status_filter_by_host`, `vhost_traffic_status_filter_by_set_key` directive.
+If you don't want it, see the [vhost_traffic_status_filter_by_host](#vhost_traffic_status_filter_by_host), [vhost_traffic_status_filter_by_set_key](#vhost_traffic_status_filter_by_set_key) directive.
+
+## Control
+It is able to reset or delete traffic zones through a query string.
+The request responds with a JSON document.
+
+* URI Syntax
+ * /*`{status_uri}`*/control?cmd=*`{command}`*&group=*`{group}`*&zone=*`{name}`*
+
+```Nginx
+http {
+
+    geoip_country                   /usr/share/GeoIP/GeoIP.dat;
+
+    vhost_traffic_status_zone;
+    vhost_traffic_status_filter_by_set_key $geoip_country_code country::*;
+
+    ...
+
+    server {
+
+        server_name example.org;
+
+        ...
+
+        vhost_traffic_status_filter_by_set_key $geoip_country_code country::$server_name;
+
+        location /status {
+            vhost_traffic_status_display;
+            vhost_traffic_status_display_format html;
+        }
+    }                                                                                                                                                                                           }
+```
+
+If it set as above, then the control uri is like `example.org/status/control`.
+
+The available request arguments are as follows:
+* **cmd**=\<`status`\|`reset`\|`delete`\>
+ * status
+   * It returns status of traffic zones to json format like `status/format/json`.
+ * reset
+   * It reset traffic zones without deleting nodes in shared memory.(= init to 0)
+ * delete
+   * It delete traffic zones in shared memory. when re-request recreated. 
+* **group**=\<`server`\|`filter`\|`upstream@alone`\|`upstream@group`\|`cache`\|`*`\>
+ * server
+ * filter
+ * upstream@alone
+ * upstream@group
+ * cache
+ * *
+* **zone**=*name*
+ * server
+   * *name*
+ * filter
+   * *filter_group*@*name*
+ * upstream@group
+   * *upstream_group*@*name*
+ * upstream@alone
+   * @*name*
+ * cache
+   * *name*
+
+
+### To get status of traffic zones on the fly
+This is similar to the `status/format/json` except that it can get each zones.
+
+#### To get fully zones
+* It is exactly the same with the `status/format/json`.
+ * /status/control?cmd=status&group=*
+
+#### To get group zones
+* serverZones
+ * /status/control?cmd=status&group=server&zone=*
+* filterZones
+ * /status/control?cmd=status&group=filter&zone=*
+* upstreamZones
+ * /status/control?cmd=status&group=upstream@group&zone=*
+* upstreamZones::nogroups
+ * /status/control?cmd=status&group=upstream@alone&zone=*
+* cacheZones
+ * /status/control?cmd=status&group=cache&zone=*
+
+#### To get each zones
+* single zone in serverZones
+ * /status/control?cmd=status&group=server&zone=*`name`*
+* single zone in filterZones
+ * /status/control?cmd=status&group=filter&zone=*`filter_group`*@*`name`*
+* single zone in upstreamZones
+ * /status/control?cmd=status&group=upstream@group&zone=*`upstream_group`*@*`name`*
+* single zone in upstreamZones::nogroups
+ * /status/control?cmd=status&group=upstream@alone&zone=@*`name`*
+* single zone in cacheZones
+ * /status/control?cmd=status&group=cache&zone=*`name`*
+
+### To reset traffic zones on the fly
+It reset the values of specified zones to 0.
+
+#### To reset fully zones
+* /status/control?cmd=reset&group=*
+
+#### To reset group zones
+* serverZones
+ * /status/control?cmd=reset&group=server&zone=*
+* filterZones
+ * /status/control?cmd=reset&group=filter&zone=*
+* upstreamZones
+ * /status/control?cmd=reset&group=upstream@group&zone=*
+* upstreamZones::nogroups
+ * /status/control?cmd=reset&group=upstream@alone&zone=*
+* cacheZones
+ * /status/control?cmd=reset&group=cache&zone=*
+
+#### To reset each zones
+* single zone in serverZones
+ * /status/control?cmd=reset&group=server&zone=*`name`*
+* single zone in filterZones
+ * /status/control?cmd=reset&group=filter&zone=*`filter_group`*@*`name`*
+* single zone in upstreamZones
+ * /status/control?cmd=reset&group=upstream@group&zone=*`upstream_group`*@*`name`*
+* single zone in upstreamZones::nogroups
+ * /status/control?cmd=reset&group=upstream@alone&zone=@*`name`*
+* single zone in cacheZones
+ * /status/control?cmd=reset&group=cache&zone=*`name`*
+
+### To delete traffic zones on the fly
+It delete the specified zones in shared memory.
+
+#### To delete fully zones
+* /status/control?cmd=delete&group=*
+
+#### To delete group zones
+* serverZones
+ * /status/control?cmd=delete&group=server&zone=*
+* filterZones
+ * /status/control?cmd=delete&group=filter&zone=*
+* upstreamZones
+ * /status/control?cmd=delete&group=upstream@group&zone=*
+* upstreamZones::nogroups
+ * /status/control?cmd=delete&group=upstream@alone&zone=*
+* cacheZones
+ * /status/control?cmd=delete&group=cache&zone=*
+
+#### To delete each zones
+* single zone in serverZones
+ * /status/control?cmd=delete&group=server&zone=*`name`*
+* single zone in filterZones
+ * /status/control?cmd=delete&group=filter&zone=*`filter_group`*@*`name`*
+* single zone in upstreamZones
+ * /status/control?cmd=delete&group=upstream@group&zone=*`upstream_group`*@*`name`*
+* single zone in upstreamZones::nogroups
+ * /status/control?cmd=delete&group=upstream@alone&zone=@*`name`*
+* single zone in cacheZones
+ * /status/control?cmd=delete&group=cache&zone=*`name`*
 
 ## JSON
 The following status information is provided in the JSON format:
+
+### Json used by status
+/*`{status_uri}`*/format/json
+
+/*`{status_uri}`*/control?cmd=status&...
 
 * nginxVersion
  * Version of the provided.
@@ -368,6 +546,21 @@ The following status information is provided in the JSON format:
     * scarce
       * The number of cache scare.
 
+### Json used by control
+/*`{status_uri}`*/control?cmd=reset&...
+
+/*`{status_uri}`*/control?cmd=delete&...
+
+* processingReturn
+ * The result of true or false.
+* processingCommandString
+ * The requested command string.
+* processingGroupString
+ * The requested group string.
+* processingZoneString
+ * The requested zone string.
+* processingCounts
+ * The actual processing number.
 
 ## Use cases
 
@@ -696,7 +889,7 @@ server {
 It is processed only one of duplicate values(`key` + `name`) in each directives(http, server, location) if this option is enabled.
 
 ## TODO
-* Add support for implementing a function to reset(remove) zones on the fly without nginx's restart.
+* Add support for implementing variables for current traffic status values.
 * Add support for implementing traffic limit.
 * Add support for implementing `stream` stats.
 
