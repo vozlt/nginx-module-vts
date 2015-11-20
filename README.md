@@ -57,10 +57,10 @@ This document describes nginx-module-vts `v0.1.5` released on 20 Nov 2015.
 * [nginx](http://nginx.org)
 
 ## Compatibility
-* 1.9.x (last tested: 1.9.6)
+* 1.9.x (last tested: 1.9.7)
 * 1.8.x (last tested: 1.8.0)
 * 1.7.x (last tested: 1.7.10)
-* 1.6.x (last tested: 1.6.2)
+* 1.6.x (last tested: 1.6.3)
 * 1.4.x (last tested: 1.4.7)
 
 Earlier versions is not tested.

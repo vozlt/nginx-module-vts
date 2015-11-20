@@ -595,7 +595,12 @@ static u_char *ngx_http_vhost_traffic_status_display_set_filter(
 static u_char *ngx_http_vhost_traffic_status_display_set_upstream_node(
     ngx_http_request_t *r, u_char *buf,
     ngx_http_upstream_server_t *us,
-    ngx_http_vhost_traffic_status_node_t *vtsn);
+#if nginx_version > 1007001
+    ngx_http_vhost_traffic_status_node_t *vtsn
+#else
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_str_t *name
+#endif
+    );
 static u_char *ngx_http_vhost_traffic_status_display_set_upstream_alone(
     ngx_http_request_t *r, u_char *buf, ngx_rbtree_node_t *node);
 static u_char *ngx_http_vhost_traffic_status_display_set_upstream_group(
@@ -1977,7 +1982,11 @@ ngx_http_vhost_traffic_status_node_upstream_lookup(
     key = *control->zone;
 
     if (control->group == NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UA) {
+
+#if nginx_version > 1007001
         usn->name = key;
+#endif
+
         usn->weight = 0;
         usn->max_fails = 0;
         usn->fail_timeout = 0;
@@ -2020,7 +2029,11 @@ ngx_http_vhost_traffic_status_node_upstream_lookup(
                     if (us[j].addrs->name.len == ush.len) {
                         if (ngx_strncmp(us[j].addrs->name.data, ush.data, ush.len) == 0) {
                             *usn = us[j];
+
+#if nginx_version > 1007001
                             usn->name = us[j].addrs->name;
+#endif
+
                             control->count++;
                             break;
                         }
@@ -2206,8 +2219,14 @@ ngx_http_vhost_traffic_status_node_status_zone(
     case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UG:
         ngx_http_vhost_traffic_status_node_upstream_lookup(control, &us);
         if (control->count) {
+#if nginx_version > 1007001
             *control->buf = ngx_http_vhost_traffic_status_display_set_upstream_node(control->r,
                                 *control->buf, &us, vtsn);
+#else
+            (void) ngx_http_vhost_traffic_status_node_position_key(&dst, 1);
+            *control->buf = ngx_http_vhost_traffic_status_display_set_upstream_node(control->r,
+                                *control->buf, &us, vtsn, &dst);
+#endif
         }
         break;
 
@@ -3110,12 +3129,22 @@ ngx_http_vhost_traffic_status_display_set_filter(ngx_http_request_t *r,
 static u_char *
 ngx_http_vhost_traffic_status_display_set_upstream_node(ngx_http_request_t *r,
      u_char *buf, ngx_http_upstream_server_t *us,
-     ngx_http_vhost_traffic_status_node_t *vtsn)
+#if nginx_version > 1007001
+     ngx_http_vhost_traffic_status_node_t *vtsn
+#else
+     ngx_http_vhost_traffic_status_node_t *vtsn, ngx_str_t *name
+#endif
+     )
 {
     ngx_int_t  rc;
     ngx_str_t  key;
 
+#if nginx_version > 1007001
     rc = ngx_http_vhost_traffic_status_escape_json_pool(r->pool, &key, &us->name);
+#else
+    rc = ngx_http_vhost_traffic_status_escape_json_pool(r->pool, &key, name);
+#endif
+
     if (rc != NGX_OK) {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                       "display_set_upstream_node::escape_json_pool() failed");
@@ -3183,14 +3212,20 @@ ngx_http_vhost_traffic_status_display_set_upstream_alone(ngx_http_request_t *r,
 
             (void) ngx_http_vhost_traffic_status_node_position_key(&key, 1);
 
+#if nginx_version > 1007001
             us.name = key;
+#endif
             us.weight = 0;
             us.max_fails = 0;
             us.fail_timeout = 0;
             us.down = 0;
             us.backup = 0;
 
+#if nginx_version > 1007001
             buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &us, vtsn);
+#else
+            buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &us, vtsn, &key);
+#endif
         }
 
         buf = ngx_http_vhost_traffic_status_display_set_upstream_alone(r, buf, node->left);
@@ -3269,14 +3304,25 @@ ngx_http_vhost_traffic_status_display_set_upstream_group(ngx_http_request_t *r,
                 node = ngx_http_vhost_traffic_status_node_lookup(ctx->rbtree, &key, hash);
 
                 usn = us[j];
+
+#if nginx_version > 1007001
                 usn.name = us[j].addrs->name;
+#endif
 
                 if (node != NULL) {
                     vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
+#if nginx_version > 1007001
                     buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, vtsn);
+#else
+                    buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, vtsn, &us[j].addrs->name);
+#endif
 
                 } else {
+#if nginx_version > 1007001
                     buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, NULL);
+#else
+                    buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, NULL, &us[j].addrs->name);
+#endif
                 }
 
                 p = dst.data;
