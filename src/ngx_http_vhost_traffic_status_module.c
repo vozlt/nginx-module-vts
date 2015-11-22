@@ -17,6 +17,8 @@
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_CC          3
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG          4
 
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAMS            (u_char *) "NO\0UA\0UG\0CC\0FG\0"
+
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_NODE_NONE            0
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_NODE_FIND            1
 
@@ -337,8 +339,8 @@
 
 #define ngx_vhost_traffic_status_group_to_string(n) (u_char *) (               \
     (n > 4)                                                                    \
-    ? "NO\0"                                                                   \
-    : "NO\0UA\0UG\0CC\0FG\0" + 3 * n                                           \
+    ? NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAMS                                  \
+    : NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAMS + 3 * n                          \
 )
 
 #define ngx_vhost_traffic_status_max_integer (NGX_ATOMIC_T_LEN < 12)           \
