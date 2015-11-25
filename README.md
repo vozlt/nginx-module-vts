@@ -30,6 +30,7 @@ Table of Contents
 * [JSON](#json)
  * [Json used by status](#json-used-by-status)
  * [Json used by control](#json-used-by-control)
+* [Variables](#variables)
 * [Use cases](#use-cases)
  * [To calculate traffic for individual country using GeoIP](#to-calculate-traffic-for-individual-country-using-geoip)
  * [To calculate traffic for individual storage volume](#to-calculate-traffic-for-individual-storage-volume)
@@ -51,7 +52,7 @@ Table of Contents
 * [Author](#author)
 
 ## Version
-This document describes nginx-module-vts `v0.1.5` released on 20 Nov 2015.
+This document describes nginx-module-vts `v0.1.6` released on 25 Nov 2015.
 
 ## Dependencies
 * [nginx](http://nginx.org)
@@ -562,6 +563,42 @@ The following status information is provided in the JSON format:
 * processingCounts
  * The actual processing number.
 
+## Variables
+The following embedded variables are provided:
+
+* **$vts_request_counter**
+ * The total number of client requests received from clients.
+* **$vts_in_bytes**
+ * The total number of bytes received from clients.
+* **$vts_out_bytes**
+ * The total number of bytes sent to clients.
+* **$vts_1xx_counter**
+ * The number of responses with status codes 1xx.
+* **$vts_2xx_counter**
+ * The number of responses with status codes 2xx.
+* **$vts_3xx_counter**
+ * The number of responses with status codes 3xx.
+* **$vts_4xx_counter**
+ * The number of responses with status codes 4xx.
+* **$vts_5xx_counter**
+ * The number of responses with status codes 5xx.
+* **$vts_cache_miss_counter**
+ * The number of cache miss.
+* **$vts_cache_bypass_counter**
+ * The number of cache bypass.
+* **$vts_cache_expired_counter**
+ * The number of cache expired.
+* **$vts_cache_stale_counter**
+ * The number of cache stale.
+* **$vts_cache_updating_counter**
+ * The number of cache updating.
+* **$vts_cache_revalidated_counter**
+ * The number of cache revalidated.
+* **$vts_cache_hit_counter**
+ * The number of cache hit.
+* **$vts_cache_scarce_counter**
+ * The number of cache scare.
+
 ## Use cases
 
 It is able to calculate the user defined individual stats by using the directive `vhost_traffic_status_filter_by_set_key`.
@@ -889,7 +926,6 @@ server {
 It is processed only one of duplicate values(`key` + `name`) in each directives(http, server, location) if this option is enabled.
 
 ## TODO
-* Add support for implementing variables for current traffic status values.
 * Add support for implementing traffic limit.
 * Add support for implementing `stream` stats.
 
