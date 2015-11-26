@@ -375,7 +375,7 @@ This is similar to the `status/format/json` except that it can get each zones.
 * single zone in upstreamZones
  * /status/control?cmd=status&group=upstream@group&zone=*`upstream_group`*@*`name`*
 * single zone in upstreamZones::nogroups
- * /status/control?cmd=status&group=upstream@alone&zone=@*`name`*
+ * /status/control?cmd=status&group=upstream@alone&zone=*`name`*
 * single zone in cacheZones
  * /status/control?cmd=status&group=cache&zone=*`name`*
 
@@ -405,7 +405,7 @@ It reset the values of specified zones to 0.
 * single zone in upstreamZones
  * /status/control?cmd=reset&group=upstream@group&zone=*`upstream_group`*@*`name`*
 * single zone in upstreamZones::nogroups
- * /status/control?cmd=reset&group=upstream@alone&zone=@*`name`*
+ * /status/control?cmd=reset&group=upstream@alone&zone=*`name`*
 * single zone in cacheZones
  * /status/control?cmd=reset&group=cache&zone=*`name`*
 
@@ -435,7 +435,7 @@ It delete the specified zones in shared memory.
 * single zone in upstreamZones
  * /status/control?cmd=delete&group=upstream@group&zone=*`upstream_group`*@*`name`*
 * single zone in upstreamZones::nogroups
- * /status/control?cmd=delete&group=upstream@alone&zone=@*`name`*
+ * /status/control?cmd=delete&group=upstream@alone&zone=*`name`*
 * single zone in cacheZones
  * /status/control?cmd=delete&group=cache&zone=*`name`*
 
