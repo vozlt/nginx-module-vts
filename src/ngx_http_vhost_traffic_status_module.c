@@ -1127,7 +1127,8 @@ ngx_http_vhost_traffic_status_display_handler(ngx_http_request_t *r)
     }
 
     /* control processing handler */
-    if (p && len == sizeof("/control") - 1) {
+    if (p && len >= sizeof("/control") - 1) {
+        p = r->uri.data + r->uri.len - sizeof("/control") + 1;
         if (ngx_strncasecmp(p, (u_char *) "/control", sizeof("/control") - 1) == 0) {
             rc = ngx_http_vhost_traffic_status_display_handler_control(r);
             goto done;
