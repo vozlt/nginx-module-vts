@@ -2508,7 +2508,7 @@ ngx_http_vhost_traffic_status_node_delete_get_nodes(
     if (node != ctx->rbtree->sentinel) {
         vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
 
-        if (vtsn->stat_upstream.type == control->group) {
+        if ((ngx_int_t) vtsn->stat_upstream.type == control->group) {
 
             if (*nodes == NULL) {
                 *nodes = ngx_array_create(control->r->pool, 1,
@@ -2722,7 +2722,7 @@ ngx_http_vhost_traffic_status_node_reset_group(
     if (node != ctx->rbtree->sentinel) {
         vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
 
-        if (vtsn->stat_upstream.type == control->group) {
+        if ((ngx_int_t) vtsn->stat_upstream.type == control->group) {
             ngx_http_vhost_traffic_status_node_zero(vtsn);
             control->count++;
         }
