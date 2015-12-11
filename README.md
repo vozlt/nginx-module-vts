@@ -31,6 +31,10 @@ Table of Contents
  * [Json used by status](#json-used-by-status)
  * [Json used by control](#json-used-by-control)
 * [Variables](#variables)
+* [Limit](#limit)
+ * [To limit traffic for server](#to-limit-traffic-for-server)
+ * [To limit traffic for filter](#to-limit-traffic-for-filter)
+ * [To limit traffic for upstream](#to-limit-traffic-for-upstream)
 * [Use cases](#use-cases)
  * [To calculate traffic for individual country using GeoIP](#to-calculate-traffic-for-individual-country-using-geoip)
  * [To calculate traffic for individual storage volume](#to-calculate-traffic-for-individual-storage-volume)
@@ -47,12 +51,16 @@ Table of Contents
  * [vhost_traffic_status_filter_by_host](#vhost_traffic_status_filter_by_host)
  * [vhost_traffic_status_filter_by_set_key](#vhost_traffic_status_filter_by_set_key)
  * [vhost_traffic_status_filter_check_duplicate](#vhost_traffic_status_filter_check_duplicate)
+ * [vhost_traffic_status_limit](#vhost_traffic_status_limit)
+ * [vhost_traffic_status_limit_traffic](#vhost_traffic_status_limit_traffic)
+ * [vhost_traffic_status_limit_traffic_by_set_key](#vhost_traffic_status_limit_traffic_by_set_key)
+ * [vhost_traffic_status_limit_check_duplicate](#vhost_traffic_status_limit_check_duplicate)
 * [TODO](#todo)
 * [Donation](#donation)
 * [Author](#author)
 
 ## Version
-This document describes nginx-module-vts `v0.1.6` released on 25 Nov 2015.
+This document describes nginx-module-vts `v0.1.7` released on 11 Dec 2015.
 
 ## Dependencies
 * [nginx](http://nginx.org)
@@ -599,6 +607,99 @@ The following embedded variables are provided:
 * **$vts_cache_scarce_counter**
  * The number of cache scare.
 
+## Limit
+
+It is able to limit total traffic per each host by using the directive
+[`vhost_traffic_status_limit_traffic`](#vhost_traffic_status_limit_traffic).
+It also is able to limit all traffic by using the directive
+[`vhost_traffic_status_limit_traffic_by_set_key`](#vhost_traffic_status_limit_traffic_by_set_key).
+When the limit is exceeded, the server will return the 503
+(Service Temporarily Unavailable) error in reply to a request. 
+The return code can be changeable.
+
+### To limit traffic for server
+```Nginx
+http {
+
+    vhost_traffic_status_zone;
+
+    ...
+
+    server {
+
+        server_name *.example.org;
+
+        vhost_traffic_status_limit_traffic in:64G;
+        vhost_traffic_status_limit_traffic out:1024G;
+
+        ...
+    }
+}
+```
+
+* Limit in/out total traffic on the `*.example.org` to 64G and 1024G respectively.
+It works individually per each domain if `vhost_traffic_status_filter_by_host` directive is enabled.
+
+### To limit traffic for filter
+```Nginx
+http {
+    geoip_country /usr/share/GeoIP/GeoIP.dat;
+
+    vhost_traffic_status_zone;
+
+    ...
+
+    server {
+
+        server_name example.org;
+
+        vhost_traffic_status_filter_by_set_key $geoip_country_code country::$server_name;
+        vhost_traffic_status_limit_traffic_by_set_key FG@country::$server_name@US out:1024G;
+        vhost_traffic_status_limit_traffic_by_set_key FG@country::$server_name@CN out:2048G;
+
+        ...
+
+    }
+}
+
+```
+
+* Limit total traffic of going into US and CN on the `example.org` to 1024G and 2048G respectively.
+
+### To limit traffic for upstream
+```Nginx
+http {
+
+    vhost_traffic_status_zone;
+
+    ...
+
+    upstream backend {
+        server 10.10.10.17:80;
+        server 10.10.10.18:80;
+    }
+
+    server {
+
+        server_name example.org;
+
+        location /backend {
+            vhost_traffic_status_limit_traffic_by_set_key UG@backend@10.10.10.17:80 in:512G;
+            vhost_traffic_status_limit_traffic_by_set_key UG@backend@10.10.10.18:80 in:1024G;
+            proxy_pass http://backend;
+        }
+
+        ...
+
+    }
+}
+
+```
+
+* Limit total traffic of going into upstream backend on the `example.org` to 512G and 1024G per each peer.
+
+`Caveats:` Traffic is the cumulative transfer or counter, not a bandwidth.
+
 ## Use cases
 
 It is able to calculate the user defined individual stats by using the directive `vhost_traffic_status_filter_by_set_key`.
@@ -606,7 +707,7 @@ It is able to calculate the user defined individual stats by using the directive
 ### To calculate traffic for individual country using GeoIP
 ```Nginx
 http {
-    geoip_country                   /usr/share/GeoIP/GeoIP.dat;
+    geoip_country /usr/share/GeoIP/GeoIP.dat;
 
     vhost_traffic_status_zone;
     vhost_traffic_status_filter_by_set_key $geoip_country_code country::*;
@@ -925,8 +1026,143 @@ server {
 `Description:` Enables or disables the deduplication of vhost_traffic_status_filter_by_set_key.
 It is processed only one of duplicate values(`key` + `name`) in each directives(http, server, location) if this option is enabled.
 
+### vhost_traffic_status_limit
+
+-   | -
+--- | ---
+**Syntax**  | **vhost_traffic_status_limit** \<on\|off\>
+**Default** | on
+**Context** | http, server, location
+
+`Description:` Enables or disables the limit features.
+
+### vhost_traffic_status_limit_traffic
+
+-   | -
+--- | ---
+**Syntax**  | **vhost_traffic_status_limit_traffic** *member*:*size* [*code*]
+**Default** | -
+**Context** | http, server, location
+
+`Description:` Enables the traffic limit for specified *member*.
+The *member* is a member string to limit traffic.
+The *size* is a size(k/m/g) to limit traffic.
+The *code* is a code to return in response to rejected requests.(Default: 503)
+
+The available *`member`* strings are as follows:
+* **request**
+ * The total number of client requests received from clients.
+* **in**
+ * The total number of bytes received from clients.
+* **out**
+ * The total number of bytes sent to clients.
+* **1xx**
+ * The number of responses with status codes 1xx.
+* **2xx**
+ * The number of responses with status codes 2xx.
+* **3xx**
+ * The number of responses with status codes 3xx.
+* **4xx**
+ * The number of responses with status codes 4xx.
+* **5xx**
+ * The number of responses with status codes 5xx.
+* **cache_miss**
+ * The number of cache miss.
+* **cache_bypass**
+ * The number of cache bypass.
+* **cache_expired**
+ * The number of cache expired.
+* **cache_stale**
+ * The number of cache stale.
+* **cache_updating**
+ * The number of cache updating.
+* **cache_revalidated**
+ * The number of cache revalidated.
+* **cache_hit**
+ * The number of cache hit.
+* **cache_scarce**
+ * The number of cache scare.
+
+### vhost_traffic_status_limit_traffic_by_set_key
+
+-   | -
+--- | ---
+**Syntax**  | **vhost_traffic_status_limit_traffic_by_set_key** *key* *member*:*size* [*code*]
+**Default** | -
+**Context** | http, server, location
+
+`Description:` Enables the traffic limit for specified *key* and *member*.
+The *key* is a key string to limit traffic.
+The *member* is a member string to limit traffic.
+The *size* is a size(k/m/g) to limit traffic.
+The *code* is a code to return in response to rejected requests.(Default: 503)
+
+
+The *`key`* syntax is as follows:
+* *`group`*@[*`subgroup`*@]*`name`*
+
+The available *`group`* strings are as follows:
+* **NO**
+ * The group of server.
+* **UA**
+ * The group of upstream alone.
+* **UG**
+ * The group of upstream group.(use *`subgroup`*)
+* **CC**
+ * The group of cache.
+* **FG**
+ * The group of filter.(use *`subgroup`*)
+
+The available *`member`* strings are as follows:
+* **request**
+ * The total number of client requests received from clients.
+* **in**
+ * The total number of bytes received from clients.
+* **out**
+ * The total number of bytes sent to clients.
+* **1xx**
+ * The number of responses with status codes 1xx.
+* **2xx**
+ * The number of responses with status codes 2xx.
+* **3xx**
+ * The number of responses with status codes 3xx.
+* **4xx**
+ * The number of responses with status codes 4xx.
+* **5xx**
+ * The number of responses with status codes 5xx.
+* **cache_miss**
+ * The number of cache miss.
+* **cache_bypass**
+ * The number of cache bypass.
+* **cache_expired**
+ * The number of cache expired.
+* **cache_stale**
+ * The number of cache stale.
+* **cache_updating**
+ * The number of cache updating.
+* **cache_revalidated**
+ * The number of cache revalidated.
+* **cache_hit**
+ * The number of cache hit.
+* **cache_scarce**
+ * The number of cache scare.
+
+The *member* is the same as `vhost_traffic_status_limit_traffic` directive.
+
+### vhost_traffic_status_limit_check_duplicate
+
+-   | -
+--- | ---
+**Syntax**  | **vhost_traffic_status_limit_check_duplicate** \<on\|off\>
+**Default** | on
+**Context** | http, server, location
+
+`Description:` Enables or disables the deduplication of vhost_traffic_status_limit_by_set_key.
+It is processed only one of duplicate values(`member` | `key` + `member`)
+in each directives(http, server, location) if this option is enabled.
+
 ## TODO
-* Add support for implementing traffic limit.
+* Add support for implementing the feature that upstream peers use shared memory.(upstream `zone` directive)
 * Add support for implementing `stream` stats.
 
 ## Donation
