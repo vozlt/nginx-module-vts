@@ -1,3 +1,7 @@
+v0.1.8 [Tue Dec 15 2015 YoungJoo.Kim <vozlt@vozlt.com>]
+    * Feature: added support for implementing the feature that
+      upstream peers use shared memory.(upstream zone directive)
+
 v0.1.7 [Fri Dec 11 2015 YoungJoo.Kim <vozlt@vozlt.com>]
     * Bugfix: fixed issues/28 that can't use control functionality
       if location has more than a segment.

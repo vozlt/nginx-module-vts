@@ -60,15 +60,14 @@ Table of Contents
 * [Author](#author)
 
 ## Version
-This document describes nginx-module-vts `v0.1.7` released on 11 Dec 2015.
+This document describes nginx-module-vts `v0.1.8` released on 15 Dec 2015.
 
 ## Dependencies
 * [nginx](http://nginx.org)
 
 ## Compatibility
-* 1.9.x (last tested: 1.9.7)
+* 1.9.x (last tested: 1.9.9)
 * 1.8.x (last tested: 1.8.0)
-* 1.7.x (last tested: 1.7.10)
 * 1.6.x (last tested: 1.6.3)
 * 1.4.x (last tested: 1.4.7)
 
@@ -1162,7 +1161,6 @@ It is processed only one of duplicate values(`member` | `key` + `member`)
 in each directives(http, server, location) if this option is enabled.
 
 ## TODO
-* Add support for implementing the feature that upstream peers use shared memory.(upstream `zone` directive)
 * Add support for implementing `stream` stats.
 
 ## Donation
