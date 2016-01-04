@@ -8,6 +8,7 @@
 #include <ngx_core.h>
 #include <ngx_http.h>
 #include <nginx.h>
+#include <stdbool.h>
 
 #include "ngx_http_vhost_traffic_status_module_html.h"
 
@@ -32,6 +33,7 @@
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_STATUS   1
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_DELETE   2
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_RESET    3
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_POLL     4
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_RANGE_NONE   0
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_RANGE_ALL    1
@@ -623,8 +625,8 @@ static void ngx_http_vhost_traffic_status_node_reset_group(
     ngx_rbtree_node_t *node);
 static void ngx_http_vhost_traffic_status_node_reset_zone(
     ngx_http_vhost_traffic_status_control_t *control);
- static void ngx_http_vhost_traffic_status_node_reset(
-    ngx_http_vhost_traffic_status_control_t *control);
+static void ngx_http_vhost_traffic_status_node_reset(
+    ngx_http_vhost_traffic_status_control_t *control, bool quiet);
 
 static int ngx_libc_cdecl ngx_http_traffic_status_filter_cmp_hashs(
     const void *one, const void *two);
@@ -1429,6 +1431,10 @@ ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
             {
                 control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_RESET;
             }
+            else if (arg_cmd.len == 4 && ngx_strncmp(arg_cmd.data, "poll", 4) == 0)
+            {
+                control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_POLL;
+            }
             else
             {
                 control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_NONE;
@@ -1438,6 +1444,10 @@ ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
         if (ngx_http_arg(r, (u_char *) "group", 5, &arg_group) == NGX_OK) {
 
             if (arg_group.len == 1 && ngx_strncmp(arg_group.data, "*", 1) == 0)
+            {
+                control->group = -1;
+            }
+            else if (arg_group.len == 3 && ngx_strncmp(arg_group.data, "%2A", 3) == 0)
             {
                 control->group = -1;
             }
@@ -1503,6 +1513,9 @@ ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
     if (control->command == NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_STATUS) {
         size = ctx->shm_size;
 
+    } else if (control->command == NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_POLL) {
+        size = ctx->shm_size;
+
     } else {
         size = sizeof(NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_CONTROL)
                + arg_cmd.len + arg_group.len + arg_zone.len + 256;
@@ -1540,12 +1553,19 @@ ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
         ngx_http_vhost_traffic_status_node_status(control);
         break;
 
+    case NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_POLL:
+        ngx_http_vhost_traffic_status_node_status(control);
+        control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_RESET;
+
+        ngx_http_vhost_traffic_status_node_reset(control, true);
+        break;
+
     case NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_DELETE:
         ngx_http_vhost_traffic_status_node_delete(control);
         break;
 
     case NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_RESET:
-        ngx_http_vhost_traffic_status_node_reset(control);
+        ngx_http_vhost_traffic_status_node_reset(control, false);
         break;
 
     default:
@@ -2603,6 +2623,10 @@ ngx_http_vhost_traffic_status_node_control_range_set(
             if(ngx_strncmp(control->zone->data, "*", 1) == 0) {
                 state = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_RANGE_GROUP;
             }
+        } else if (control->zone->len == 3) {
+            if(ngx_strncmp(control->zone->data, '%2A', 3) == 0) {
+                state = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_RANGE_GROUP;
+            }
         }
     }
 
@@ -3086,7 +3110,7 @@ ngx_http_vhost_traffic_status_node_reset_zone(
 
 static void
 ngx_http_vhost_traffic_status_node_reset(
-    ngx_http_vhost_traffic_status_control_t *control)
+    ngx_http_vhost_traffic_status_control_t *control, bool quiet)
 {
     ngx_rbtree_node_t                    *node;
     ngx_http_vhost_traffic_status_ctx_t  *ctx;
@@ -3109,14 +3133,14 @@ ngx_http_vhost_traffic_status_node_reset(
         ngx_http_vhost_traffic_status_node_reset_zone(control);
         break;
     }
-
-    *control->buf = ngx_sprintf(*control->buf,
-                                NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_CONTROL,
-                                ngx_vhost_traffic_status_boolean_to_string(1),
-                                control->arg_cmd, control->arg_group,
-                                control->arg_zone, control->count);
+    if (quiet == false) {
+        *control->buf = ngx_sprintf(*control->buf,
+                NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_CONTROL,
+                ngx_vhost_traffic_status_boolean_to_string(1),
+                control->arg_cmd, control->arg_group,
+                control->arg_zone, control->count);
+    }
 }
-
 
 static int ngx_libc_cdecl
 ngx_http_traffic_status_filter_cmp_hashs(const void *one, const void *two)
