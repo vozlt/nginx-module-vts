@@ -27,6 +27,7 @@
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_NONE          0
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSON          1
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_HTML          2
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSONP         3
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_NONE     0
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_STATUS   1
@@ -38,8 +39,9 @@
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_RANGE_GROUP  2
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_RANGE_ZONE   3
 
-#define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_SHM_NAME     "vhost_traffic_status"
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_SHM_NAME     "ngx_http_vhost_traffic_status"
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_SHM_SIZE     0xfffff
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_JSONP        "ngx_http_vhost_traffic_status_jsonp_callback"
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_S           "{"
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_OBJECT_S    "\"%V\":{"
@@ -516,8 +518,8 @@ typedef struct {
     ngx_str_t                                        shm_name;
     ngx_http_vhost_traffic_status_node_t             stats;
     ngx_msec_t                                       start_msec;
-    ngx_str_t                                        display;
     ngx_flag_t                                       format;
+    ngx_str_t                                        jsonp;
 
     ngx_rbtree_node_t                              **node_caches;
 } ngx_http_vhost_traffic_status_loc_conf_t;
@@ -712,6 +714,7 @@ static ngx_int_t ngx_http_vhost_traffic_status_init(ngx_conf_t *cf);
 static ngx_conf_enum_t  ngx_http_vhost_traffic_status_display_format[] = {
     { ngx_string("json"), NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSON },
     { ngx_string("html"), NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_HTML },
+    { ngx_string("jsonp"), NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSONP },
     { ngx_null_string, 0 }
 };
 
@@ -801,6 +804,13 @@ static ngx_command_t ngx_http_vhost_traffic_status_commands[] = {
       NGX_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_vhost_traffic_status_loc_conf_t, format),
       &ngx_http_vhost_traffic_status_display_format },
+
+    { ngx_string("vhost_traffic_status_display_jsonp"),
+      NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      ngx_conf_set_str_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, jsonp),
+      NULL },
 
     ngx_null_command
 };
@@ -1146,6 +1156,9 @@ ngx_http_vhost_traffic_status_handler(ngx_http_request_t *r)
     ngx_http_vhost_traffic_status_ctx_t       *ctx;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
 
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "http vts handler");
+
     ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
     vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
 
@@ -1192,6 +1205,9 @@ ngx_http_vhost_traffic_status_limit_handler(ngx_http_request_t *r)
     ngx_int_t                                  rc;
     ngx_http_vhost_traffic_status_ctx_t       *ctx;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
+
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "http vts limit handler");
 
     ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
 
@@ -1628,7 +1644,10 @@ ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
 
             s += sizeof("/format/") - 1;
 
-            if (ngx_strncasecmp(s, (u_char *) "json", sizeof("json") - 1) == 0) {
+            if (ngx_strncasecmp(s, (u_char *) "jsonp", sizeof("jsonp") - 1) == 0) {
+                format = NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSONP;
+
+            } else if (ngx_strncasecmp(s, (u_char *) "json", sizeof("json") - 1) == 0) {
                 format = NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSON;
 
             } else if (ngx_strncasecmp(s, (u_char *) "html", sizeof("html") - 1) == 0) {
@@ -1665,6 +1684,10 @@ ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
         size = ctx->shm_size;
         ngx_str_set(&type, "application/json");
 
+    } else if (format == NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSONP) {
+        size = ctx->shm_size;
+        ngx_str_set(&type, "application/javascript");
+
     } else {
         size = sizeof(NGX_HTTP_VHOST_TRAFFIC_STATUS_HTML_DATA) + ngx_pagesize ;
         ngx_str_set(&type, "text/html");
@@ -1698,7 +1721,17 @@ ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
             b->last = ngx_sprintf(b->last, "{}");
         }
 
-    } else {
+    }  else if (format == NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSONP) {
+        shpool = (ngx_slab_pool_t *) vtscf->shm_zone->shm.addr;
+        ngx_shmtx_lock(&shpool->mutex);
+        b->last = ngx_sprintf(b->last, "%V", &vtscf->jsonp);
+        b->last = ngx_sprintf(b->last, "(");
+        b->last = ngx_http_vhost_traffic_status_display_set(r, b->last);
+        b->last = ngx_sprintf(b->last, ")");
+        ngx_shmtx_unlock(&shpool->mutex);
+
+    }    
+    else {
         b->last = ngx_sprintf(b->last, NGX_HTTP_VHOST_TRAFFIC_STATUS_HTML_DATA, &uri);
     }
 
@@ -4917,6 +4950,8 @@ ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf, void *parent, void 
     ngx_conf_merge_ptr_value(conf->shm_zone, prev->shm_zone, NULL);
     ngx_conf_merge_value(conf->format, prev->format,
                          NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSON);
+    ngx_conf_merge_str_value(conf->jsonp, prev->jsonp,
+                             NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_JSONP);
 
     name = ctx->shm_name;
 
@@ -4938,6 +4973,9 @@ ngx_http_vhost_traffic_status_init(ngx_conf_t *cf)
 {
     ngx_http_handler_pt        *h;
     ngx_http_core_main_conf_t  *cmcf;
+
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, cf->log, 0,
+                   "http vts init");
 
     cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
 
