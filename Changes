@@ -1,18 +1,25 @@
-v0.1.8 [Tue Dec 15 2015 YoungJoo.Kim <vozlt@vozlt.com>]
+v0.1.9 [Fri Feb 26 2016 YoungJoo.Kim <vozltx@gmail.com>]
+    * Feature: added vhost_traffic_status_display_jsonp 
+      to support JSONP
+
+    * Refactor: changed function names from ngx_vhost_*
+      to ngx_http_vhost_*
+
+v0.1.8 [Tue Dec 15 2015 YoungJoo.Kim <vozltx@gmail.com>]
     * Feature: added support for implementing the feature that
       upstream peers use shared memory.(upstream zone directive)
 
-v0.1.7 [Fri Dec 11 2015 YoungJoo.Kim <vozlt@vozlt.com>]
+v0.1.7 [Fri Dec 11 2015 YoungJoo.Kim <vozltx@gmail.com>]
     * Bugfix: fixed issues/28 that can't use control functionality
       if location has more than a segment.
 
     * Feature: added support for implementing traffic limit.
 
-v0.1.6 [Tue Nov 25 2015 YoungJoo.Kim <vozlt@vozlt.com>]
+v0.1.6 [Tue Nov 25 2015 YoungJoo.Kim <vozltx@gmail.com>]
     * Feature: added support for implementing variables for
       current traffic status values. It is starting with a $vts_*.
 
-v0.1.5 [Fri Nov 20 2015 YoungJoo.Kim <vozlt@vozlt.com>]
+v0.1.5 [Fri Nov 20 2015 YoungJoo.Kim <vozltx@gmail.com>]
     * Bugfix: fixed issues/26 that the each diffrent proxy
       caches are used by single zone(key).
 
@@ -26,7 +33,7 @@ v0.1.5 [Fri Nov 20 2015 YoungJoo.Kim <vozlt@vozlt.com>]
     * Refactor: removed overlapping routine and merged into
       functions.
 
-v0.1.4 [Mon Nov 02 2015 YoungJoo.Kim <vozlt@vozlt.com>]
+v0.1.4 [Mon Nov 02 2015 YoungJoo.Kim <vozltx@gmail.com>]
     * Feature: added vhost_traffic_status_filter
       to globally enable or disable the filter features.
 
@@ -42,7 +49,7 @@ v0.1.4 [Mon Nov 02 2015 YoungJoo.Kim <vozlt@vozlt.com>]
 
     * Feature: added update interval in HTML.
 
-v0.1.3 [Wed Oct 21 2015 YoungJoo.Kim <vozlt@vozlt.com>]
+v0.1.3 [Wed Oct 21 2015 YoungJoo.Kim <vozltx@gmail.com>]
     * Bugfix: stats for cached responses with error_page
       directive do not create a cache file by pull/23
       Thanks to Wandenberg Peixoto.
@@ -52,7 +59,7 @@ v0.1.3 [Wed Oct 21 2015 YoungJoo.Kim <vozlt@vozlt.com>]
       to set the dynamically keys for issues/24.
       Thanks to Pauli Jokela for suggestion this work.
 
-v0.1.2 [Wed Sep 23 2015 YoungJoo.Kim <vozlt@vozlt.com>]
+v0.1.2 [Wed Sep 23 2015 YoungJoo.Kim <vozltx@gmail.com>]
     * Bugfix: added cache variable's lock routine in
       ngx_http_vhost_traffic_status_shm_add_cache() for issues/19
 
@@ -60,10 +67,10 @@ v0.1.2 [Wed Sep 23 2015 YoungJoo.Kim <vozlt@vozlt.com>]
       It deals with the overflow of both 32bit and 64bit variables
       but I think that not be useful in 64bit variable(Max:16EB) at this moment.
 
-v0.1.1 [Thu May 28 2015 YoungJoo.Kim <vozlt@vozlt.com>]
+v0.1.1 [Thu May 28 2015 YoungJoo.Kim <vozltx@gmail.com>]
     * Feature: cache status support when using the proxy_cache directive.
 
-v0.1.0 [Thu May 28 2015 YoungJoo.Kim <vozlt@vozlt.com>]
+v0.1.0 [Thu May 28 2015 YoungJoo.Kim <vozltx@gmail.com>]
     * The first version.
 
 # vi:set ft=changelog ts=4 sw=4 et fdm=marker:

@@ -47,6 +47,7 @@ Table of Contents
  * [vhost_traffic_status_zone](#vhost_traffic_status_zone)
  * [vhost_traffic_status_display](#vhost_traffic_status_display)
  * [vhost_traffic_status_display_format](#vhost_traffic_status_display_format)
+ * [vhost_traffic_status_display_jsonp](#vhost_traffic_status_display_jsonp)
  * [vhost_traffic_status_filter](#vhost_traffic_status_filter)
  * [vhost_traffic_status_filter_by_host](#vhost_traffic_status_filter_by_host)
  * [vhost_traffic_status_filter_by_set_key](#vhost_traffic_status_filter_by_set_key)
@@ -60,7 +61,7 @@ Table of Contents
 * [Author](#author)
 
 ## Version
-This document describes nginx-module-vts `v0.1.8` released on 15 Dec 2015.
+This document describes nginx-module-vts `v0.1.9` released on 26 Feb 2016.
 
 ## Dependencies
 * [nginx](http://nginx.org)
@@ -128,11 +129,15 @@ and then if the directive `vhost_traffic_status_display` is set, can be access t
 
 * /status/format/html
 
+* /status/format/jsonp
+
 * /status/control
 
  * If you request `/status/format/json`, will respond with a JSON document containing the current activity data for using in live dashboards and third-party monitoring tools.
 
  * If you request `/status/format/html`, will respond with the built-in live dashboard in HTML that requests internally to `/status/format/json`.
+ 
+ * If you request `/status/format/jsonp`, will respond with a JSONP callback function containing the current activity data for using in live dashboards and third-party monitoring tools. 
 
  * If you request `/status/control`, will respond with a JSON document after it reset or delete zones through a query string. See the [Control](#control).
 
@@ -890,13 +895,24 @@ The cache is shared between all worker processes.
 
 -   | -
 --- | ---
-**Syntax**  | **vhost_traffic_status_display_format** \<json\|html\>
+**Syntax**  | **vhost_traffic_status_display_format** \<json\|html\|jsonp\>
 **Default** | json
 **Context** | http, server, location
 
 `Description:` Sets the display handler's output format.
 If you set `json`, will respond with a JSON document.
 If you set `html`, will respond with the built-in live dashboard in HTML.
+If you set `jsonp`, will respond with a JSONP callback function(default: *ngx_http_vhost_traffic_status_jsonp_callback*).
+
+### vhost_traffic_status_display_jsonp
+
+-   | -
+--- | ---
+**Syntax**  | **vhost_traffic_status_display_jsonp** *callback*
+**Default** | ngx_http_vhost_traffic_status_jsonp_callback
+**Context** | http, server, location
+
+`Description:` Sets the callback name for the JSONP.
 
 ### vhost_traffic_status_filter
 
@@ -1162,9 +1178,10 @@ in each directives(http, server, location) if this option is enabled.
 
 ## TODO
 * Add support for implementing `stream` stats.
+* Add support for implementing `request_time` stats.
 
 ## Donation
 [![License](http://img.shields.io/badge/PAYPAL-DONATE-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=PWWSYKQ9VKH38&lc=KR&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
 
 ## Author
-YoungJoo.Kim(김영주) [<vozlt@vozlt.com>]
+YoungJoo.Kim(김영주) [<vozltx@gmail.com>]

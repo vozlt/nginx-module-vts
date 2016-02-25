@@ -2,7 +2,7 @@
 #
 # @file:    tplToDefine.sh
 # @brief:
-# @author:  YoungJoo.Kim <vozlt@vozlt.com>
+# @author:  YoungJoo.Kim <vozltx@gmail.com>
 # @version:
 # @date:
 

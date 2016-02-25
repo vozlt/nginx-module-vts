@@ -2,7 +2,7 @@
 #
 # @file:    fileToHex.pl
 # @brief:
-# @author:  YoungJoo.Kim <vozlt@vozlt.com>
+# @author:  YoungJoo.Kim <vozltx@gmail.com>
 # @version:
 # @date:
 
