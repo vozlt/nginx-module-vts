@@ -4806,12 +4806,17 @@ ngx_http_vhost_traffic_status_init_main_conf(ngx_conf_t *cf, void *conf)
     ngx_int_t                                  rc;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
 
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, cf->log, 0,
+                   "http vts init main conf");
+
     vtscf = ngx_http_conf_get_module_loc_conf(cf, ngx_http_vhost_traffic_status_module);
 
     if (vtscf->filter_check_duplicate != 0) {
         rc = ngx_http_vhost_traffic_status_filter_unique(cf->pool, &ctx->filter_keys);
         if (rc != NGX_OK) {
-            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "init_main_conf::filter_unique() failed");
+            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                               "init_main_conf::filter_unique() failed");
+            return NGX_CONF_ERROR;
         }
     }
 
@@ -4820,6 +4825,7 @@ ngx_http_vhost_traffic_status_init_main_conf(ngx_conf_t *cf, void *conf)
         if (rc != NGX_OK) {
             ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                                "init_main_conf::limit_traffic_unique(server) failed");
+            return NGX_CONF_ERROR;
         }
 
         rc = ngx_http_vhost_traffic_status_limit_traffic_unique(cf->pool,
@@ -4827,6 +4833,7 @@ ngx_http_vhost_traffic_status_init_main_conf(ngx_conf_t *cf, void *conf)
         if (rc != NGX_OK) {
             ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                                "init_main_conf::limit_traffic_unique(filter) failed");
+            return NGX_CONF_ERROR;
         }
     }
 
@@ -4884,6 +4891,9 @@ ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf, void *parent, void 
     ngx_shm_zone_t                       *shm_zone;
     ngx_http_vhost_traffic_status_ctx_t  *ctx;
 
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, cf->log, 0,
+                   "http vts merge loc conf");
+
     ctx = ngx_http_conf_get_module_main_conf(cf, ngx_http_vhost_traffic_status_module);
 
     if (!ctx->enable) {
@@ -4901,6 +4911,7 @@ ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf, void *parent, void 
             rc = ngx_http_vhost_traffic_status_filter_unique(cf->pool, &conf->filter_keys);
             if (rc != NGX_OK) {
                 ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "mere_loc_conf::filter_unique() failed");
+                return NGX_CONF_ERROR;
             }
         }
     }
@@ -4919,6 +4930,7 @@ ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf, void *parent, void 
             if (rc != NGX_OK) {
                 ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                                    "mere_loc_conf::limit_traffic_unique(server) failed");
+                return NGX_CONF_ERROR;
             }
         }
     }
@@ -4937,6 +4949,7 @@ ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf, void *parent, void 
             if (rc != NGX_OK) {
                 ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                                    "mere_loc_conf::limit_traffic_unique(filter) failed");
+                return NGX_CONF_ERROR;
             }
         }
     }
