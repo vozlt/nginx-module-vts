@@ -4522,6 +4522,9 @@ ngx_http_vhost_traffic_status_filter_by_set_key(ngx_conf_t *cf, ngx_command_t *c
         if (ngx_http_compile_complex_value(&ccv) != NGX_OK) {
             return NGX_CONF_ERROR;
         }
+
+    } else {
+        filter->filter_name.value.len = 0;
     }
 
     if (cf->cmd_type == NGX_HTTP_MAIN_CONF) {
