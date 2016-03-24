@@ -4471,7 +4471,7 @@ ngx_http_vhost_traffic_status_filter_by_set_key(ngx_conf_t *cf, ngx_command_t *c
 {
     ngx_http_vhost_traffic_status_loc_conf_t *vtscf = conf;
 
-    ngx_str_t                               *value;
+    ngx_str_t                               *value, name;
     ngx_array_t                             *filter_keys;
     ngx_http_compile_complex_value_t         ccv;
     ngx_http_vhost_traffic_status_ctx_t     *ctx;
@@ -4502,6 +4502,7 @@ ngx_http_vhost_traffic_status_filter_by_set_key(ngx_conf_t *cf, ngx_command_t *c
         return NGX_CONF_ERROR;
     }
 
+    /* first argument process */
     ngx_memzero(&ccv, sizeof(ngx_http_compile_complex_value_t));
 
     ccv.cf = cf;
@@ -4512,19 +4513,22 @@ ngx_http_vhost_traffic_status_filter_by_set_key(ngx_conf_t *cf, ngx_command_t *c
         return NGX_CONF_ERROR;
     }
 
+    /* second argument process */
     if (cf->args->nelts == 3) {
-        ngx_memzero(&ccv, sizeof(ngx_http_compile_complex_value_t));
-
-        ccv.cf = cf;
-        ccv.value = &value[2];
-        ccv.complex_value = &filter->filter_name;
-
-        if (ngx_http_compile_complex_value(&ccv) != NGX_OK) {
-            return NGX_CONF_ERROR;
-        }
+        name = value[2];
 
     } else {
-        filter->filter_name.value.len = 0;
+        ngx_str_set(&name, "");
+    }
+
+    ngx_memzero(&ccv, sizeof(ngx_http_compile_complex_value_t));
+
+    ccv.cf = cf;
+    ccv.value = &name;
+    ccv.complex_value = &filter->filter_name;
+
+    if (ngx_http_compile_complex_value(&ccv) != NGX_OK) {
+        return NGX_CONF_ERROR;
     }
 
     if (cf->cmd_type == NGX_HTTP_MAIN_CONF) {
