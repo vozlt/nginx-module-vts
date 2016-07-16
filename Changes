@@ -1,3 +1,16 @@
+v0.1.10 [Sun Jul 17 2016 YoungJoo.Kim <vozltx@gmail.com>]
+    *  Bugfix: initialize a variable(filter->filter_name.flushes)
+    for issues/35 that worker process exited on signal 11
+
+    * Compatibility: added dynamic module build option for
+    --add-dynamic-module in nginx 1.9.11
+
+    * Bugfix: initialize a variable(filter->filter_name.value.len)
+    for issues/33 that occurred segfault when running "nginx -s reload"
+
+    * Exception: return NGX_CONF_ERROR if failed
+    ngx_http_vhost_traffic_status_filter_unique()
+
 v0.1.9 [Fri Feb 26 2016 YoungJoo.Kim <vozltx@gmail.com>]
     * Feature: added vhost_traffic_status_display_jsonp 
       to support JSONP
