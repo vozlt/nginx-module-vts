@@ -2319,12 +2319,19 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r)
             }
         }
 
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                      "shm_add_upstream::uscf failed");
         return NGX_ERROR;
     }
 
 found:
 
     state = r->upstream_states->elts;
+    if (state[0].peer == NULL) {
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                      "shm_add_upstream::peer failed");
+        return NGX_ERROR;
+    }
 
     dst.len = (uscf->port ? 0 : uscf->host.len + sizeof("@") - 1) + state[0].peer->len;
     dst.data = ngx_pnalloc(r->pool, dst.len);
