@@ -2319,9 +2319,14 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r)
             }
         }
 
-        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                      "shm_add_upstream::uscf failed");
-        return NGX_ERROR;
+        /* routine for proxy_pass|fastcgi_pass|... $variables */
+        uscf = ngx_pcalloc(r->pool, sizeof(ngx_http_upstream_srv_conf_t));
+        if (uscf == NULL) {
+            return NGX_ERROR;
+        }
+
+        uscf->host = u->resolved->host;
+        uscf->port = u->resolved->port;
     }
 
 found:
