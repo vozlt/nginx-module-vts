@@ -96,7 +96,7 @@
     "\"scarce\":%uA"                                                           \
     "},"                                                                       \
     "\"overCounts\":{"                                                         \
-    "\"maxIntegerSize\":%uA,"                                                  \
+    "\"maxIntegerSize\":%s,"                                                   \
     "\"requestCounter\":%uA,"                                                  \
     "\"inBytes\":%uA,"                                                         \
     "\"outBytes\":%uA,"                                                        \
@@ -128,7 +128,7 @@
     "\"5xx\":%uA"                                                              \
     "},"                                                                       \
     "\"overCounts\":{"                                                         \
-    "\"maxIntegerSize\":%uA,"                                                  \
+    "\"maxIntegerSize\":%s,"                                                   \
     "\"requestCounter\":%uA,"                                                  \
     "\"inBytes\":%uA,"                                                         \
     "\"outBytes\":%uA,"                                                        \
@@ -162,7 +162,7 @@
     "\"backup\":%s,"                                                           \
     "\"down\":%s,"                                                             \
     "\"overCounts\":{"                                                         \
-    "\"maxIntegerSize\":%uA,"                                                  \
+    "\"maxIntegerSize\":%s,"                                                   \
     "\"requestCounter\":%uA,"                                                  \
     "\"inBytes\":%uA,"                                                         \
     "\"outBytes\":%uA,"                                                        \
@@ -192,7 +192,7 @@
     "\"scarce\":%uA"                                                           \
     "},"                                                                       \
     "\"overCounts\":{"                                                         \
-    "\"maxIntegerSize\":%uA,"                                                  \
+    "\"maxIntegerSize\":%s,"                                                   \
     "\"inBytes\":%uA,"                                                         \
     "\"outBytes\":%uA,"                                                        \
     "\"miss\":%uA,"                                                            \
@@ -364,8 +364,8 @@
 )
 
 #define ngx_http_vhost_traffic_status_max_integer (NGX_ATOMIC_T_LEN < 12)      \
-    ? 0xffffffff                                                               \
-    : 0xffffffffffffffff
+    ? "4294967295"                                                             \
+    : "18446744073709551615"
 
 #define ngx_http_vhost_traffic_status_boolean_to_string(b) (b) ? "true" : "false"
 
