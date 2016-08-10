@@ -1274,7 +1274,7 @@ ngx_http_vhost_traffic_status_limit_handler_traffic(ngx_http_request_t *r,
     n = traffics->nelts;
 
     for (i = 0; i < n; i++) {
-        if (&limits[i].variable == NULL) {
+        if (limits[i].variable.value.len <= 0) {
             continue;
         }
 
@@ -2148,7 +2148,7 @@ ngx_http_vhost_traffic_status_shm_add_filter_node(ngx_http_request_t *r,
     n = filter_keys->nelts;
 
     for (i = 0; i < n; i++) {
-        if (&filters[i].filter_key == NULL || &filters[i].filter_name == NULL) {
+        if (filters[i].filter_key.value.len <= 0) {
             continue;
         }
 
