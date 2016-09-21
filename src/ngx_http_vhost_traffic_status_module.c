@@ -1419,6 +1419,7 @@ ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
     control->r = r;
     control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_NONE;
     control->group = -2;
+    control->zone = ngx_pcalloc(r->pool, sizeof(ngx_str_t));
     control->arg_cmd = &arg_cmd;
     control->arg_group = &arg_group;
     control->arg_zone = &arg_zone;
@@ -1493,8 +1494,6 @@ ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
             }
 
         } else {
-            control->zone = ngx_palloc(r->pool, sizeof(ngx_str_t));
-
             rc = ngx_http_vhost_traffic_status_copy_str(r->pool, control->zone, &arg_zone);
             if (rc != NGX_OK) {
                 ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
