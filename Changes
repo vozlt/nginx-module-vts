@@ -1,15 +1,36 @@
+v0.1.11 [Wed Nov 09 2016 YoungJoo.Kim <vozltx@gmail.com>]
+    * Bugfix: fixed issues/56 that worker process exited on signal 11
+      if running control query without group argument or nonexistent group
+
+    * Bugfix: fixed issues/52 that worker process exited on signal 11
+
+    * Compatibility: changed for issues/49 that occured errors when
+      using compile with clang -Werror,-Wtautological-pointer-compare in
+      osx os.
+
+    * Compatibility: changed for issues/47 that occured errors when
+      using compile with -Werror(Make all warnings into errors). The
+      number returned by ngx_http_vhost_traffic_status_max_integer()
+      consist of string without the suf
+
+    * Bugfix: fixed issues/6 that occured error(handler::shm_add_upstream()
+      failed) when using fastcgi_pass $variables
+
+    * Bugfix: fixed issues/45 that occurred segfault when
+      balancer_by_lua breaks
+
 v0.1.10 [Sun Jul 17 2016 YoungJoo.Kim <vozltx@gmail.com>]
-    *  Bugfix: initialize a variable(filter->filter_name.flushes)
-    for issues/35 that worker process exited on signal 11
+    * Bugfix: initialize a variable(filter->filter_name.flushes)
+      for issues/35 that worker process exited on signal 11
 
     * Compatibility: added dynamic module build option for
-    --add-dynamic-module in nginx 1.9.11
+      --add-dynamic-module in nginx 1.9.11
 
     * Bugfix: initialize a variable(filter->filter_name.value.len)
-    for issues/33 that occurred segfault when running "nginx -s reload"
+      for issues/33 that occurred segfault when running "nginx -s reload"
 
     * Exception: return NGX_CONF_ERROR if failed
-    ngx_http_vhost_traffic_status_filter_unique()
+      ngx_http_vhost_traffic_status_filter_unique()
 
 v0.1.9 [Fri Feb 26 2016 YoungJoo.Kim <vozltx@gmail.com>]
     * Feature: added vhost_traffic_status_display_jsonp 
