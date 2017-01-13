@@ -488,6 +488,8 @@
                     out += (zone.requestCounter + zone.overCounts['maxIntegerSize'] * zone.overCounts['requestCounter']);
                     out += '</td><td>';
                     out += (aPs.getValue(uniq + '.requestCounter', zone.requestCounter));
+                    out += '</td><td>';
+                    out += mTh(zone.requestMsec);
                     out += '</td>';
                     for(var code in zone.responses) {
                         out += '<td>';
@@ -551,8 +553,8 @@
                 out += '</tbody></table></div>';
 
                 /* serverZones */
-                var outCache = '<table><thead><tr><th rowspan="2">Zone</th><th colspan="2">Requests</th><th colspan="6">Responses</th><th colspan="4">Traffic</th><th colspan="9">Cache</th></tr><tr><th>Total</th><th>Req/s</th><th>1xx</th><th>2xx</th><th>3xx</th><th>4xx</th><th>5xx</th><th>Total</th><th>Sent</th><th>Rcvd</th><th>Sent/s</th><th>Rcvd/s</th><th>Miss</th><th>Bypass</th><th>Expired</th><th>Stale</th><th>Updating</th><th>Revalidated</th><th>Hit</th><th>Scarce</th><th>Total</th></tr></thead><tbody>';
-                var outNoCache = '<table><thead><tr><th rowspan="2">Zone</th><th colspan="2">Requests</th><th colspan="6">Responses</th><th colspan="4">Traffic</th></tr><tr><th>Total</th><th>Req/s</th><th>1xx</th><th>2xx</th><th>3xx</th><th>4xx</th><th>5xx</th><th>Total</th><th>Sent</th><th>Rcvd</th><th>Sent/s</th><th>Rcvd/s</th></tr></thead><tbody> ';
+                var outCache = '<table><thead><tr><th rowspan="2">Zone</th><th colspan="3">Requests</th><th colspan="6">Responses</th><th colspan="4">Traffic</th><th colspan="9">Cache</th></tr><tr><th>Total</th><th>Req/s</th><th>Time</th><th>1xx</th><th>2xx</th><th>3xx</th><th>4xx</th><th>5xx</th><th>Total</th><th>Sent</th><th>Rcvd</th><th>Sent/s</th><th>Rcvd/s</th><th>Miss</th><th>Bypass</th><th>Expired</th><th>Stale</th><th>Updating</th><th>Revalidated</th><th>Hit</th><th>Scarce</th><th>Total</th></tr></thead><tbody>';
+                var outNoCache = '<table><thead><tr><th rowspan="2">Zone</th><th colspan="3">Requests</th><th colspan="6">Responses</th><th colspan="4">Traffic</th></tr><tr><th>Total</th><th>Req/s<th>Time</th></th><th>1xx</th><th>2xx</th><th>3xx</th><th>4xx</th><th>5xx</th><th>Total</th><th>Sent</th><th>Rcvd</th><th>Sent/s</th><th>Rcvd/s</th></tr></thead><tbody> ';
                 var outHeader = '<div id="serverZones"><h2>Server zones</h2>';
                 if (it.serverZones["*"]) {
                     if (Object.keys(it.serverZones["*"].responses).length > 5) {

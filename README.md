@@ -67,7 +67,7 @@ This document describes nginx-module-vts `v0.1.10` released on 17 Jul 2016.
 * [nginx](http://nginx.org)
 
 ## Compatibility
-* 1.11.x (last tested: 1.11.2)
+* 1.11.x (last tested: 1.11.8)
 * 1.10.x (last tested: 1.10.1)
 * 1.9.x (last tested: 1.9.9)
 * 1.8.x (last tested: 1.8.0)
@@ -178,7 +178,8 @@ JSON document contains as follows:
                 "revalidated":...,
                 "hit":...,
                 "scarce":...
-            }
+            },
+            "requestMsec":...
         }
         ...
     },
@@ -202,7 +203,8 @@ JSON document contains as follows:
                     "revalidated":...,
                     "hit":...,
                     "scarce":...
-                }
+                },
+                "requestMsec":...
             },
             ...
         },
@@ -508,6 +510,8 @@ The following status information is provided in the JSON format:
       * The number of cache hit.
     * scarce
       * The number of cache scare.
+ * requestMsec
+   * The average of request processing time.
 * filterZones
  * It provides the same fields with `serverZones` except that it included group names.
 * upstreamZones
@@ -612,6 +616,8 @@ The following embedded variables are provided:
  * The number of cache hit.
 * **$vts_cache_scarce_counter**
  * The number of cache scare.
+* **$vts_request_time**
+ * The average of request processing time.
 
 ## Limit
 
@@ -1019,7 +1025,8 @@ server {
                   "revalidated":...,
                   "hit":...,
                   "scarce":...
-              }
+              },
+              "requestMsec":...
           },
           "US": {
           ...

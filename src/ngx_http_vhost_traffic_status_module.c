@@ -95,6 +95,7 @@
     "\"hit\":%uA,"                                                             \
     "\"scarce\":%uA"                                                           \
     "},"                                                                       \
+    "\"requestMsec\":%M,"                                                      \
     "\"overCounts\":{"                                                         \
     "\"maxIntegerSize\":%s,"                                                   \
     "\"requestCounter\":%uA,"                                                  \
@@ -127,6 +128,7 @@
     "\"4xx\":%uA,"                                                             \
     "\"5xx\":%uA"                                                              \
     "},"                                                                       \
+    "\"requestMsec\":%M,"                                                      \
     "\"overCounts\":{"                                                         \
     "\"maxIntegerSize\":%s,"                                                   \
     "\"requestCounter\":%uA,"                                                  \
@@ -452,6 +454,8 @@ typedef struct {
     ngx_atomic_t                                     stat_4xx_counter;
     ngx_atomic_t                                     stat_5xx_counter;
 
+    ngx_msec_t                                       stat_request_time;
+
     /* deals with the overflow of variables */
     ngx_atomic_t                                     stat_request_counter_oc;
     ngx_atomic_t                                     stat_in_bytes_oc;
@@ -561,6 +565,8 @@ static void ngx_http_vhost_traffic_status_find_name(ngx_http_request_t *r,
     ngx_str_t *buf);
 static ngx_rbtree_node_t *ngx_http_vhost_traffic_status_find_node(ngx_http_request_t *r,
     ngx_str_t *key, unsigned type, uint32_t key_hash);
+
+static ngx_msec_int_t ngx_http_vhost_traffic_status_request_time(ngx_http_request_t *r);
 
 static ngx_int_t ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
     ngx_str_t *key, unsigned type);
@@ -887,6 +893,11 @@ static ngx_http_variable_t  ngx_http_vhost_traffic_status_vars[] = {
     { ngx_string("vts_5xx_counter"), NULL,
       ngx_http_vhost_traffic_status_node_variable,
       offsetof(ngx_http_vhost_traffic_status_node_t, stat_5xx_counter),
+      NGX_HTTP_VAR_NOCACHEABLE, 0 },
+
+    { ngx_string("vts_request_time"), NULL,
+      ngx_http_vhost_traffic_status_node_variable,
+      offsetof(ngx_http_vhost_traffic_status_node_t, stat_request_time),
       NGX_HTTP_VAR_NOCACHEABLE, 0 },
 
 #if (NGX_HTTP_CACHE)
@@ -1729,7 +1740,7 @@ ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
         b->last = ngx_sprintf(b->last, ")");
         ngx_shmtx_unlock(&shpool->mutex);
 
-    }    
+    }
     else {
         b->last = ngx_sprintf(b->last, NGX_HTTP_VHOST_TRAFFIC_STATUS_HTML_DATA, &uri);
     }
@@ -1959,6 +1970,20 @@ ngx_http_vhost_traffic_status_find_node(ngx_http_request_t *r,
 found:
 
     return node;
+}
+
+
+static ngx_msec_int_t
+ngx_http_vhost_traffic_status_request_time(ngx_http_request_t *r)
+{
+    ngx_time_t      *tp;
+    ngx_msec_int_t   ms;
+
+    tp = ngx_timeofday();
+
+    ms = (ngx_msec_int_t)
+             ((tp->sec - r->start_sec) * 1000 + (tp->msec - r->start_msec));
+    return ngx_max(ms, 0);
 }
 
 
@@ -2465,6 +2490,8 @@ ngx_http_vhost_traffic_status_node_zero(ngx_http_vhost_traffic_status_node_t *vt
     vtsn->stat_4xx_counter = 0;
     vtsn->stat_5xx_counter = 0;
 
+    vtsn->stat_request_time = 0;
+
     vtsn->stat_request_counter_oc = 0;
     vtsn->stat_in_bytes_oc = 0;
     vtsn->stat_out_bytes_oc = 0;
@@ -2494,6 +2521,7 @@ ngx_http_vhost_traffic_status_node_zero(ngx_http_vhost_traffic_status_node_t *vt
     vtsn->stat_cache_scarce_counter_oc = 0;
 #endif
 
+    vtsn->stat_upstream.rtms = 0;
 }
 
 
@@ -2512,6 +2540,8 @@ ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
 
     ngx_http_vhost_traffic_status_add_rc(status, vtsn);
 
+    vtsn->stat_request_time = (ngx_msec_t) ngx_http_vhost_traffic_status_request_time(r);
+
 #if (NGX_HTTP_CACHE)
     if (r->upstream != NULL && r->upstream->cache_status != 0) {
         ngx_http_vhost_traffic_status_add_cc(r->upstream->cache_status, vtsn);
@@ -2526,6 +2556,7 @@ ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t *vtsn)
 {
     ngx_uint_t                            status;
+    ngx_msec_int_t                        ms;
     ngx_http_vhost_traffic_status_node_t  ovtsn;
 
     status = r->headers_out.status;
@@ -2536,6 +2567,12 @@ ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
     vtsn->stat_out_bytes += (ngx_atomic_uint_t) r->connection->sent;
 
     ngx_http_vhost_traffic_status_add_rc(status, vtsn);
+
+    ms = ngx_http_vhost_traffic_status_request_time(r);
+
+    vtsn->stat_request_time = (ngx_msec_t)
+                                  (vtsn->stat_request_time + ms) / 2
+                                  + (vtsn->stat_request_time + ms) % 2;
 
 #if (NGX_HTTP_CACHE)
     if (r->upstream != NULL && r->upstream->cache_status != 0) {
@@ -3585,6 +3622,7 @@ ngx_http_vhost_traffic_status_display_set_server_node(
                       vtsn->stat_cache_revalidated_counter,
                       vtsn->stat_cache_hit_counter,
                       vtsn->stat_cache_scarce_counter,
+                      vtsn->stat_request_time,
                       ngx_http_vhost_traffic_status_max_integer,
                       vtsn->stat_request_counter_oc,
                       vtsn->stat_in_bytes_oc,
@@ -3612,6 +3650,7 @@ ngx_http_vhost_traffic_status_display_set_server_node(
                       vtsn->stat_3xx_counter,
                       vtsn->stat_4xx_counter,
                       vtsn->stat_5xx_counter,
+                      vtsn->stat_request_time,
                       ngx_http_vhost_traffic_status_max_integer,
                       vtsn->stat_request_counter_oc,
                       vtsn->stat_in_bytes_oc,
