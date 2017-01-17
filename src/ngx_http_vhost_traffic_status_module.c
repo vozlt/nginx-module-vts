@@ -2107,9 +2107,8 @@ ngx_http_vhost_traffic_status_shm_add_node_upstream(ngx_http_request_t *r,
         vtsn->stat_upstream.rtms = ms;
 
     } else {
-        vtsn->stat_upstream.rtms = (ngx_msec_t)
-                                   (vtsn->stat_upstream.rtms + ms) / 2
-                                   + (vtsn->stat_upstream.rtms + ms) % 2;
+        vtsn->stat_upstream.rtms += (ngx_msec_t)
+                                  (ms - vtsn->stat_upstream.rtms) / vtsn->stat_request_counter;
     }
 
     return NGX_OK;
@@ -2570,9 +2569,8 @@ ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
 
     ms = ngx_http_vhost_traffic_status_request_time(r);
 
-    vtsn->stat_request_time = (ngx_msec_t)
-                                  (vtsn->stat_request_time + ms) / 2
-                                  + (vtsn->stat_request_time + ms) % 2;
+    vtsn->stat_request_time += (ngx_msec_t)
+                                  (ms - vtsn->stat_request_time) / vtsn->stat_request_counter;
 
 #if (NGX_HTTP_CACHE)
     if (r->upstream != NULL && r->upstream->cache_status != 0) {
