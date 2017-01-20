@@ -1,15 +1,39 @@
 ngx_addon_name=ngx_http_vhost_traffic_status_module
 have=NGX_STAT_STUB . auto/have
 
+HTTP_VTS_SRCS=" \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_module.c  \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_string.c  \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_shm.c     \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_node.c    \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_filter.c  \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_control.c \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_limit.c   \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_display.c \
+                 "
+
+HTTP_VTS_DEPS=" \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_module.h      \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_string.h      \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_shm.h         \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_node.h        \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_filter.h      \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_control.h     \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_limit.h       \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_display.h     \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_module_html.h \
+                 "
 if test -n "$ngx_module_link"; then
     ngx_module_type=HTTP
-    ngx_module_name=ngx_http_vhost_traffic_status_module
-    ngx_module_srcs="$ngx_addon_dir/src/ngx_http_vhost_traffic_status_module.c"
-    ngx_module_deps="$NGX_ADDON_DEPS $ngx_addon_dir/src/ngx_http_vhost_traffic_status_module_html.h"
+    ngx_module_name=$ngx_addon_name
+    ngx_module_srcs="$HTTP_VTS_SRCS"
+    ngx_module_deps="$HTTP_VTS_DEPS"
 
     . auto/module
 else
-    HTTP_MODULES="$HTTP_MODULES ngx_http_vhost_traffic_status_module"
-    NGX_ADDON_SRCS="$NGX_ADDON_SRCS $ngx_addon_dir/src/ngx_http_vhost_traffic_status_module.c"
-    NGX_ADDON_DEPS="$NGX_ADDON_DEPS $ngx_addon_dir/src/ngx_http_vhost_traffic_status_module_html.h"
+    HTTP_MODULES="$HTTP_MODULES $ngx_addon_name"
+    NGX_ADDON_SRCS="$NGX_ADDON_SRCS $HTTP_VTS_SRCS"
+    NGX_ADDON_DEPS="$NGX_ADDON_DEPS $HTTP_VTS_DEPS"
 fi
+
+# vi:set ft=sh ts=4 sw=4 et fdm=marker:
