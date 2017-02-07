@@ -114,17 +114,19 @@ static ngx_int_t
 ngx_http_vhost_traffic_status_shm_add_node_upstream(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t *vtsn, unsigned init)
 {
-    ngx_msec_int_t              ms;
+    ngx_msec_int_t  ms;
 
     ms = ngx_http_vhost_traffic_status_upstream_response_time(r);
 
+    ngx_http_vhost_traffic_status_node_time_queue_insert(&vtsn->stat_upstream.response_times,
+                                                         ms);
+
     if (init == NGX_HTTP_VHOST_TRAFFIC_STATUS_NODE_NONE) {
-        vtsn->stat_upstream.rtms = (ngx_msec_t) ms;
+        vtsn->stat_upstream.response_time = (ngx_msec_t) ms;
 
     } else {
-        vtsn->stat_upstream.rtms = (ngx_msec_t)
-                                   (((ngx_msec_int_t) vtsn->stat_upstream.rtms + ms) / 2
-                                   + ((ngx_msec_int_t) vtsn->stat_upstream.rtms + ms) % 2);
+        vtsn->stat_upstream.response_time = ngx_http_vhost_traffic_status_node_time_queue_wma(
+                &vtsn->stat_upstream.response_times);
     }
 
     return NGX_OK;

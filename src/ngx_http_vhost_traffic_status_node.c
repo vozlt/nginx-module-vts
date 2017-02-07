@@ -275,7 +275,6 @@ ngx_http_vhost_traffic_status_node_zero(ngx_http_vhost_traffic_status_node_t *vt
     vtsn->stat_cache_scarce_counter_oc = 0;
 #endif
 
-    vtsn->stat_upstream.rtms = 0;
 }
 
 
@@ -285,9 +284,16 @@ ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
 {
     ngx_uint_t status = r->headers_out.status;
 
+    /* init serverZone */
     ngx_http_vhost_traffic_status_node_zero(vtsn);
+    ngx_http_vhost_traffic_status_node_time_queue_init(&vtsn->stat_request_times);
 
+    /* init upstreamZone */
     vtsn->stat_upstream.type = NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_NO;
+    vtsn->stat_upstream.response_time = 0;
+    ngx_http_vhost_traffic_status_node_time_queue_init(&vtsn->stat_upstream.response_times);
+
+    /* set serverZone */
     vtsn->stat_request_counter = 1;
     vtsn->stat_in_bytes = (ngx_atomic_uint_t) r->request_length;
     vtsn->stat_out_bytes = (ngx_atomic_uint_t) r->connection->sent;
@@ -295,6 +301,9 @@ ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_add_rc(status, vtsn);
 
     vtsn->stat_request_time = (ngx_msec_t) ngx_http_vhost_traffic_status_request_time(r);
+
+    ngx_http_vhost_traffic_status_node_time_queue_insert(&vtsn->stat_request_times,
+        vtsn->stat_request_time);
 
 #if (NGX_HTTP_CACHE)
     if (r->upstream != NULL && r->upstream->cache_status != 0) {
@@ -324,9 +333,11 @@ ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
 
     ms = ngx_http_vhost_traffic_status_request_time(r);
 
-    vtsn->stat_request_time = (ngx_msec_t)
-                                  (((ngx_msec_int_t) vtsn->stat_request_time + ms) / 2
-                                  + ((ngx_msec_int_t) vtsn->stat_request_time + ms) % 2);
+    ngx_http_vhost_traffic_status_node_time_queue_insert(&vtsn->stat_request_times,
+                                                         ms);
+
+    vtsn->stat_request_time = ngx_http_vhost_traffic_status_node_time_queue_wma(
+                                  &vtsn->stat_request_times);
 
 #if (NGX_HTTP_CACHE)
     if (r->upstream != NULL && r->upstream->cache_status != 0) {
@@ -335,6 +346,92 @@ ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
 #endif
 
     ngx_http_vhost_traffic_status_add_oc((&ovtsn), vtsn);
+}
+
+
+void
+ngx_http_vhost_traffic_status_node_time_queue_zero(
+    ngx_http_vhost_traffic_status_node_time_queue_t *q)
+{
+    ngx_memzero(q, sizeof(ngx_http_vhost_traffic_status_node_time_queue_t));
+}
+
+
+void
+ngx_http_vhost_traffic_status_node_time_queue_init(
+    ngx_http_vhost_traffic_status_node_time_queue_t *q)
+{
+    ngx_http_vhost_traffic_status_node_time_queue_zero(q);
+    q->rear = NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_QUEUE_LEN - 1;
+    q->len = NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_QUEUE_LEN;
+}
+
+
+ngx_int_t
+ngx_http_vhost_traffic_status_node_time_queue_push(
+    ngx_http_vhost_traffic_status_node_time_queue_t *q,
+    ngx_msec_int_t x)
+{
+    if ((q->rear + 1) % q->len == q->front) {
+        return NGX_ERROR;
+    }
+
+    q->times[q->rear].time = ngx_current_msec;
+    q->times[q->rear].msec = x;
+    q->rear = (q->rear + 1) % q->len;
+
+    return NGX_OK;
+}
+
+
+ngx_int_t
+ngx_http_vhost_traffic_status_node_time_queue_pop(
+    ngx_http_vhost_traffic_status_node_time_queue_t *q,
+    ngx_http_vhost_traffic_status_node_time_t *x)
+{
+    if (q->front == q->rear) {
+        return NGX_ERROR;
+    }
+
+    *x = q->times[q->front];
+    q->front = (q->front + 1) % q->len;
+
+    return NGX_OK;
+}
+
+
+void
+ngx_http_vhost_traffic_status_node_time_queue_insert(
+    ngx_http_vhost_traffic_status_node_time_queue_t *q,
+    ngx_msec_int_t x)
+{
+    ngx_int_t                                  rc;
+    ngx_http_vhost_traffic_status_node_time_t  rx;
+    rc = ngx_http_vhost_traffic_status_node_time_queue_pop(q, &rx)
+         | ngx_http_vhost_traffic_status_node_time_queue_push(q, x);
+
+    if (rc != NGX_OK) {
+        ngx_http_vhost_traffic_status_node_time_queue_init(q);
+    }
+}
+
+
+ngx_msec_t
+ngx_http_vhost_traffic_status_node_time_queue_wma(
+    ngx_http_vhost_traffic_status_node_time_queue_t *q)
+{
+    ngx_int_t  i, j, k;
+
+    for (i = q->front, j = 1, k = 0; i != q->rear; i = (i + 1) % q->len, j++) {
+        k += (ngx_int_t) q->times[i].msec * j;
+    }
+
+    if (j != q->len) {
+        ngx_http_vhost_traffic_status_node_time_queue_init(q);
+    }
+
+    return (ngx_msec_t)
+               (k / (ngx_int_t) ngx_http_vhost_traffic_status_triangle((q->len - 1)));
 }
 
 

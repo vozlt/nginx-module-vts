@@ -622,17 +622,14 @@ ngx_http_vhost_traffic_status_init_main_conf(ngx_conf_t *cf, void *conf)
 static void *
 ngx_http_vhost_traffic_status_create_loc_conf(ngx_conf_t *cf)
 {
-    ngx_time_t                                *tp;
     ngx_http_vhost_traffic_status_loc_conf_t  *conf;
-
-    tp = ngx_timeofday();
 
     conf = ngx_pcalloc(cf->pool, sizeof(ngx_http_vhost_traffic_status_loc_conf_t));
     if (conf == NULL) {
         return NULL;
     }
 
-    conf->start_msec = (ngx_msec_t) (tp->sec * 1000 + tp->msec);
+    conf->start_msec = ngx_current_msec;
     conf->enable = NGX_CONF_UNSET;
     conf->filter = NGX_CONF_UNSET;
     conf->filter_host = NGX_CONF_UNSET;

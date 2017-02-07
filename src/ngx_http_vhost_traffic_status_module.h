@@ -82,6 +82,10 @@
     "\"scarce\":%uA"                                                           \
     "},"                                                                       \
     "\"requestMsec\":%M,"                                                      \
+    "\"requestMsecs\":{"                                                       \
+    "\"times\":[%s],"                                                          \
+    "\"msecs\":[%s]"                                                           \
+    "},"                                                                       \
     "\"overCounts\":{"                                                         \
     "\"maxIntegerSize\":%s,"                                                   \
     "\"requestCounter\":%uA,"                                                  \
@@ -115,6 +119,10 @@
     "\"5xx\":%uA"                                                              \
     "},"                                                                       \
     "\"requestMsec\":%M,"                                                      \
+    "\"requestMsecs\":{"                                                       \
+    "\"times\":[%s],"                                                          \
+    "\"msecs\":[%s]"                                                           \
+    "},"                                                                       \
     "\"overCounts\":{"                                                         \
     "\"maxIntegerSize\":%s,"                                                   \
     "\"requestCounter\":%uA,"                                                  \
@@ -143,7 +151,16 @@
     "\"4xx\":%uA,"                                                             \
     "\"5xx\":%uA"                                                              \
     "},"                                                                       \
+    "\"requestMsec\":%M,"                                                      \
+    "\"requestMsecs\":{"                                                       \
+    "\"times\":[%s],"                                                          \
+    "\"msecs\":[%s]"                                                           \
+    "},"                                                                       \
     "\"responseMsec\":%M,"                                                     \
+    "\"responseMsecs\":{"                                                      \
+    "\"times\":[%s],"                                                          \
+    "\"msecs\":[%s]"                                                           \
+    "},"                                                                       \
     "\"weight\":%ui,"                                                          \
     "\"maxFails\":%ui,"                                                        \
     "\"failTimeout\":%T,"                                                      \
@@ -356,6 +373,10 @@
     : "18446744073709551615"
 
 #define ngx_http_vhost_traffic_status_boolean_to_string(b) (b) ? "true" : "false"
+
+#define ngx_http_vhost_traffic_status_triangle(n) (unsigned) (                 \
+    n * (n + 1) / 2                                                            \
+)
 
 
 typedef struct {

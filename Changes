@@ -1,3 +1,9 @@
+v0.1.12 [Tue Feb 07 2017 YoungJoo.Kim <vozltx@gmail.com>]
+    * Feature: added request_time, request_times sections for
+      issues/(43|57) and pull/67
+
+    * Refactor: divided the source code because of too big
+
 v0.1.11 [Wed Nov 09 2016 YoungJoo.Kim <vozltx@gmail.com>]
     * Bugfix: fixed issues/56 that worker process exited on signal 11
       if running control query without group argument or nonexistent group
@@ -11,7 +17,7 @@ v0.1.11 [Wed Nov 09 2016 YoungJoo.Kim <vozltx@gmail.com>]
     * Compatibility: changed for issues/47 that occured errors when
       using compile with -Werror(Make all warnings into errors). The
       number returned by ngx_http_vhost_traffic_status_max_integer()
-      consist of string without the suf
+      consist of string without the suffix ULL(unsigned long long int).
 
     * Bugfix: fixed issues/6 that occured error(handler::shm_add_upstream()
       failed) when using fastcgi_pass $variables

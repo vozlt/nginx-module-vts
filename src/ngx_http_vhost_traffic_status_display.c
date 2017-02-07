@@ -416,18 +416,63 @@ ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
 
 
 u_char *
+ngx_http_vhost_traffic_status_display_get_time_queue(
+    ngx_http_request_t *r,
+    ngx_http_vhost_traffic_status_node_time_queue_t *q,
+    ngx_uint_t offset
+    )
+{
+    u_char     *p, *s;
+    ngx_int_t   i;
+
+    if (q->front == q->rear) {
+        return (u_char *) "";
+    }
+
+    p = ngx_pcalloc(r->pool, q->len * NGX_INT_T_LEN);
+
+    s = p;
+
+    for (i = q->front; i != q->rear; i = (i + 1) % q->len) {
+        s = ngx_sprintf(s, "%M,", *((ngx_msec_t *) ((char *) &(q->times[i]) + offset)));
+    }
+
+    if (s > p) {
+       *(s - 1) = '\0';
+    }
+
+    return p;
+}
+
+
+u_char *
+ngx_http_vhost_traffic_status_display_get_time_queue_times(
+    ngx_http_request_t *r,
+    ngx_http_vhost_traffic_status_node_time_queue_t *q)
+{
+    return ngx_http_vhost_traffic_status_display_get_time_queue(r, q,
+               offsetof(ngx_http_vhost_traffic_status_node_time_t, time));
+}
+
+
+u_char *
+ngx_http_vhost_traffic_status_display_get_time_queue_msecs(
+    ngx_http_request_t *r,
+    ngx_http_vhost_traffic_status_node_time_queue_t *q)
+{
+    return ngx_http_vhost_traffic_status_display_get_time_queue(r, q,
+               offsetof(ngx_http_vhost_traffic_status_node_time_t, msec));
+}
+
+
+u_char *
 ngx_http_vhost_traffic_status_display_set_main(ngx_http_request_t *r,
     u_char *buf)
 {
-    ngx_time_t                                *tp;
-    ngx_msec_t                                 now;
     ngx_atomic_int_t                           ap, hn, ac, rq, rd, wr, wa;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
 
     vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
-
-    tp = ngx_timeofday();
-    now = (ngx_msec_t) (tp->sec * 1000 + tp->msec);
 
     ap = *ngx_stat_accepted;
     hn = *ngx_stat_handled;
@@ -438,7 +483,7 @@ ngx_http_vhost_traffic_status_display_set_main(ngx_http_request_t *r,
     wa = *ngx_stat_waiting;
 
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_MAIN, NGINX_VERSION,
-                      vtscf->start_msec, now, ac, rd, wr, wa, ap, hn, rq);
+                      vtscf->start_msec, ngx_current_msec, ac, rd, wr, wa, ap, hn, rq);
 
     return buf;
 }
@@ -482,6 +527,10 @@ ngx_http_vhost_traffic_status_display_set_server_node(
                       vtsn->stat_cache_hit_counter,
                       vtsn->stat_cache_scarce_counter,
                       vtsn->stat_request_time,
+                      ngx_http_vhost_traffic_status_display_get_time_queue_times(r,
+                          &vtsn->stat_request_times),
+                      ngx_http_vhost_traffic_status_display_get_time_queue_msecs(r,
+                          &vtsn->stat_request_times),
                       ngx_http_vhost_traffic_status_max_integer,
                       vtsn->stat_request_counter_oc,
                       vtsn->stat_in_bytes_oc,
@@ -510,6 +559,10 @@ ngx_http_vhost_traffic_status_display_set_server_node(
                       vtsn->stat_4xx_counter,
                       vtsn->stat_5xx_counter,
                       vtsn->stat_request_time,
+                      ngx_http_vhost_traffic_status_display_get_time_queue_times(r,
+                          &vtsn->stat_request_times),
+                      ngx_http_vhost_traffic_status_display_get_time_queue_msecs(r,
+                          &vtsn->stat_request_times),
                       ngx_http_vhost_traffic_status_max_integer,
                       vtsn->stat_request_counter_oc,
                       vtsn->stat_in_bytes_oc,
@@ -735,7 +788,17 @@ ngx_http_vhost_traffic_status_display_set_upstream_node(ngx_http_request_t *r,
                 vtsn->stat_in_bytes, vtsn->stat_out_bytes,
                 vtsn->stat_1xx_counter, vtsn->stat_2xx_counter,
                 vtsn->stat_3xx_counter, vtsn->stat_4xx_counter,
-                vtsn->stat_5xx_counter, vtsn->stat_upstream.rtms,
+                vtsn->stat_5xx_counter,
+                vtsn->stat_request_time,
+                ngx_http_vhost_traffic_status_display_get_time_queue_times(r,
+                    &vtsn->stat_request_times),
+                ngx_http_vhost_traffic_status_display_get_time_queue_msecs(r,
+                    &vtsn->stat_request_times),
+                vtsn->stat_upstream.response_time,
+                ngx_http_vhost_traffic_status_display_get_time_queue_times(r,
+                    &vtsn->stat_upstream.response_times),
+                ngx_http_vhost_traffic_status_display_get_time_queue_msecs(r,
+                    &vtsn->stat_upstream.response_times),
                 us->weight, us->max_fails,
                 us->fail_timeout,
                 ngx_http_vhost_traffic_status_boolean_to_string(us->backup),
@@ -752,7 +815,11 @@ ngx_http_vhost_traffic_status_display_set_upstream_node(ngx_http_request_t *r,
                 (ngx_atomic_uint_t) 0, (ngx_atomic_uint_t) 0,
                 (ngx_atomic_uint_t) 0, (ngx_atomic_uint_t) 0,
                 (ngx_atomic_uint_t) 0, (ngx_atomic_uint_t) 0,
-                (ngx_atomic_uint_t) 0, (ngx_msec_t) 0,
+                (ngx_atomic_uint_t) 0,
+                (ngx_msec_t) 0,
+                (u_char *) "", (u_char *) "",
+                (ngx_msec_t) 0,
+                (u_char *) "", (u_char *) "",
                 us->weight, us->max_fails,
                 us->fail_timeout,
                 ngx_http_vhost_traffic_status_boolean_to_string(us->backup),

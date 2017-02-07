@@ -8,6 +8,17 @@
 #define _NGX_HTTP_VTS_DISPLAY_H_INCLUDED_
 
 
+u_char *ngx_http_vhost_traffic_status_display_get_time_queue(
+    ngx_http_request_t *r,
+    ngx_http_vhost_traffic_status_node_time_queue_t *q,
+    ngx_uint_t offset);
+u_char *ngx_http_vhost_traffic_status_display_get_time_queue_times(
+    ngx_http_request_t *r,
+    ngx_http_vhost_traffic_status_node_time_queue_t *q);
+u_char *ngx_http_vhost_traffic_status_display_get_time_queue_msecs(
+    ngx_http_request_t *r,
+    ngx_http_vhost_traffic_status_node_time_queue_t *q);
+
 u_char *ngx_http_vhost_traffic_status_display_set_main(
     ngx_http_request_t *r, u_char *buf);
 u_char *ngx_http_vhost_traffic_status_display_set_server_node(

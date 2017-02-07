@@ -589,7 +589,7 @@
                     out+='<div id="upstreamZones"><h2>Upstreams</h2>';
                     for (var ups in it.upstreamZones) {
                         out += '<h3>' + (ups) + '</h3>';
-                        out += '<table><thead><tr><th rowspan="2">Server</th><th rowspan="2">State</th><th rowspan="2">Response Time</th><th rowspan="2">Weight</th><th rowspan="2">MaxFails</th><th rowspan="2">FailTimeout</th><th colspan="2">Requests</th><th colspan="6">Responses</th><th colspan="4">Traffic</th></tr><tr><th>Total</th><th>Req/s</th><th>1xx</th><th>2xx</th><th>3xx</th><th>4xx</th><th>5xx</th><th>Total</th><th>Sent</th><th>Rcvd</th><th>Sent/s</th><th>Rcvd/s</th></tr></thead><tbody>';
+                        out += '<table><thead><tr><th rowspan="2">Server</th><th rowspan="2">State</th><th rowspan="2">Response Time</th><th rowspan="2">Weight</th><th rowspan="2">MaxFails</th><th rowspan="2">FailTimeout</th><th colspan="3">Requests</th><th colspan="6">Responses</th><th colspan="4">Traffic</th></tr><tr><th>Total</th><th>Req/s</th><th>Time</th><th>1xx</th><th>2xx</th><th>3xx</th><th>4xx</th><th>5xx</th><th>Total</th><th>Sent</th><th>Rcvd</th><th>Sent/s</th><th>Rcvd/s</th></tr></thead><tbody>';
                         var arr = it.upstreamZones[ups];
                         if (arr) {
                             var peer, n = -1,
@@ -616,6 +616,8 @@
                                 out += (peer.requestCounter + peer.overCounts['maxIntegerSize'] * peer.overCounts['requestCounter']);
                                 out += '</td><td>';
                                 out += (aPs.getValue('upstreamZones.' + ups + '.' + peer.server + '.requestCounter', peer.requestCounter));
+                                out += '</td><td>';
+                                out += mTh(peer.requestMsec);
                                 out += '</td>';
                                 for(var code in peer.responses) {
                                     out += '<td>';

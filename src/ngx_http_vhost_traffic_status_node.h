@@ -7,10 +7,28 @@
 #ifndef _NGX_HTTP_VTS_NODE_H_INCLUDED_
 #define _NGX_HTTP_VTS_NODE_H_INCLUDED_
 
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_QUEUE_LEN  64
+
 
 typedef struct {
-    unsigned                     type;        /* unsigned type:5 */
-    ngx_msec_t                   rtms;
+    ngx_msec_t                                       time;
+    ngx_msec_int_t                                   msec;
+} ngx_http_vhost_traffic_status_node_time_t;
+
+
+typedef struct {
+    ngx_http_vhost_traffic_status_node_time_t        times[NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_QUEUE_LEN];
+    ngx_int_t                                        front;
+    ngx_int_t                                        rear;
+    ngx_int_t                                        len;
+} ngx_http_vhost_traffic_status_node_time_queue_t;
+
+
+typedef struct {
+    /* unsigned type:5 */
+    unsigned                                         type;
+    ngx_msec_t                                       response_time;
+    ngx_http_vhost_traffic_status_node_time_queue_t  response_times;
 } ngx_http_vhost_traffic_status_node_upstream_t;
 
 
@@ -26,6 +44,7 @@ typedef struct {
     ngx_atomic_t                                     stat_5xx_counter;
 
     ngx_msec_t                                       stat_request_time;
+    ngx_http_vhost_traffic_status_node_time_queue_t  stat_request_times;
 
     /* deals with the overflow of variables */
     ngx_atomic_t                                     stat_request_counter_oc;
@@ -79,6 +98,22 @@ void ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t *vtsn);
 void ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t *vtsn);
+
+void ngx_http_vhost_traffic_status_node_time_queue_zero(
+    ngx_http_vhost_traffic_status_node_time_queue_t *q);
+void ngx_http_vhost_traffic_status_node_time_queue_init(
+    ngx_http_vhost_traffic_status_node_time_queue_t *q);
+void ngx_http_vhost_traffic_status_node_time_queue_insert(
+    ngx_http_vhost_traffic_status_node_time_queue_t *q,
+    ngx_msec_int_t x);
+ngx_int_t ngx_http_vhost_traffic_status_node_time_queue_push(
+    ngx_http_vhost_traffic_status_node_time_queue_t *q,
+    ngx_msec_int_t x);
+ngx_int_t ngx_http_vhost_traffic_status_node_time_queue_pop(
+    ngx_http_vhost_traffic_status_node_time_queue_t *q,
+    ngx_http_vhost_traffic_status_node_time_t *x);
+ngx_msec_t ngx_http_vhost_traffic_status_node_time_queue_wma(
+    ngx_http_vhost_traffic_status_node_time_queue_t *q);
 
 void ngx_http_vhost_traffic_status_find_name(ngx_http_request_t *r,
     ngx_str_t *buf);

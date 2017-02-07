@@ -61,15 +61,14 @@ Table of Contents
 * [Author](#author)
 
 ## Version
-This document describes nginx-module-vts `v0.1.10` released on 17 Jul 2016.
+This document describes nginx-module-vts `v0.1.12` released on 7 Feb 2017.
 
 ## Dependencies
 * [nginx](http://nginx.org)
 
 ## Compatibility
-* 1.11.x (last tested: 1.11.8)
-* 1.10.x (last tested: 1.10.1)
-* 1.9.x (last tested: 1.9.9)
+* 1.11.x (last tested: 1.11.9)
+* 1.10.x (last tested: 1.10.3)
 * 1.8.x (last tested: 1.8.0)
 * 1.6.x (last tested: 1.6.3)
 * 1.4.x (last tested: 1.4.7)
@@ -179,7 +178,11 @@ JSON document contains as follows:
                 "hit":...,
                 "scarce":...
             },
-            "requestMsec":...
+            "requestMsec":...,
+            "requestMsecs":{
+                "times":[...],
+                "msecs":[...]
+            },
         }
         ...
     },
@@ -204,7 +207,11 @@ JSON document contains as follows:
                     "hit":...,
                     "scarce":...
                 },
-                "requestMsec":...
+                "requestMsec":...,
+                "requestMsecs":{
+                    "times":[...],
+                    "msecs":[...]
+                },
             },
             ...
         },
@@ -224,7 +231,16 @@ JSON document contains as follows:
                     "4xx":...,
                     "5xx":...
                 },
+                "requestMsec":...,
+                "requestMsecs":{
+                    "times":[...],
+                    "msecs":[...]
+                },
                 "responseMsec":...,
+                "responseMsecs":{
+                    "times":[...],
+                    "msecs":[...]
+                },
                 "weight":...,
                 "maxFails":...,
                 "failTimeout":...,
@@ -511,7 +527,12 @@ The following status information is provided in the JSON format:
     * scarce
       * The number of cache scare.
  * requestMsec
-   * The average of request processing time.
+   * The average of request processing times in milliseconds.
+ * requestMsecs
+    * times
+      * The times in milliseconds at request processing times.
+    * msecs
+      * The request processing times in milliseconds.
 * filterZones
  * It provides the same fields with `serverZones` except that it included group names.
 * upstreamZones
@@ -526,8 +547,20 @@ The following status information is provided in the JSON format:
  * responses
    * 1xx, 2xx, 3xx, 4xx, 5xx
      * The number of responses with status codes 1xx, 2xx, 3xx, 4xx, and 5xx.
+ * requestMsec
+   * The average of request processing times including upstream in milliseconds.
+ * requestMsecs
+    * times
+      * The times in milliseconds at request processing times.
+    * msecs
+      * The request processing times including upstream in milliseconds.
  * responseMsec
-   * The average time to receive the last byte of data.
+   * The average of only upstream response processing times in milliseconds.
+ * responseMsecs
+    * times
+      * The times in milliseconds at request processing times.
+    * msecs
+      * The only upstream response processing times in milliseconds.
  * weight
    * Current `weight` setting of the server.
  * maxFails
@@ -617,7 +650,7 @@ The following embedded variables are provided:
 * **$vts_cache_scarce_counter**
  * The number of cache scare.
 * **$vts_request_time**
- * The average of request processing time.
+ * The average of request processing times.
 
 ## Limit
 
