@@ -146,6 +146,7 @@ JSON document contains as follows:
 
 ```Json
 {
+    "hostName": ...,
     "nginxVersion": ...,
     "loadMsec": ...,
     "nowMsec": ...,
@@ -479,6 +480,8 @@ The following status information is provided in the JSON format:
 
 /*`{status_uri}`*/control?cmd=status&...
 
+* hostName
+ * Host name.
 * nginxVersion
  * Version of the provided.
 * loadMsec

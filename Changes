@@ -2,6 +2,8 @@ v0.1.12 [Tue Feb 07 2017 YoungJoo.Kim <vozltx@gmail.com>]
     * Feature: added request_time, request_times sections for
       issues/(43|57) and pull/67
 
+    * Feature: added hostname section for issues/37
+
     * Refactor: divided the source code because of too big
 
 v0.1.11 [Wed Nov 09 2016 YoungJoo.Kim <vozltx@gmail.com>]

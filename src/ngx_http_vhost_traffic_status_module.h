@@ -46,7 +46,8 @@
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_E           "}"
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_NEXT        ","
 
-#define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_MAIN "\"nginxVersion\":\"%s\"," \
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_MAIN "\"hostName\":\"%V\","     \
+    "\"nginxVersion\":\"%s\","                                                 \
     "\"loadMsec\":%M,"                                                         \
     "\"nowMsec\":%M,"                                                          \
     "\"connections\":{"                                                        \

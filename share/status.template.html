@@ -374,7 +374,7 @@
         </div>
 
         <div id="footer" class="footer">
-            <a href="/format/json" id="jsonUri"><strong>JSON</strong></a>
+            <a href="{{uri}}/format/json" id="jsonUri"><strong>JSON</strong></a>
             | <a href="https://github.com/vozlt/nginx-module-vts"><strong>GITHUB</strong></a>
         </div>
 
@@ -540,8 +540,8 @@
                 /* main */
                 aPs.refresh(it.nowMsec);
                 var cache = 0;
-                var out = '<div id="serverInfos"><h2>Server main</h2><table><thead><tr><th rowspan="2">Version</th><th rowspan="2">Uptime</th><th colspan="4">Connections</th><th colspan="5">Requests</th></tr><tr><th>active</th><th>reading</th><th>writing</th><th>waiting</th><th>accepted</th><th>handled</th><th>Total</th><th>Req/s</th></tr></thead><tbody>';
-                out += '<tr><td>' + it.nginxVersion + '</td><td>' + mTh(it.nowMsec - it.loadMsec) + '</td><td>'
+                var out = '<div id="serverInfos"><h2>Server main</h2><table><thead><tr><th rowspan="2">Host</th><th rowspan="2">Version</th><th rowspan="2">Uptime</th><th colspan="4">Connections</th><th colspan="5">Requests</th></tr><tr><th>active</th><th>reading</th><th>writing</th><th>waiting</th><th>accepted</th><th>handled</th><th>Total</th><th>Req/s</th></tr></thead><tbody>';
+                out += '<tr><td>' + it.hostName + '</td><td>' + it.nginxVersion + '</td><td>' + mTh(it.nowMsec - it.loadMsec) + '</td><td>'
                        + it.connections.active + '</td><td>'
                        + it.connections.reading + '</td><td>'
                        + it.connections.writing + '</td><td>'

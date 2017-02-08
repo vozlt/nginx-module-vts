@@ -394,7 +394,7 @@ ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
 
     }
     else {
-        b->last = ngx_sprintf(b->last, NGX_HTTP_VHOST_TRAFFIC_STATUS_HTML_DATA, &uri);
+        b->last = ngx_sprintf(b->last, NGX_HTTP_VHOST_TRAFFIC_STATUS_HTML_DATA, &uri, &uri);
     }
 
     r->headers_out.status = NGX_HTTP_OK;
@@ -482,8 +482,9 @@ ngx_http_vhost_traffic_status_display_set_main(ngx_http_request_t *r,
     wr = *ngx_stat_writing;
     wa = *ngx_stat_waiting;
 
-    buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_MAIN, NGINX_VERSION,
-                      vtscf->start_msec, ngx_current_msec, ac, rd, wr, wa, ap, hn, rq);
+    buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_MAIN, &ngx_cycle->hostname,
+                      NGINX_VERSION, vtscf->start_msec, ngx_current_msec,
+                      ac, rd, wr, wa, ap, hn, rq);
 
     return buf;
 }
