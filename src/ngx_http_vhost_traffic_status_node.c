@@ -482,6 +482,8 @@ ngx_http_vhost_traffic_status_node_member(ngx_http_vhost_traffic_status_node_t *
     {
         return vtsn->stat_5xx_counter;
     }
+
+#if (NGX_HTTP_CACHE)
     else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "cache_miss") == 0)
     {
         return vtsn->stat_cache_miss_counter;
@@ -514,6 +516,7 @@ ngx_http_vhost_traffic_status_node_member(ngx_http_vhost_traffic_status_node_t *
     {
         return vtsn->stat_cache_scarce_counter;
     }
+#endif
 
     return 0;
 }
