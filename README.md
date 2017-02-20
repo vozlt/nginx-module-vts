@@ -56,6 +56,7 @@ Table of Contents
  * [vhost_traffic_status_limit_traffic](#vhost_traffic_status_limit_traffic)
  * [vhost_traffic_status_limit_traffic_by_set_key](#vhost_traffic_status_limit_traffic_by_set_key)
  * [vhost_traffic_status_limit_check_duplicate](#vhost_traffic_status_limit_check_duplicate)
+* [See Also](#see-also)
 * [TODO](#todo)
 * [Donation](#donation)
 * [Author](#author)
@@ -318,6 +319,10 @@ The working of the module doesn't matter at all whether the access_log directive
 Again, this module works well on "access_log off".
 When using several domains it sets to be first domain(left) of server_name directive.
 If you don't want it, see the [vhost_traffic_status_filter_by_host](#vhost_traffic_status_filter_by_host), [vhost_traffic_status_filter_by_set_key](#vhost_traffic_status_filter_by_set_key) directive.
+
+See the following modules for the `stream` traffic statistics:
+* [nginx-module-sts](https://github.com/vozlt/nginx-module-sts)
+* [nginx-module-stream-sts](https://github.com/vozlt/nginx-module-stream-sts)
 
 ## Control
 It is able to reset or delete traffic zones through a query string.
@@ -1221,9 +1226,13 @@ The *member* is the same as `vhost_traffic_status_limit_traffic` directive.
 It is processed only one of duplicate values(`member` | `key` + `member`)
 in each directives(http, server, location) if this option is enabled.
 
+## See Also
+* [nginx-module-sts](https://github.com/vozlt/nginx-module-sts)
+* [nginx-module-stream-sts](https://github.com/vozlt/nginx-module-stream-sts)
+
 ## TODO
-* Add support for implementing `stream` stats.
-* Add support for implementing `request_time` stats.
+* Add support for implementing stats values access in nginx config.
+* Add support for implementing user-defined-string for total key `*` in json.
 
 ## Donation
 [![License](http://img.shields.io/badge/PAYPAL-DONATE-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=PWWSYKQ9VKH38&lc=KR&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
