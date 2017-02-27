@@ -10,6 +10,7 @@ Table of Contents
 
 * [Version](#version)
 * [Dependencies](#dependencies)
+* [Compatibility](#compatibility)
 * [Screenshots](#screenshots)
 * [Installation](#installation)
 * [Synopsis](#synopsis)

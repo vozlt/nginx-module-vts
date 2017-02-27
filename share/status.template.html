@@ -379,7 +379,31 @@
         </div>
 
         <script>
+            String.prototype.format = function () {
+                var i = 0, args = arguments;
+                return this.replace(/{}/g, function () {
+                    return typeof args[i] != 'undefined' ? args[i++] : '';
+                });
+            };
+
             var vtsStatusURI = "{{uri}}/format/json", vtsUpdateInterval = 1000, vtsUpdate;
+
+            var vtsStatusVars = {
+                titles: {
+                    main:"Server main",
+                    server:"Server zones",
+                    filter:"Filters",
+                    upstream:"Upstreams",
+                    cache:"Caches"
+                },
+                ids: {
+                    main:"mainZones",
+                    server:"serverZones",
+                    filter:"filterZones",
+                    upstream:"upstreamZones",
+                    cache:"cacheZones"
+                }
+            };
 
             var aPs = (function() {
                 var data = [];
@@ -412,26 +436,26 @@
                 var ms = 1000, m = 60, h = m * m, d = h * 24, s = '';
 
                 if (msec < ms) {
-                return msec + 'ms';
+                    return msec + 'ms';
                 }
 
                 if (msec < (ms * m)) {
-                return Math.floor(msec / ms) + '.' + Math.floor((msec % ms) / 10) + 's';
+                    return Math.floor(msec / ms) + '.' + Math.floor((msec % ms) / 10) + 's';
                 }
 
                 var days = Math.floor(msec / (d * ms));
                 if (days) {
-                s += days + "d ";
+                    s += days + "d ";
                 }
 
                 var hours = Math.floor((msec % (d * ms)) / (h * ms));
                 if (days || hours) {
-                s += hours + "h ";
+                    s += hours + "h ";
                 }
 
                 var minutes = Math.floor(((msec % (d * ms)) % (h * ms)) / (m * ms));
                 if (days || hours || minutes) {
-                s += minutes + "m ";
+                    s += minutes + "m ";
                 }
 
                 var seconds = Math.floor((((msec % (d * ms)) % (h * ms)) % (m * ms)) / ms);
@@ -472,219 +496,316 @@
                 return s;
             }
 
-            function templateZone(filter, group, id) {
+            function sHe(t, v) {
+                var ts = t.split(' ');
+                return '<' + t + '>' + (v) + '</' + ts[0] + '>';
+            }
+
+            function aHe(t, v) {
+                var i;
+                var o = '';
+                if (Object.prototype.toString.call(v) === '[object Array]') {
+                    for (i = 0; i < v.length; i++)  {
+                        o += sHe(t, v[i]);
+                    }
+                } else {
+                    o = sHe(t, v);
+                }
+                return o;
+            }
+
+            function templateServerHeader(cache) {
+                var heads = [];
+
+                heads[0] = '{}{}{}{}'.format(aHe('th rowspan="2"', 'Zone'),
+                                             aHe('th colspan="3"', 'Requests'),
+                                             aHe('th colspan="6"', 'Responses'),
+                                             aHe('th colspan="4"', 'Traffic'));
+
+                if (cache) {
+                    heads[0] = '{}{}'.format(heads[0], aHe('th colspan="9"', 'Cache'));
+                }
+
+                heads[1] = aHe('th', ['Total', 'Req/s', 'Time', '1xx', '2xx', '3xx', '4xx', '5xx',
+                                      'Total', 'Sent', 'Rcvd', 'Sent/s', 'Rcvd/s']);
+
+                if (cache) {
+                    heads[1] = '{}{}'.format(heads[1], aHe('th', ['Miss', 'Bypass', 'Expired', 'Stale',
+                                                                  'Updating', 'Revalidated', 'Hit',
+                                                                  'Scarce', 'Total']));
+                }
+
+                return aHe('thead', '{}{}'.format(aHe('tr', heads[0]), aHe('tr', heads[1])));
+            }
+
+            function templateUpstreamHeader() {
+                var heads = [];
+
+                heads[0] = '{}{}{}{}{}{}{}{}{}'.format(aHe('th rowspan="2"', 'Server'),
+                                                       aHe('th rowspan="2"', 'State'),
+                                                       aHe('th rowspan="2"', 'Response Time'),
+                                                       aHe('th rowspan="2"', 'Weight'),
+                                                       aHe('th rowspan="2"', 'MaxFails'),
+                                                       aHe('th rowspan="2"', 'FailTimeout'),
+                                                       aHe('th colspan="3"', 'Requests'),
+                                                       aHe('th colspan="6"', 'Responses'),
+                                                       aHe('th colspan="4"', 'Traffic'));
+
+                heads[1] = aHe('th', ['Total', 'Req/s', 'Time', '1xx', '2xx', '3xx', '4xx', '5xx',
+                                      'Total', 'Sent', 'Rcvd', 'Sent/s', 'Rcvd/s']);
+
+                return aHe('thead', '{}{}'.format(aHe('tr', heads[0]), aHe('tr', heads[1])));
+            }
+
+            function templateCacheHeader() {
+                var heads = [];
+
+                heads[0] = '{}{}{}{}'.format(aHe('th rowspan="2"', 'Zone'),
+                                             aHe('th colspan="2"', 'Size'),
+                                             aHe('th colspan="4"', 'Traffic'),
+                                             aHe('th colspan="9"', 'Cache'));
+
+                heads[1] = aHe('th', ['Capacity', 'Used', 'Sent', 'Rcvd', 'Sent/s', 'Rcvd/s',
+                                      'Miss', 'Bypass', 'Expired', 'Stale', 'Updating',
+                                      'Revalidated', 'Hit', 'Scarce', 'Total']);
+
+                return aHe('thead', '{}{}'.format(aHe('tr', heads[0]), aHe('tr', heads[1])));
+            }
+
+
+            function templateMainZone(it) {
+                var o = '';
+                var head = '';
+                var body = '';
+                var heads = [];
+                var bodys = [];
+
+                heads[0] = '{}{}{}{}{}'.format(aHe('th rowspan="2"', 'Host'),
+                                               aHe('th rowspan="2"', 'Version'),
+                                               aHe('th rowspan="2"', 'Uptime'),
+                                               aHe('th colspan="4"', 'Connections'),
+                                               aHe('th colspan="5"', 'Requests'));
+
+                heads[1] = aHe('th', ['active', 'reading', 'writing', 'waiting', 'accepted',
+                                      'handled', 'Total', 'Req/s']);
+
+                head = aHe('thead', '{}{}'.format(aHe('tr', heads[0]), aHe('tr', heads[1])));
+
+                bodys[0] = aHe('td', [it.hostName, it.nginxVersion, mTh(it.nowMsec - it.loadMsec), it.connections.active,
+                                      it.connections.reading, it.connections.writing, it.connections.waiting,
+                                      it.connections.accepted, it.connections.handled, it.connections.requests,
+                                      aPs.getValue('main.connections.requests', it.connections.requests)]);
+
+                body = aHe('tbody', aHe('tr', bodys[0]));
+
+                o = '{}{}'.format(aHe('h2', vtsStatusVars.titles.main), aHe('table', '{}{}'.format(head, body)));
+                o = aHe('div id="{}"'.format(vtsStatusVars.ids.main), o);
+
+                return o;
+            }
+
+            function templateServerZone(filter, group, id, cache) {
                 var n = 0;
-                var out = '';
+                var s = '';
+                var o = '';
+
                 for(var name in filter) {
                     var zone = filter[name];
-                    var uniq = id + '.' + group + '.' + name;
-                    out += '<tr ';
-                    out += ((n++ % 2) ? 'class="odd"' : '');
-                    out += '><th>';
-                    if (group.indexOf("country") != -1 && name.length == 2)
-                        out += '<img class="flag flag-' + name.toLowerCase() + '" />'
-                    out += (name);
-                    out += '</th><td>';
-                    out += (zone.requestCounter + zone.overCounts['maxIntegerSize'] * zone.overCounts['requestCounter']);
-                    out += '</td><td>';
-                    out += (aPs.getValue(uniq + '.requestCounter', zone.requestCounter));
-                    out += '</td><td>';
-                    out += mTh(zone.requestMsec);
-                    out += '</td>';
-                    for(var code in zone.responses) {
-                        out += '<td>';
-                        out += (zone.responses[code] + zone.overCounts['maxIntegerSize'] * zone.overCounts[code]);
-                        out += '</td>';
-                        if(code == '5xx')break;
-                    }
-
+                    var uniq = '{}.{}.{}'.format(id, group, name);
+                    var clas = '';
+                    var flag = '';
+                    var responseCount = 0;
                     var responseTotal = 0;
+                    var cacheCount = 0;
+                    var cacheTotal = 0;
+
+                    clas = (n++ % 2) ? 'odd' : '';
+                    flag = (group.indexOf("country") != -1 && name.length == 2)
+                           ? '<img class="flag flag-{}" />'.format(name.toLowerCase())
+                           : '';
+
+                    s = '{}{}'.format(aHe('th', '{}{}'.format(flag, name)),
+                                      aHe('td', [(zone.requestCounter + zone.overCounts['maxIntegerSize'] * zone.overCounts['requestCounter']),
+                                                 aPs.getValue('{}.{}'.format(uniq, 'requestCounter'), zone.requestCounter), mTh(zone.requestMsec)
+                                                ]));
+
                     for(var code in zone.responses) {
-                        responseTotal += (zone.responses[code] + zone.overCounts['maxIntegerSize'] * zone.overCounts[code]);
-                        if(code == '5xx')break;
+                        responseCount = zone.responses[code] + zone.overCounts['maxIntegerSize'] * zone.overCounts[code];
+                        responseTotal += responseCount;
+                        s = '{}{}'.format(s, aHe('td', responseCount));
+                        if(code == '5xx') break;
                     }
 
-                    out += '<td>' + responseTotal + '</td>';
-                    out += '<td>';
-                    out += (bTh(zone.outBytes + zone.overCounts['maxIntegerSize'] * zone.overCounts['outBytes']));
-                    out += '</td><td>';
-                    out += (bTh(zone.inBytes + zone.overCounts['maxIntegerSize'] * zone.overCounts['inBytes']));
-                    out += '</td><td>';
-                    out += (bTh(aPs.getValue(uniq + '.outBytes', zone.outBytes)));
-                    out += '</td><td>';
-                    out += (bTh(aPs.getValue(uniq + '.inBytes', zone.inBytes)));
-                    out += '</td>';
-                    if(Object.keys(zone.responses).length > 5) {
+                    s = '{}{}'.format(s, aHe('td', [responseTotal,
+                                                    bTh(zone.outBytes + zone.overCounts['maxIntegerSize'] * zone.overCounts['outBytes']),
+                                                    bTh(zone.inBytes + zone.overCounts['maxIntegerSize'] * zone.overCounts['inBytes']),
+                                                    bTh(aPs.getValue('{}.{}'.format(uniq, 'outBytes'), zone.outBytes)),
+                                                    bTh(aPs.getValue('{}.{}'.format(uniq, 'inBytes'), zone.inBytes))
+                                                   ]));
+
+                    if (cache) {
                         var i = 0;
                         for(var code in zone.responses) {
-                            if(i++ < 5)continue;
-                            out += '<td>';
-                            out += (zone.responses[code] + zone.overCounts['maxIntegerSize'] * zone.overCounts[code]);
-                            out += '</td>';
+                            if(i++ < 5) continue;
+                            cacheCount = (zone.responses[code] + zone.overCounts['maxIntegerSize'] * zone.overCounts[code]);
+                            cacheTotal += cacheCount;
+                            s = '{}{}'.format(s, aHe('td', cacheCount));
                         }
-
-                        var cacheTotal = 0;
-                        i = 0;
-                        for(var code in zone.responses) {
-                            if(i++ < 5)continue;
-                            cacheTotal += (zone.responses[code] + zone.overCounts['maxIntegerSize'] * zone.overCounts[code]);
-                        }
-                        out += '<td>' + cacheTotal + '</td>';
+                        s = '{}{}'.format(s, aHe('td', cacheTotal));
                     }
-                    out += '</tr>';
+
+                    o = '{}{}'.format(o, aHe('tr class="{}"'.format(clas), s));
                 }
-                return out;
+
+                return o;
+            }
+
+            function templateUpstreamZone(filter, group, id) {
+                var n = 0;
+                var s = '';
+                var o = '';
+
+                while (n < filter.length) {
+                    var peer = filter[n];
+                    var uniq = '{}.{}.{}'.format(id, group, peer.server);
+                    var clas = '';
+                    var responseCount = 0;
+                    var responseTotal = 0;
+
+                    clas = (n++ % 2) ? 'odd' : '';
+
+                    s = '{}{}'.format(aHe('th', peer.server),
+                                      aHe('td', [sTh(peer.backup, peer.down), mTh(peer.responseMsec),
+                                                 peer.weight, peer.maxFails, peer.failTimeout,
+                                                 (peer.requestCounter + peer.overCounts['maxIntegerSize'] * peer.overCounts['requestCounter']),
+                                                 aPs.getValue('{}.{}'.format(uniq, 'requestCounter'), peer.requestCounter),
+                                                 mTh(peer.requestMsec)
+                                                ]));
+
+                    for(var code in peer.responses) {
+                        responseCount = peer.responses[code] + peer.overCounts['maxIntegerSize'] * peer.overCounts[code];
+                        responseTotal += responseCount;
+                        s = '{}{}'.format(s, aHe('td', responseCount));
+                    }
+
+                    s = '{}{}'.format(s, aHe('td', [responseTotal,
+                                                    bTh(peer.outBytes + peer.overCounts['maxIntegerSize'] * peer.overCounts['outBytes']),
+                                                    bTh(peer.inBytes + peer.overCounts['maxIntegerSize'] * peer.overCounts['inBytes']),
+                                                    bTh(aPs.getValue('{}.{}'.format(uniq, 'outBytes'), peer.outBytes)),
+                                                    bTh(aPs.getValue('{}.{}'.format(uniq, 'inBytes'), peer.inBytes))
+                                                   ]));
+
+                    o = '{}{}'.format(o, aHe('tr class="{}"'.format(clas), s));
+                }
+
+                return o;
+            }
+
+            function templateCacheZone(filter, group, id) {
+                var n = 0;
+                var s = '';
+                var o = '';
+
+                for(var name in filter) {
+                    var zone = filter[name];
+                    var uniq = '{}.{}.{}'.format(id, group, name);
+                    var clas = '';
+                    var cacheCount = 0;
+                    var cacheTotal = 0;
+
+                    clas = (n++ % 2) ? 'odd' : '';
+
+                    s = '{}{}'.format(aHe('th', name),
+                                      aHe('td', [bTh(zone.maxSize),
+                                                 bTh(zone.usedSize),
+                                                 bTh(zone.outBytes + zone.overCounts['maxIntegerSize'] * zone.overCounts['outBytes']),
+                                                 bTh(zone.inBytes + zone.overCounts['maxIntegerSize'] * zone.overCounts['inBytes']),
+                                                 bTh(aPs.getValue('{}.{}'.format(uniq, 'outBytes'), zone.outBytes)),
+                                                 bTh(aPs.getValue('{}.{}'.format(uniq, 'inBytes'), zone.inBytes))
+                                                ]));
+
+                    for(var code in zone.responses) {
+                        cacheCount = zone.responses[code] + zone.overCounts['maxIntegerSize'] * zone.overCounts[code];
+                        cacheTotal += cacheCount;
+                        s = '{}{}'.format(s, aHe('td', cacheCount));
+                    }
+
+                    s = '{}{}'.format(s, aHe('td', cacheTotal));
+
+                    o = '{}{}'.format(o, aHe('tr class="{}"'.format(clas), s));
+                }
+
+                return o;
+            }
+
+            function haveCache(it) {
+                var key = "*";
+
+                if (typeof it.serverZones[key] == "undefined") {
+                    return true;
+                }
+
+                return Object.keys(it.serverZones[key].responses).length > 5 ? true : false;
             }
 
             function template(it) {
-                /* main */
                 aPs.refresh(it.nowMsec);
-                var cache = 0;
-                var out = '<div id="serverInfos"><h2>Server main</h2><table><thead><tr><th rowspan="2">Host</th><th rowspan="2">Version</th><th rowspan="2">Uptime</th><th colspan="4">Connections</th><th colspan="5">Requests</th></tr><tr><th>active</th><th>reading</th><th>writing</th><th>waiting</th><th>accepted</th><th>handled</th><th>Total</th><th>Req/s</th></tr></thead><tbody>';
-                out += '<tr><td>' + it.hostName + '</td><td>' + it.nginxVersion + '</td><td>' + mTh(it.nowMsec - it.loadMsec) + '</td><td>'
-                       + it.connections.active + '</td><td>'
-                       + it.connections.reading + '</td><td>'
-                       + it.connections.writing + '</td><td>'
-                       + it.connections.waiting + '</td><td>'
-                       + it.connections.accepted + '</td><td>'
-                       + it.connections.handled + '</td><td>'
-                       + it.connections.requests + '</td><td>'
-                       + aPs.getValue('serverInfos.connections.requests', it.connections.requests) + '</td></tr>';
-                out += '</tbody></table></div>';
+
+                var out = '';
+                var tmp = '';
+                var head = '';
+                var body = '';
+                var bodys = [];
+                var cache = true;
+
+                /* main */
+                out = templateMainZone(it);
 
                 /* serverZones */
-                var outCache = '<table><thead><tr><th rowspan="2">Zone</th><th colspan="3">Requests</th><th colspan="6">Responses</th><th colspan="4">Traffic</th><th colspan="9">Cache</th></tr><tr><th>Total</th><th>Req/s</th><th>Time</th><th>1xx</th><th>2xx</th><th>3xx</th><th>4xx</th><th>5xx</th><th>Total</th><th>Sent</th><th>Rcvd</th><th>Sent/s</th><th>Rcvd/s</th><th>Miss</th><th>Bypass</th><th>Expired</th><th>Stale</th><th>Updating</th><th>Revalidated</th><th>Hit</th><th>Scarce</th><th>Total</th></tr></thead><tbody>';
-                var outNoCache = '<table><thead><tr><th rowspan="2">Zone</th><th colspan="3">Requests</th><th colspan="6">Responses</th><th colspan="4">Traffic</th></tr><tr><th>Total</th><th>Req/s<th>Time</th></th><th>1xx</th><th>2xx</th><th>3xx</th><th>4xx</th><th>5xx</th><th>Total</th><th>Sent</th><th>Rcvd</th><th>Sent/s</th><th>Rcvd/s</th></tr></thead><tbody> ';
-                var outHeader = '<div id="serverZones"><h2>Server zones</h2>';
-                if (it.serverZones["*"]) {
-                    if (Object.keys(it.serverZones["*"].responses).length > 5) {
-                        out += outHeader + outCache;
-                        cache = 1;
-                    } else {
-                        out += outHeader + outNoCache;
-                        cache = 0;
-                    }
-                } else {
-                    out += outHeader + outCache;
-                }
-
-                out += templateZone(it.serverZones, 'server', 'serverZones');
-                out += '</table></div>';
+                cache = haveCache(it);
+                head = templateServerHeader(cache);
+                bodys[0] = templateServerZone(it.serverZones, 'server', vtsStatusVars.ids.server, cache);
+                body = aHe('tbody', bodys[0]);
+                out = '{}{}'.format(out, aHe('div id="{}"'.format(vtsStatusVars.ids.server),
+                                             '{}{}'.format(aHe('h2', vtsStatusVars.titles.server),
+                                                           aHe('table', '{}{}'.format(head, body)))));
 
                 /* filterZones */
-                if ('filterZones' in it) {
-                    out += '<div id="filterZones"><h2>Filters</h2>';
+                if (vtsStatusVars.ids.filter in it) {
+                    tmp = '';
                     for (var group in it.filterZones) {
-                        out += '<h3>' + (group) + '</h3>';
-                        out += cache ? outCache : outNoCache;
                         var filter = it.filterZones[group];
-                        out += templateZone(filter, group, 'filterZones');
-                        out += '</tbody></table>';
+                        head = templateServerHeader(cache);
+                        bodys[0] = templateServerZone(filter, group, vtsStatusVars.ids.filter, cache);
+                        body = aHe('tbody', bodys[0]);
+                        tmp = '{}{}{}'.format(tmp, aHe('h3', group), aHe('table', '{}{}'.format(head, body)));
                     }
-                    out += '</div>';
+                    out = '{}{}'.format(out, aHe('div id="{}"'.format(vtsStatusVars.ids.filter),
+                                                 '{}{}'.format(aHe('h2', vtsStatusVars.titles.filter), tmp)));
                 }
 
                 /* upstreamZones */
-                if ('upstreamZones' in it) {
-                    out+='<div id="upstreamZones"><h2>Upstreams</h2>';
-                    for (var ups in it.upstreamZones) {
-                        out += '<h3>' + (ups) + '</h3>';
-                        out += '<table><thead><tr><th rowspan="2">Server</th><th rowspan="2">State</th><th rowspan="2">Response Time</th><th rowspan="2">Weight</th><th rowspan="2">MaxFails</th><th rowspan="2">FailTimeout</th><th colspan="3">Requests</th><th colspan="6">Responses</th><th colspan="4">Traffic</th></tr><tr><th>Total</th><th>Req/s</th><th>Time</th><th>1xx</th><th>2xx</th><th>3xx</th><th>4xx</th><th>5xx</th><th>Total</th><th>Sent</th><th>Rcvd</th><th>Sent/s</th><th>Rcvd/s</th></tr></thead><tbody>';
-                        var arr = it.upstreamZones[ups];
-                        if (arr) {
-                            var peer, n = -1,
-                            l1 = arr.length - 1;
-                            while (n < l1) {
-                                peer = arr[n += 1];
-
-                                out += '<tr ';
-                                out += ((n % 2) ? 'class="odd"' : '');
-                                out += '><th>';
-                                out += (peer.server);
-                                out += '</th><td>';
-
-                                out += sTh(peer.backup, peer.down);
-                                out += '</td><td>';
-                                out += mTh(peer.responseMsec);
-                                out += '</td><td>';
-                                out += peer.weight;
-                                out += '</td><td>';
-                                out += peer.maxFails;
-                                out += '</td><td>';
-                                out += peer.failTimeout;
-                                out += '</td><td>';
-                                out += (peer.requestCounter + peer.overCounts['maxIntegerSize'] * peer.overCounts['requestCounter']);
-                                out += '</td><td>';
-                                out += (aPs.getValue('upstreamZones.' + ups + '.' + peer.server + '.requestCounter', peer.requestCounter));
-                                out += '</td><td>';
-                                out += mTh(peer.requestMsec);
-                                out += '</td>';
-                                for(var code in peer.responses) {
-                                    out += '<td>';
-                                    out += (peer.responses[code] + peer.overCounts['maxIntegerSize'] * peer.overCounts[code]);
-                                    out += '</td>';
-                                }
-
-                                var responseTotal = 0;
-                                for(var code in peer.responses) {
-                                    responseTotal += (peer.responses[code] + peer.overCounts['maxIntegerSize'] * peer.overCounts[code]);
-                                }
-
-                                out += '<td>' + responseTotal  + '</td>';
-                                out += '<td>';
-                                out += (bTh(peer.outBytes + peer.overCounts['maxIntegerSize'] * peer.overCounts['outBytes']));
-                                out += '</td><td>';
-                                out += (bTh(peer.inBytes + peer.overCounts['maxIntegerSize'] * peer.overCounts['inBytes']));
-                                out += '</td><td>';
-                                out += (bTh(aPs.getValue('upstreamZones.' + ups + '.' + peer.server + '.outBytes', peer.outBytes)));
-                                out += '</td><td>';
-                                out += (bTh(aPs.getValue('upstreamZones.' + ups + '.' + peer.server + '.inBytes', peer.inBytes)));
-                                out += '</td></tr>';
-                            }
-                        }
-                        out += '</tbody></table>';
+                if (vtsStatusVars.ids.upstream in it) {
+                    tmp = '';
+                    for (var group in it.upstreamZones) {
+                        var filter = it.upstreamZones[group];
+                        head = templateUpstreamHeader();
+                        bodys[0] = templateUpstreamZone(filter, group, vtsStatusVars.ids.upstream);
+                        body = aHe('tbody', bodys[0]);
+                        tmp = '{}{}{}'.format(tmp, aHe('h3', group), aHe('table', '{}{}'.format(head, body)));
                     }
-                    out += '</div>';
+                    out = '{}{}'.format(out, aHe('div id="{}"'.format(vtsStatusVars.ids.upstream),
+                                                 '{}{}'.format(aHe('h2', vtsStatusVars.titles.upstream), tmp)));
                 }
 
                 /* cacheZones */
-                if ('cacheZones' in it) {
-                    out += '<div id="cacheZones"><h2>Caches</h2><table><thead><tr><th rowspan="2">Zone</th><th colspan="2">Size</th><th colspan="4">Traffic</th><th colspan="9">Cache</th></tr><tr><th>Capacity</th><th>Used</th><th>Sent</th><th>Rcvd</th><th>Sent/s</th><th>Rcvd/s</th><th>Miss</th><th>Bypass</th><th>Expired</th><th>Stale</th><th>Updating</th><th>Revalidated</th><th>Hit</th><th>Scarce</th><th>Total</th></tr></thead><tbody>';
-                    var n = 0;
-                    for(var name in it.cacheZones) {
-                        var zone = it.cacheZones[name];
-                        out += '<tr ';
-                        out += ( (n++ % 2) ? 'class="odd"' : '');
-                        out += '><th>';
-                        out += (name);
-                        out += '</th><td>';
-                        out += (bTh(zone.maxSize));
-                        out += '</td><td>';
-                        out += (bTh(zone.usedSize));
-                        out += '</td>';
-
-                        out += '<td>';
-                        out += (bTh(zone.outBytes + zone.overCounts['maxIntegerSize'] * zone.overCounts['outBytes']));
-                        out += '</td><td>';
-                        out += (bTh(zone.inBytes + zone.overCounts['maxIntegerSize'] * zone.overCounts['inBytes']));
-                        out += '</td><td>';
-                        out += (bTh(aPs.getValue('cacheZones.' + name + '.outBytes', zone.outBytes)));
-                        out += '</td><td>';
-                        out += (bTh(aPs.getValue('cacheZones.' + name + '.inBytes', zone.inBytes)));
-
-                        out += '</td>';
-                        var cacheTotal = 0;
-                        var i = 0;
-                        for(var code in zone.responses) {
-                            out += '<td>';
-                            out += (zone.responses[code] + zone.overCounts['maxIntegerSize'] * zone.overCounts[code]);
-                            out += '</td>';
-                            cacheTotal += zone.responses[code] + zone.overCounts['maxIntegerSize'] * zone.overCounts[code];
-                        }
-                        out += '<td>' + cacheTotal + '</td></tr>';
-
-                    }
-                    out += '</tbody></table></div>';
+                if (vtsStatusVars.ids.cache in it) {
+                    head = templateCacheHeader();
+                    bodys[0] = templateCacheZone(it.cacheZones, 'cache', vtsStatusVars.ids.cache);
+                    body = aHe('tbody', bodys[0]);
+                    out = '{}{}'.format(out, aHe('div id="{}"'.format(vtsStatusVars.ids.cache),
+                                                  '{}{}'.format(aHe('h2', vtsStatusVars.titles.cache),
+                                                                aHe('table', '{}{}'.format(head, body)))));
                 }
 
                 return out;
