@@ -49,6 +49,7 @@ Table of Contents
  * [vhost_traffic_status_display](#vhost_traffic_status_display)
  * [vhost_traffic_status_display_format](#vhost_traffic_status_display_format)
  * [vhost_traffic_status_display_jsonp](#vhost_traffic_status_display_jsonp)
+ * [vhost_traffic_status_display_sum_key](#vhost_traffic_status_display_sum_key)
  * [vhost_traffic_status_filter](#vhost_traffic_status_filter)
  * [vhost_traffic_status_filter_by_host](#vhost_traffic_status_filter_by_host)
  * [vhost_traffic_status_filter_by_set_key](#vhost_traffic_status_filter_by_set_key)
@@ -963,6 +964,16 @@ If you set `jsonp`, will respond with a JSONP callback function(default: *ngx_ht
 **Context** | http, server, location
 
 `Description:` Sets the callback name for the JSONP.
+
+### vhost_traffic_status_display_sum_key
+
+-   | -
+--- | ---
+**Syntax**  | **vhost_traffic_status_display_sum_key** *name*
+**Default** | *
+**Context** | http, server, location
+
+`Description:` Sets the sum key string in serverZones field's JSON. The default sum key string is the "*".
 
 ### vhost_traffic_status_filter
 

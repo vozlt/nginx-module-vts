@@ -123,8 +123,6 @@ ngx_rbtree_node_t *ngx_http_vhost_traffic_status_find_node(ngx_http_request_t *r
 ngx_int_t ngx_http_vhost_traffic_status_node_member_cmp(ngx_str_t *member, const char *name);
 ngx_atomic_uint_t ngx_http_vhost_traffic_status_node_member(ngx_http_vhost_traffic_status_node_t *vtsn,
     ngx_str_t *member);
-ngx_int_t ngx_http_vhost_traffic_status_node_variable(ngx_http_request_t *r,
-    ngx_http_variable_value_t *v, uintptr_t data);
 
 
 #endif /* _NGX_HTTP_VTS_NODE_H_INCLUDED_ */

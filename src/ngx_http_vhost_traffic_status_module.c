@@ -5,6 +5,7 @@
 
 
 #include "ngx_http_vhost_traffic_status_module.h"
+#include "ngx_http_vhost_traffic_status_variables.h"
 #include "ngx_http_vhost_traffic_status_shm.h"
 #include "ngx_http_vhost_traffic_status_filter.h"
 #include "ngx_http_vhost_traffic_status_limit.h"
@@ -21,7 +22,7 @@ static ngx_int_t ngx_http_vhost_traffic_status_init_zone(
 static char *ngx_http_vhost_traffic_status_zone(ngx_conf_t *cf,
     ngx_command_t *cmd, void *conf);
 
-static ngx_int_t ngx_http_vhost_traffic_status_add_variables(ngx_conf_t *cf);
+static ngx_int_t ngx_http_vhost_traffic_status_preconfiguration(ngx_conf_t *cf);
 static void *ngx_http_vhost_traffic_status_create_main_conf(ngx_conf_t *cf);
 static char *ngx_http_vhost_traffic_status_init_main_conf(ngx_conf_t *cf,
     void *conf);
@@ -132,12 +133,19 @@ static ngx_command_t ngx_http_vhost_traffic_status_commands[] = {
       offsetof(ngx_http_vhost_traffic_status_loc_conf_t, jsonp),
       NULL },
 
+    { ngx_string("vhost_traffic_status_display_sum_key"),
+      NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      ngx_conf_set_str_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, sum_key),
+      NULL },
+
     ngx_null_command
 };
 
 
 static ngx_http_module_t ngx_http_vhost_traffic_status_module_ctx = {
-    ngx_http_vhost_traffic_status_add_variables,    /* preconfiguration */
+    ngx_http_vhost_traffic_status_preconfiguration, /* preconfiguration */
     ngx_http_vhost_traffic_status_init,             /* postconfiguration */
 
     ngx_http_vhost_traffic_status_create_main_conf, /* create main configuration */
@@ -164,99 +172,6 @@ ngx_module_t ngx_http_vhost_traffic_status_module = {
     NULL,                                        /* exit process */
     NULL,                                        /* exit master */
     NGX_MODULE_V1_PADDING
-};
-
-
-static ngx_http_variable_t  ngx_http_vhost_traffic_status_vars[] = {
-
-    { ngx_string("vts_request_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_request_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_in_bytes"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_in_bytes),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_out_bytes"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_out_bytes),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_1xx_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_1xx_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_2xx_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_2xx_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_3xx_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_3xx_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_4xx_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_4xx_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_5xx_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_5xx_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_request_time"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_request_time),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-#if (NGX_HTTP_CACHE)
-    { ngx_string("vts_cache_miss_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_cache_miss_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_cache_bypass_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_cache_bypass_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_cache_expired_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_cache_expired_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_cache_stale_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_cache_stale_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_cache_updating_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_cache_updating_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_cache_revalidated_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_cache_revalidated_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_cache_hit_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_cache_hit_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_cache_scarce_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_cache_scarce_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-#endif
-
-    { ngx_null_string, NULL, NULL, 0, 0, 0 }
 };
 
 
@@ -536,21 +451,9 @@ ngx_http_vhost_traffic_status_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *con
 
 
 static ngx_int_t
-ngx_http_vhost_traffic_status_add_variables(ngx_conf_t *cf)
+ngx_http_vhost_traffic_status_preconfiguration(ngx_conf_t *cf)
 {
-    ngx_http_variable_t  *var, *v;
-
-    for (v = ngx_http_vhost_traffic_status_vars; v->name.len; v++) {
-        var = ngx_http_add_variable(cf, &v->name, v->flags);
-        if (var == NULL) {
-            return NGX_ERROR;
-        }
-
-        var->get_handler = v->get_handler;
-        var->data = v->data;
-    }
-
-    return NGX_OK;
+    return ngx_http_vhost_traffic_status_add_variables(cf);
 }
 
 
@@ -736,6 +639,8 @@ ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf, void *parent, void 
                          NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSON);
     ngx_conf_merge_str_value(conf->jsonp, prev->jsonp,
                              NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_JSONP);
+    ngx_conf_merge_str_value(conf->sum_key, prev->sum_key,
+                             NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_SUM_KEY);
 
     name = ctx->shm_name;
 

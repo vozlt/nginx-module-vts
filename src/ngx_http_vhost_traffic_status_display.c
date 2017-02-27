@@ -1168,7 +1168,6 @@ ngx_http_vhost_traffic_status_display_set(ngx_http_request_t *r,
     u_char *buf)
 {
     u_char                                    *o, *s;
-    ngx_str_t                                  stats;
     ngx_rbtree_node_t                         *node;
     ngx_http_vhost_traffic_status_ctx_t       *ctx;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
@@ -1191,9 +1190,7 @@ ngx_http_vhost_traffic_status_display_set(ngx_http_request_t *r,
 
     buf = ngx_http_vhost_traffic_status_display_set_server(r, buf, node);
 
-    ngx_str_set(&stats, "*");
-
-    buf = ngx_http_vhost_traffic_status_display_set_server_node(r, buf, &stats,
+    buf = ngx_http_vhost_traffic_status_display_set_server_node(r, buf, &vtscf->sum_key,
                                                                 &vtscf->stats);
 
     buf--;

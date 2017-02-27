@@ -7,6 +7,7 @@
 #ifndef _NGX_HTTP_VTS_MODULE_H_INCLUDED_
 #define _NGX_HTTP_VTS_MODULE_H_INCLUDED_
 
+
 #include <nginx.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
@@ -36,6 +37,7 @@
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_SHM_NAME     "ngx_http_vhost_traffic_status"
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_SHM_SIZE     0xfffff
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_JSONP        "ngx_http_vhost_traffic_status_jsonp_callback"
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_SUM_KEY      "*"
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_S           "{"
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_OBJECT_S    "\"%V\":{"
@@ -424,6 +426,7 @@ typedef struct {
     ngx_msec_t                                       start_msec;
     ngx_flag_t                                       format;
     ngx_str_t                                        jsonp;
+    ngx_str_t                                        sum_key;
 
     ngx_rbtree_node_t                              **node_caches;
 } ngx_http_vhost_traffic_status_loc_conf_t;
