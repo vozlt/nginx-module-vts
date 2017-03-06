@@ -412,6 +412,9 @@ typedef struct {
     /* array of ngx_http_vhost_traffic_status_filter_t */
     ngx_array_t                                     *filter_keys;
 
+    /* array of ngx_http_vhost_traffic_status_filter_variable_t */
+    ngx_array_t                                     *filter_vars;
+
     ngx_flag_t                                       limit;
     ngx_flag_t                                       limit_check_duplicate;
 

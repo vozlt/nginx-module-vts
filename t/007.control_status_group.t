@@ -16,7 +16,33 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: /status/control?cmd=status&group=server&zone=*
+=== TEST 1: /status/control?cmd=status&group=server&zone=::main
+--- http_config
+    vhost_traffic_status_zone;
+--- config
+    location /status {
+        vhost_traffic_status_display;
+        vhost_traffic_status_display_format json;
+        access_log off;
+    }
+--- user_files eval
+[
+    ['storage/control/file.txt' => 'server:OK']
+]
+--- request eval
+[
+    'GET /storage/control/file.txt',
+    'GET /status/control?cmd=status&group=server&zone=::main',
+]
+--- response_body_like eval
+[
+    'OK',
+    'hostName'
+]
+
+
+
+=== TEST 2: /status/control?cmd=status&group=server&zone=*
 --- http_config
     vhost_traffic_status_zone;
 --- config
@@ -42,7 +68,7 @@ __DATA__
 
 
 
-=== TEST 2: /status/control?cmd=status&group=filter&zone=*
+=== TEST 3: /status/control?cmd=status&group=filter&zone=*
 --- http_config
     vhost_traffic_status_zone;
 --- config
@@ -72,7 +98,7 @@ __DATA__
 
 
 
-=== TEST 3: /status/control?cmd=status&group=upstream@group&zone=*
+=== TEST 4: /status/control?cmd=status&group=upstream@group&zone=*
 --- http_config
     vhost_traffic_status_zone;
     upstream backend {
@@ -108,7 +134,7 @@ __DATA__
 
 
 
-=== TEST 4: /status/control?cmd=status&group=upstream@alone&zone=*
+=== TEST 5: /status/control?cmd=status&group=upstream@alone&zone=*
 --- http_config
     vhost_traffic_status_zone;
 --- config
@@ -137,7 +163,7 @@ __DATA__
 
 
 
-=== TEST 5: /status/control?cmd=status&group=cache&zone=*
+=== TEST 6: /status/control?cmd=status&group=cache&zone=*
 --- http_config
     vhost_traffic_status_zone;
     proxy_cache_path cache_one levels=1:2 keys_zone=cache_one:2m inactive=1m max_size=4m;

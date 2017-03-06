@@ -28,6 +28,7 @@ Table of Contents
     * [To delete fully zones](#to-delete-fully-zones)
     * [To delete group zones](#to-delete-group-zones)
     * [To delete each zones](#to-delete-each-zones)
+* [Set](#set)
 * [JSON](#json)
  * [Json used by status](#json-used-by-status)
  * [Json used by control](#json-used-by-control)
@@ -58,19 +59,20 @@ Table of Contents
  * [vhost_traffic_status_limit_traffic](#vhost_traffic_status_limit_traffic)
  * [vhost_traffic_status_limit_traffic_by_set_key](#vhost_traffic_status_limit_traffic_by_set_key)
  * [vhost_traffic_status_limit_check_duplicate](#vhost_traffic_status_limit_check_duplicate)
+ * [vhost_traffic_status_set_by_filter](#vhost_traffic_status_set_by_filter)
 * [See Also](#see-also)
 * [TODO](#todo)
 * [Donation](#donation)
 * [Author](#author)
 
 ## Version
-This document describes nginx-module-vts `v0.1.12` released on 7 Feb 2017.
+This document describes nginx-module-vts `v0.1.13` released on 6 Mar 2017.
 
 ## Dependencies
 * [nginx](http://nginx.org)
 
 ## Compatibility
-* 1.11.x (last tested: 1.11.9)
+* 1.11.x (last tested: 1.11.10)
 * 1.10.x (last tested: 1.10.3)
 * 1.8.x (last tested: 1.8.0)
 * 1.6.x (last tested: 1.6.3)
@@ -336,7 +338,7 @@ The request responds with a JSON document.
 ```Nginx
 http {
 
-    geoip_country                   /usr/share/GeoIP/GeoIP.dat;
+    geoip_country /usr/share/GeoIP/GeoIP.dat;
 
     vhost_traffic_status_zone;
     vhost_traffic_status_filter_by_set_key $geoip_country_code country::*;
@@ -355,7 +357,8 @@ http {
             vhost_traffic_status_display;
             vhost_traffic_status_display_format html;
         }
-    }                                                                                                                                                                                           }
+    }
+}
 ```
 
 If it set as above, then the control uri is like `example.org/status/control`.
@@ -396,6 +399,8 @@ This is similar to the `status/format/json` except that it can get each zones.
  * /status/control?cmd=status&group=*
 
 #### To get group zones
+* mainZones
+ * /status/control?cmd=status&group=server&zone=::main
 * serverZones
  * /status/control?cmd=status&group=server&zone=*
 * filterZones
@@ -406,6 +411,8 @@ This is similar to the `status/format/json` except that it can get each zones.
  * /status/control?cmd=status&group=upstream@alone&zone=*
 * cacheZones
  * /status/control?cmd=status&group=cache&zone=*
+
+The **mainZones** values are default status values including `hostName`, `nginxVersion`, `loadMsec`, `nowMsec`, `connections`.
 
 #### To get each zones
 * single zone in serverZones
@@ -478,6 +485,57 @@ It delete the specified zones in shared memory.
  * /status/control?cmd=delete&group=upstream@alone&zone=*`name`*
 * single zone in cacheZones
  * /status/control?cmd=delete&group=cache&zone=*`name`*
+
+## Set
+It can get the status values in nginx configuration separately using `vhost_traffic_status_set_by_filter` directive.
+It can acquire almost all status values and the obtained value is stored in user-defined-variable which is first argument.
+
+* Directive Syntax
+ * **vhost_traffic_status_set_by_filter** *$variable* *group*/*zone*/*name*
+
+```Nginx
+http {
+
+    geoip_country /usr/share/GeoIP/GeoIP.dat;
+
+    vhost_traffic_status_zone;
+    vhost_traffic_status_filter_by_set_key $geoip_country_code country::*;
+
+    ...
+    upstream backend {
+        10.10.10.11:80;
+        10.10.10.12:80;
+    }
+
+    server {
+
+        server_name example.org;
+
+        ...
+
+        vhost_traffic_status_filter_by_set_key $geoip_country_code country::$server_name;
+
+        vhost_traffic_status_set_by_filter $requestCounter server/example.org/requestCounter;
+        vhost_traffic_status_set_by_filter $requestCounterKR filter/country::example.org@KR/requestCounter;
+
+        location /backend {
+            vhost_traffic_status_set_by_filter $requestCounterB1 upstream@group/backend@10.10.10.11:80/requestCounter;
+            proxy_pass http://backend;
+        }
+    }
+}
+```
+
+The above settings are as follows:
+
+* $requestCounter
+ * serverZones -> example.org -> requestCounter
+* $requestCounterKR
+ * filterZones -> country::example.org -> KR -> requestCounter
+* $requestCounterB1
+ * upstreamZones -> backend -> 10.0.10.11:80 -> requestCounter
+
+Please see the [vhost_traffic_status_set_by_filter](#vhost_traffic_status_set_by_filter) directive for detailed usage.
 
 ## JSON
 The following status information is provided in the JSON format:
@@ -1237,6 +1295,93 @@ The *member* is the same as `vhost_traffic_status_limit_traffic` directive.
 `Description:` Enables or disables the deduplication of vhost_traffic_status_limit_by_set_key.
 It is processed only one of duplicate values(`member` | `key` + `member`)
 in each directives(http, server, location) if this option is enabled.
+
+### vhost_traffic_status_set_by_filter
+
+-   | -
+--- | ---
+**Syntax**  | **vhost_traffic_status_set_by_filter** *$variable* *group*/*zone*/*name*
+**Default** | -
+**Context** | http, server, location, if
+
+`Description:` Get the specified status value stored in shared memory.
+It can acquire almost all status values and the obtained value is stored in *$variable* which is first argument.
+
+* **group**
+ * server
+ * filter
+ * upstream@alone
+ * upstream@group
+ * cache
+* **zone**
+ * server
+   * *name*
+ * filter
+   * *filter_group*@*name*
+ * upstream@group
+   * *upstream_group*@*name*
+ * upstream@alone
+   * @*name*
+ * cache
+   * *name*
+* **name**
+ * requestCounter
+   * The total number of client requests received from clients.
+ * requestMsec
+   * The average of request processing times in milliseconds.
+ * responseMsec
+   * The average of only upstream response processing times in milliseconds.
+ * inBytes
+   * The total number of bytes received from clients.
+ * outBytes
+   * The total number of bytes sent to clients.
+ * 1xx, 2xx, 3xx, 4xx, 5xx
+   * The number of responses with status codes 1xx, 2xx, 3xx, 4xx, and 5xx.
+ * cacheMaxSize
+   * The limit on the maximum size of the cache specified in the configuration.
+ * cacheUsedSize
+   * The current size of the cache.
+ * cacheMiss
+   * The number of cache miss.
+ * cacheBypass
+   * The number of cache bypass.
+ * cacheExpired
+   * The number of cache expired.
+ * cacheStale
+   * The number of cache stale.
+ * cacheUpdating
+   * The number of cache updating.
+ * cacheRevalidated
+   * The number of cache revalidated.
+ * cacheHit
+   * The number of cache hit.
+ * cacheScarce
+   * The number of cache scare.
+ * weight
+   * Current weight setting of the server.
+ * maxFails
+   * Current max_fails setting of the server.
+ * failTimeout
+   * Current fail_timeout setting of the server.
+ * backup
+   * Current backup setting of the server.(0\|1)
+ * down
+   * Current down setting of the server.(0\|1)
+
+`Caveats:` The *name* is case sensitive. All return values take the integer type.
+
+For examples:
+* requestCounter in serverZones
+ * **vhost_traffic_status_set_by_filter** `$requestCounter` `server/example.org/requestCounter`
+* requestCounter in filterZones
+ * **vhost_traffic_status_set_by_filter** `$requestCounter` `filter/country::example.org@KR/requestCounter`
+* requestCounter in upstreamZones
+ * **vhost_traffic_status_set_by_filter** `$requestCounter` `upstream@group/backend@10.10.10.11:80/requestCounter`
+* requestCounter in upstreamZones::nogroups
+ * **vhost_traffic_status_set_by_filter** `$requestCounter` `upstream@alone/10.10.10.11:80/requestCounter`
+* cacheHit in cacheZones
+ * **vhost_traffic_status_set_by_filter** `$cacheHit` `cache/my_cache_name/cacheHit`
+
 
 ## See Also
 * [nginx-module-sts](https://github.com/vozlt/nginx-module-sts)

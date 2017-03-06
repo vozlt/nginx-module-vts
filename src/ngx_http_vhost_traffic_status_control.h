@@ -40,6 +40,7 @@ typedef struct {
     ngx_str_t                   *arg_cmd;
     ngx_str_t                   *arg_group;
     ngx_str_t                   *arg_zone;
+    ngx_str_t                   *arg_name;
     ngx_uint_t                   range;
     ngx_uint_t                   count;
     u_char                     **buf;
@@ -55,6 +56,9 @@ void ngx_http_vhost_traffic_status_node_delete(
 void ngx_http_vhost_traffic_status_node_reset(
     ngx_http_vhost_traffic_status_control_t *control);
 
+void ngx_http_vhost_traffic_status_node_upstream_lookup(
+    ngx_http_vhost_traffic_status_control_t *control,
+    ngx_http_upstream_server_t *us);
 
 #endif /* _NGX_HTTP_VTS_CONTROL_H_INCLUDED_ */
 

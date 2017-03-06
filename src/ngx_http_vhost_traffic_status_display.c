@@ -79,10 +79,19 @@ ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
 
     /* init control */
     control = ngx_pcalloc(r->pool, sizeof(ngx_http_vhost_traffic_status_control_t));
+    if (control == NULL) {
+        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+    }
+
     control->r = r;
     control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_NONE;
     control->group = -2;
+
     control->zone = ngx_pcalloc(r->pool, sizeof(ngx_str_t));
+    if (control->zone == NULL) {
+        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+    }
+
     control->arg_cmd = &arg_cmd;
     control->arg_group = &arg_group;
     control->arg_zone = &arg_zone;
@@ -430,6 +439,9 @@ ngx_http_vhost_traffic_status_display_get_time_queue(
     }
 
     p = ngx_pcalloc(r->pool, q->len * NGX_INT_T_LEN);
+    if (p == NULL) {
+        return (u_char *) "";
+    }
 
     s = p;
 

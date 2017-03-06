@@ -8,9 +8,7 @@
 #include "ngx_http_vhost_traffic_status_control.h"
 #include "ngx_http_vhost_traffic_status_display.h"
 
-static void ngx_http_vhost_traffic_status_node_upstream_lookup(
-    ngx_http_vhost_traffic_status_control_t *control,
-    ngx_http_upstream_server_t *us);
+
 static void ngx_http_vhost_traffic_status_node_status_all(
     ngx_http_vhost_traffic_status_control_t *control);
 static void ngx_http_vhost_traffic_status_node_status_group(
@@ -38,7 +36,7 @@ static void ngx_http_vhost_traffic_status_node_reset_zone(
     ngx_http_vhost_traffic_status_control_t *control);
 
 
-static void
+void
 ngx_http_vhost_traffic_status_node_upstream_lookup(
     ngx_http_vhost_traffic_status_control_t *control,
     ngx_http_upstream_server_t *usn)
@@ -250,6 +248,21 @@ ngx_http_vhost_traffic_status_node_status_zone(
     ngx_http_vhost_traffic_status_node_t  *vtsn;
 
     ctx = ngx_http_get_module_main_conf(control->r, ngx_http_vhost_traffic_status_module);
+
+    if (control->group == NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_NO
+        && control->zone->len == 6
+        && ngx_strncasecmp(control->zone->data, (u_char *) "::main", 6) == 0)
+    {
+        *control->buf = ngx_sprintf(*control->buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_S);
+        *control->buf = ngx_http_vhost_traffic_status_display_set_main(control->r,
+                            *control->buf);
+        (*control->buf)--;
+         *control->buf = ngx_sprintf(*control->buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_E);
+
+        control->count++;
+
+        return;
+    } 
 
     rc = ngx_http_vhost_traffic_status_node_generate_key(control->r->pool, &key, control->zone,
                                                          control->group);

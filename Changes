@@ -1,3 +1,9 @@
+v0.1.13 [Mon Mar 06 2017 YoungJoo.Kim <vozltx@gmail.com>]
+    * Feature: added vhost_traffic_status_set_by_filter to support
+      stats values access
+
+    * Feature: added "::main" in control to get only default status values
+
 v0.1.12 [Tue Feb 07 2017 YoungJoo.Kim <vozltx@gmail.com>]
     * Feature: added request_time, request_times sections for
       issues/(43|57) and pull/67
