@@ -3,6 +3,10 @@ v0.1.13 [Mon Mar 06 2017 YoungJoo.Kim <vozltx@gmail.com>]
       stats values access
 
     * Feature: added "::main" in control to get only default status values
+    
+    * Feature: added the stream status modules at new repository
+      https://github.com/vozlt/nginx-module-sts
+      https://github.com/vozlt/nginx-module-stream-sts
 
 v0.1.12 [Tue Feb 07 2017 YoungJoo.Kim <vozltx@gmail.com>]
     * Feature: added request_time, request_times sections for

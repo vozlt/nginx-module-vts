@@ -1388,7 +1388,6 @@ For examples:
 * [nginx-module-stream-sts](https://github.com/vozlt/nginx-module-stream-sts)
 
 ## TODO
-* Add support for implementing stats values access in nginx config.
 
 ## Donation
 [![License](http://img.shields.io/badge/PAYPAL-DONATE-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=PWWSYKQ9VKH38&lc=KR&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
