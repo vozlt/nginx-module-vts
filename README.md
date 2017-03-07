@@ -1384,8 +1384,15 @@ For examples:
 
 
 ## See Also
-* [nginx-module-sts](https://github.com/vozlt/nginx-module-sts)
-* [nginx-module-stream-sts](https://github.com/vozlt/nginx-module-stream-sts)
+* Stream traffic status
+ * [nginx-module-sts](https://github.com/vozlt/nginx-module-sts)
+ * [nginx-module-stream-sts](https://github.com/vozlt/nginx-module-stream-sts)
+
+* Prometheus
+ * [nginx-vts-exporter](https://github.com/hnlq715/nginx-vts-exporter)
+
+* System protection
+ * [nginx-module-sysguard](https://github.com/vozlt/nginx-module-sysguard)
 
 ## TODO
 
