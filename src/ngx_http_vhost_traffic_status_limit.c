@@ -23,7 +23,7 @@ ngx_http_vhost_traffic_status_limit_handler(ngx_http_request_t *r)
 
     vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
 
-    if (!vtscf->limit) {
+    if (!ctx->enable || !vtscf->limit) {
         return NGX_DECLINED;
     }
 

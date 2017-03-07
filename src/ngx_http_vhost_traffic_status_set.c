@@ -30,10 +30,14 @@ ngx_int_t
 ngx_http_vhost_traffic_status_set_handler(ngx_http_request_t *r)
 {
     ngx_int_t                                  rc;
+    ngx_http_vhost_traffic_status_ctx_t       *ctx;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
 
+    ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
+
     vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
-    if (!vtscf->filter) {
+
+    if (!ctx->enable || !vtscf->filter) {
         return NGX_DECLINED;
     }
 
