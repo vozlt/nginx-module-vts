@@ -60,6 +60,12 @@
     "\"accepted\":%uA,"                                                        \
     "\"handled\":%uA,"                                                         \
     "\"requests\":%uA"                                                         \
+    "},"                                                                       \
+    "\"sharedZones\":{"                                                        \
+    "\"name\":\"%V\","                                                         \
+    "\"maxSize\":%ui,"                                                         \
+    "\"usedSize\":%ui,"                                                        \
+    "\"usedNode\":%ui"                                                         \
     "},"
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_S "\"serverZones\":{"

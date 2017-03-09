@@ -8,6 +8,9 @@
 #define _NGX_HTTP_VTS_DISPLAY_H_INCLUDED_
 
 
+ngx_int_t ngx_http_vhost_traffic_status_display_get_size(
+    ngx_http_request_t *r, ngx_int_t format);
+
 u_char *ngx_http_vhost_traffic_status_display_get_time_queue(
     ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_time_queue_t *q,

@@ -23,6 +23,50 @@ static ngx_int_t ngx_http_vhost_traffic_status_shm_add_filter_node(ngx_http_requ
     ngx_array_t *filter_keys);
 
 
+void
+ngx_http_vhost_traffic_status_shm_info_node(ngx_http_request_t *r,
+    ngx_http_vhost_traffic_status_shm_info_t *shm_info,
+    ngx_rbtree_node_t *node)
+{
+    ngx_uint_t                             size;
+    ngx_http_vhost_traffic_status_ctx_t   *ctx;
+    ngx_http_vhost_traffic_status_node_t  *vtsn;
+
+    ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
+
+    if (node != ctx->rbtree->sentinel) {
+        vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
+
+        size = offsetof(ngx_rbtree_node_t, color)
+               + offsetof(ngx_http_vhost_traffic_status_node_t, data)
+               + vtsn->len;
+
+        shm_info->used_size += size;
+        shm_info->used_node++;
+
+        ngx_http_vhost_traffic_status_shm_info_node(r, shm_info, node->left);
+        ngx_http_vhost_traffic_status_shm_info_node(r, shm_info, node->right);
+    }
+}
+
+
+void
+ngx_http_vhost_traffic_status_shm_info(ngx_http_request_t *r,
+    ngx_http_vhost_traffic_status_shm_info_t *shm_info)
+{
+    ngx_http_vhost_traffic_status_ctx_t  *ctx;
+
+    ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
+
+    ngx_memzero(shm_info, sizeof(ngx_http_vhost_traffic_status_shm_info_t));
+
+    shm_info->name = &ctx->shm_name;
+    shm_info->max_size = ctx->shm_size;
+
+    ngx_http_vhost_traffic_status_shm_info_node(r, shm_info, ctx->rbtree->root);
+}
+
+
 static ngx_int_t
 ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
     ngx_str_t *key, unsigned type)
@@ -35,6 +79,7 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_ctx_t       *ctx;
     ngx_http_vhost_traffic_status_node_t      *vtsn;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
+    ngx_http_vhost_traffic_status_shm_info_t  *shm_info;
 
     ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
 
@@ -62,6 +107,18 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
 
         node = ngx_slab_alloc_locked(shpool, size);
         if (node == NULL) {
+            shm_info = ngx_pcalloc(r->pool, sizeof(ngx_http_vhost_traffic_status_shm_info_t));
+            if (shm_info == NULL) {
+                return NGX_ERROR;
+            }
+
+            ngx_http_vhost_traffic_status_shm_info(r, shm_info);
+
+            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                          "shm_add_node::ngx_slab_alloc_locked() failed: "
+                          "used_size[%ui], used_node[%ui]",
+                          shm_info->used_size, shm_info->used_node);
+
             ngx_shmtx_unlock(&shpool->mutex);
             return NGX_ERROR;
         }

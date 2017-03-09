@@ -164,6 +164,12 @@ JSON document contains as follows:
         "handled":...,
         "requests":...
     },
+    "sharedZones": {
+        "name":...,
+        "maxSize":...,
+        "usedSize":...,
+        "usedNode":...
+    },
     "serverZones": {
         "...":{
             "requestCounter":...,
@@ -568,6 +574,15 @@ The following status information is provided in the JSON format:
    * The total number of handled client connections.
  * requests
    * The total number of requested client connections.
+* sharedZones
+ * name
+   * The name of shared memory specified in the configuration.(default: `vhost_traffic_status`)
+ * maxSize
+   * The limit on the maximum size of the shared memory specified in the configuration.
+ * usedSize
+   * The current size of the shared memory.
+ * usedNode
+   * The current number of node using in shared memory. It can get an approximate size for one node with the following formula: (*usedSize* / *usedNode*)
 * serverZones
  * requestCounter
    * The total number of client requests received from clients.

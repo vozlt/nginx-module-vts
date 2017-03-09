@@ -5,6 +5,7 @@
 
 
 #include "ngx_http_vhost_traffic_status_module.h"
+#include "ngx_http_vhost_traffic_status_shm.h"
 #include "ngx_http_vhost_traffic_status_filter.h"
 #include "ngx_http_vhost_traffic_status_display.h"
 #include "ngx_http_vhost_traffic_status_control.h"
@@ -63,17 +64,13 @@ done:
 static ngx_int_t
 ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
 {
-    size_t                                     size;
-    ngx_int_t                                  rc;
+    ngx_int_t                                  size, rc;
     ngx_str_t                                  type, alpha, arg_cmd, arg_group, arg_zone;
     ngx_buf_t                                 *b;
     ngx_chain_t                                out;
     ngx_slab_pool_t                           *shpool;
-    ngx_http_vhost_traffic_status_ctx_t       *ctx;
     ngx_http_vhost_traffic_status_control_t   *control;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
-
-    ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
 
     vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
 
@@ -188,11 +185,17 @@ ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
     }
 
     if (control->command == NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_STATUS) {
-        size = ctx->shm_size;
+        size = ngx_http_vhost_traffic_status_display_get_size(r,
+                   NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSON);
+        if (size == NGX_ERROR) {
+            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                          "display_handler_control::display_get_size() failed");
+            return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        }
 
     } else {
         size = sizeof(NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_CONTROL)
-               + arg_cmd.len + arg_group.len + arg_zone.len + 256;
+               + arg_cmd.len + arg_group.len + arg_zone.len + ngx_pagesize;
     }
 
     ngx_str_set(&type, "application/json");
@@ -271,10 +274,10 @@ ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
 static ngx_int_t
 ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
 {
-    size_t                                     size, len;
+    size_t                                     len;
     u_char                                    *o, *s;
     ngx_str_t                                  uri, type;
-    ngx_int_t                                  format, rc;
+    ngx_int_t                                  size, format, rc;
     ngx_buf_t                                 *b;
     ngx_chain_t                                out;
     ngx_slab_pool_t                           *shpool;
@@ -352,15 +355,12 @@ ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
     }
 
     if (format == NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSON) {
-        size = ctx->shm_size;
         ngx_str_set(&type, "application/json");
 
     } else if (format == NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSONP) {
-        size = ctx->shm_size;
         ngx_str_set(&type, "application/javascript");
 
     } else {
-        size = sizeof(NGX_HTTP_VHOST_TRAFFIC_STATUS_HTML_DATA) + ngx_pagesize ;
         ngx_str_set(&type, "text/html");
     }
 
@@ -375,6 +375,13 @@ ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
         if (rc == NGX_ERROR || rc > NGX_OK || r->header_only) {
             return rc;
         }
+    }
+
+    size = ngx_http_vhost_traffic_status_display_get_size(r, format);
+    if (size == NGX_ERROR) {
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                      "display_handler_default::display_get_size() failed");
+        return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     b = ngx_create_temp_buf(r->pool, size);
@@ -421,6 +428,48 @@ ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
     }
 
     return ngx_http_output_filter(r, &out);
+}
+
+
+ngx_int_t
+ngx_http_vhost_traffic_status_display_get_size(ngx_http_request_t *r,
+    ngx_int_t format)
+{
+    ngx_uint_t                                 size;
+    ngx_http_vhost_traffic_status_shm_info_t  *shm_info;
+
+    shm_info = ngx_pcalloc(r->pool, sizeof(ngx_http_vhost_traffic_status_shm_info_t));
+    if (shm_info == NULL) {
+        return NGX_ERROR;
+    }
+
+    ngx_http_vhost_traffic_status_shm_info(r, shm_info);
+
+    size = 0;
+
+    switch (format) {
+
+    case NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSON:
+    case NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSONP:
+        size = sizeof(ngx_http_vhost_traffic_status_node_t) / NGX_PTR_SIZE
+               * NGX_ATOMIC_T_LEN * shm_info->used_node 
+               + (shm_info->used_node * 1024);
+        break;
+
+    case NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_HTML:
+        size = sizeof(NGX_HTTP_VHOST_TRAFFIC_STATUS_HTML_DATA) + ngx_pagesize;
+        break;
+    }
+
+    if (size <= 0) {
+        size = shm_info->max_size;
+    }
+
+    ngx_log_debug3(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "vts::display_get_size(): size[%ui] used_size[%ui], used_node[%ui]",
+                   size, shm_info->used_size, shm_info->used_node);
+
+    return size;
 }
 
 
@@ -483,6 +532,7 @@ ngx_http_vhost_traffic_status_display_set_main(ngx_http_request_t *r,
 {
     ngx_atomic_int_t                           ap, hn, ac, rq, rd, wr, wa;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
+    ngx_http_vhost_traffic_status_shm_info_t  *shm_info;
 
     vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
 
@@ -494,9 +544,18 @@ ngx_http_vhost_traffic_status_display_set_main(ngx_http_request_t *r,
     wr = *ngx_stat_writing;
     wa = *ngx_stat_waiting;
 
+    shm_info = ngx_pcalloc(r->pool, sizeof(ngx_http_vhost_traffic_status_shm_info_t));
+    if (shm_info == NULL) {
+        return buf;
+    }
+
+    ngx_http_vhost_traffic_status_shm_info(r, shm_info);
+
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_MAIN, &ngx_cycle->hostname,
                       NGINX_VERSION, vtscf->start_msec, ngx_current_msec,
-                      ac, rd, wr, wa, ap, hn, rq);
+                      ac, rd, wr, wa, ap, hn, rq,
+                      shm_info->name, shm_info->max_size,
+                      shm_info->used_size, shm_info->used_node);
 
     return buf;
 }
