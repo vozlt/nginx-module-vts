@@ -41,6 +41,13 @@ static ngx_conf_enum_t  ngx_http_vhost_traffic_status_display_format[] = {
 };
 
 
+static ngx_conf_enum_t  ngx_http_vhost_traffic_status_average_method[] = {
+    { ngx_string("AMM"), NGX_HTTP_VHOST_TRAFFIC_STATUS_AVERAGE_METHOD_AMM },
+    { ngx_string("WMA"), NGX_HTTP_VHOST_TRAFFIC_STATUS_AVERAGE_METHOD_WMA },
+    { ngx_null_string, 0 }
+};
+
+
 static ngx_command_t ngx_http_vhost_traffic_status_commands[] = {
 
     { ngx_string("vhost_traffic_status"),
@@ -148,6 +155,13 @@ static ngx_command_t ngx_http_vhost_traffic_status_commands[] = {
       NGX_HTTP_LOC_CONF_OFFSET,
       0,
       NULL },
+
+    { ngx_string("vhost_traffic_status_average_method"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      ngx_conf_set_enum_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, average_method),
+      &ngx_http_vhost_traffic_status_average_method },
 
     ngx_null_command
 };
@@ -541,16 +555,44 @@ ngx_http_vhost_traffic_status_create_loc_conf(ngx_conf_t *cf)
         return NULL;
     }
 
-    conf->start_msec = ngx_current_msec;
+    /*
+     * set by ngx_pcalloc():
+     *
+     *     conf->shm_zone = { NULL, ... };
+     *     conf->enable = 0;
+     *     conf->filter = 0;
+     *     conf->filter_host = 0;
+     *     conf->filter_check_duplicate = 0;
+     *     conf->filter_keys = { NULL, ... };
+     *     conf->filter_vars = { NULL, ... };
+     *
+     *     conf->limit = 0;
+     *     conf->limit_check_duplicate = 0;
+     *     conf->limit_traffics = { NULL, ... };
+     *     conf->limit_filter_traffics = { NULL, ... };
+     *
+     *     conf->shm_name = { 0, NULL };
+     *     conf->stats = { 0, ... };
+     *     conf->start_msec = 0;
+     *     conf->format = 0;
+     *     conf->jsonp = { 0, NULL };
+     *     conf->sum_key = { 0, NULL };
+     *     conf->average_method = 0;
+     */
+
+    conf->shm_zone = NGX_CONF_UNSET_PTR;
     conf->enable = NGX_CONF_UNSET;
     conf->filter = NGX_CONF_UNSET;
     conf->filter_host = NGX_CONF_UNSET;
     conf->filter_check_duplicate = NGX_CONF_UNSET;
+    conf->filter_vars = NGX_CONF_UNSET_PTR;
+
     conf->limit = NGX_CONF_UNSET;
     conf->limit_check_duplicate = NGX_CONF_UNSET;
-    conf->shm_zone = NGX_CONF_UNSET_PTR;
+
+    conf->start_msec = ngx_current_msec;
     conf->format = NGX_CONF_UNSET;
-    conf->filter_vars = NGX_CONF_UNSET_PTR;
+    conf->average_method = NGX_CONF_UNSET;
 
     conf->node_caches = ngx_pcalloc(cf->pool, sizeof(ngx_rbtree_node_t *)
                                     * (NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG + 1));
@@ -638,21 +680,23 @@ ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf, void *parent, void 
         }
     }
 
+    ngx_conf_merge_ptr_value(conf->shm_zone, prev->shm_zone, NULL);
     ngx_conf_merge_value(conf->enable, prev->enable, 1);
     ngx_conf_merge_value(conf->filter, prev->filter, 1);
     ngx_conf_merge_value(conf->filter_host, prev->filter_host, 0);
     ngx_conf_merge_value(conf->filter_check_duplicate, prev->filter_check_duplicate, 1);
     ngx_conf_merge_value(conf->limit, prev->limit, 1);
     ngx_conf_merge_value(conf->limit_check_duplicate, prev->limit_check_duplicate, 1);
-    ngx_conf_merge_ptr_value(conf->shm_zone, prev->shm_zone, NULL);
+    ngx_conf_merge_ptr_value(conf->filter_vars, prev->filter_vars, NULL);
+
     ngx_conf_merge_value(conf->format, prev->format,
                          NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSON);
     ngx_conf_merge_str_value(conf->jsonp, prev->jsonp,
                              NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_JSONP);
     ngx_conf_merge_str_value(conf->sum_key, prev->sum_key,
                              NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_SUM_KEY);
-
-    ngx_conf_merge_ptr_value(conf->filter_vars, prev->filter_vars, NULL);
+    ngx_conf_merge_value(conf->average_method, prev->average_method,
+                         NGX_HTTP_VHOST_TRAFFIC_STATUS_AVERAGE_METHOD_AMM);
 
     name = ctx->shm_name;
 

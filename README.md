@@ -60,6 +60,7 @@ Table of Contents
  * [vhost_traffic_status_limit_traffic_by_set_key](#vhost_traffic_status_limit_traffic_by_set_key)
  * [vhost_traffic_status_limit_check_duplicate](#vhost_traffic_status_limit_check_duplicate)
  * [vhost_traffic_status_set_by_filter](#vhost_traffic_status_set_by_filter)
+ * [vhost_traffic_status_average_method](#vhost_traffic_status_average_method)
 * [See Also](#see-also)
 * [TODO](#todo)
 * [Donation](#donation)
@@ -1397,6 +1398,21 @@ For examples:
 * cacheHit in cacheZones
  * **vhost_traffic_status_set_by_filter** `$cacheHit` `cache/my_cache_name/cacheHit`
 
+### vhost_traffic_status_average_method
+
+-   | -
+--- | ---
+**Syntax**  | **vhost_traffic_status_average_method** \<AMM\|WMA\>
+**Default** | AMM
+**Context** | http, server, location
+
+`Description:` Sets the method which is a formula that calculate the average of response processing times.
+The corresponding values are `requestMsec` and `responseMsec` in JSON.
+
+* **AMM**
+ * The AMM is the [arithmetic mean](https://en.wikipedia.org/wiki/Arithmetic_mean).
+* **WMA**
+ * THE WMA is the [weighted moving average](https://en.wikipedia.org/wiki/Moving_average#Weighted_moving_average).
 
 ## See Also
 * Stream traffic status

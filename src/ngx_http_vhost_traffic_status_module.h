@@ -34,6 +34,9 @@
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_HTML          2
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSONP         3
 
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_AVERAGE_METHOD_AMM   0
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_AVERAGE_METHOD_WMA   1
+
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_SHM_NAME     "ngx_http_vhost_traffic_status"
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_SHM_SIZE     0xfffff
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_JSONP        "ngx_http_vhost_traffic_status_jsonp_callback"
@@ -436,6 +439,7 @@ typedef struct {
     ngx_flag_t                                       format;
     ngx_str_t                                        jsonp;
     ngx_str_t                                        sum_key;
+    ngx_flag_t                                       average_method;
 
     ngx_rbtree_node_t                              **node_caches;
 } ngx_http_vhost_traffic_status_loc_conf_t;
