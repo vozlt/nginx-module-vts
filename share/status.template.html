@@ -580,21 +580,24 @@
                 var heads = [];
                 var bodys = [];
 
-                heads[0] = '{}{}{}{}{}'.format(aHe('th rowspan="2"', 'Host'),
+                heads[0] = '{}{}{}{}{}{}'.format(aHe('th rowspan="2"', 'Host'),
                                                aHe('th rowspan="2"', 'Version'),
                                                aHe('th rowspan="2"', 'Uptime'),
                                                aHe('th colspan="4"', 'Connections'),
-                                               aHe('th colspan="5"', 'Requests'));
+                                               aHe('th colspan="4"', 'Requests'),
+                                               aHe('th colspan="4"', 'Shared memory'));
 
                 heads[1] = aHe('th', ['active', 'reading', 'writing', 'waiting', 'accepted',
-                                      'handled', 'Total', 'Req/s']);
+                                      'handled', 'Total', 'Req/s', 'name', 'maxSize', 'usedSize', 'usedNode']);
 
                 head = aHe('thead', '{}{}'.format(aHe('tr', heads[0]), aHe('tr', heads[1])));
 
-                bodys[0] = aHe('td', [it.hostName, it.nginxVersion, mTh(it.nowMsec - it.loadMsec), it.connections.active,
-                                      it.connections.reading, it.connections.writing, it.connections.waiting,
-                                      it.connections.accepted, it.connections.handled, it.connections.requests,
-                                      aPs.getValue('main.connections.requests', it.connections.requests)]);
+                bodys[0] = aHe('td', [ aHe('strong', it.hostName), it.nginxVersion, mTh(it.nowMsec - it.loadMsec),
+                                      it.connections.active, it.connections.reading, it.connections.writing,
+                                      it.connections.waiting, it.connections.accepted, it.connections.handled,
+                                      it.connections.requests, aPs.getValue('main.connections.requests', it.connections.requests),
+                                      aHe('strong', it.sharedZones.name), bTh(it.sharedZones.maxSize), bTh(it.sharedZones.usedSize),
+                                      it.sharedZones.usedNode]);
 
                 body = aHe('tbody', aHe('tr', bodys[0]));
 
