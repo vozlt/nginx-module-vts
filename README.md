@@ -61,6 +61,8 @@ Table of Contents
  * [vhost_traffic_status_limit_check_duplicate](#vhost_traffic_status_limit_check_duplicate)
  * [vhost_traffic_status_set_by_filter](#vhost_traffic_status_set_by_filter)
  * [vhost_traffic_status_average_method](#vhost_traffic_status_average_method)
+ * [vhost_traffic_status_bypass_limit](#vhost_traffic_status_bypass_limit)
+ * [vhost_traffic_status_bypass_stats](#vhost_traffic_status_bypass_stats)
 * [See Also](#see-also)
 * [TODO](#todo)
 * [Donation](#donation)
@@ -1413,6 +1415,69 @@ The corresponding values are `requestMsec` and `responseMsec` in JSON.
  * The AMM is the [arithmetic mean](https://en.wikipedia.org/wiki/Arithmetic_mean).
 * **WMA**
  * THE WMA is the [weighted moving average](https://en.wikipedia.org/wiki/Moving_average#Weighted_moving_average).
+
+### vhost_traffic_status_bypass_limit
+
+-   | -
+--- | ---
+**Syntax**  | **vhost_traffic_status_bypass_limit** \<on\|off\>
+**Default** | off
+**Context** | http, server, location
+
+`Description:` Enables or disables to bypass `vhost_traffic_status_limit` directives.
+The limit features is bypassed if this option is enabled.
+This is mostly useful if you want to connect the status web page like `/status` regardless of `vhost_traffic_status_limit` directives as follows:
+
+```Nginx
+http {
+    vhost_traffic_status_zone;
+
+    ...
+
+    server {
+
+        ...
+
+        location /status {
+            vhost_traffic_status_bypass_limit;
+            vhost_traffic_status_display;
+            vhost_traffic_status_display_format html;
+        }
+    }
+}
+```
+
+### vhost_traffic_status_bypass_stats
+
+-   | -
+--- | ---
+**Syntax**  | **vhost_traffic_status_bypass_stats** \<on\|off\>
+**Default** | off
+**Context** | http, server, location
+
+`Description:` Enables or disables to bypass `vhost_traffic_status`.
+The traffic status stats features is bypassed if this option is enabled.
+In other words, it is excluded from the traffic status stats.
+This is mostly useful if you want to ignore your request in status web page like `/status` as follows:
+
+```Nginx
+http {
+    vhost_traffic_status_zone;
+
+    ...
+
+    server {
+
+        ...
+
+        location /status {
+            vhost_traffic_status_bypass_stats;
+            vhost_traffic_status_display;
+            vhost_traffic_status_display_format html;
+        }
+    }
+}
+```
 
 ## See Also
 * Stream traffic status

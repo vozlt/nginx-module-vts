@@ -75,17 +75,23 @@ my $path = $ARGV[0];
 my $max = $ARGV[1] || 16;
 my $fth = FileToHex->new(path => $path);
 $fth->fileOpen();
+my $plus = "";
 my $buf = "";
 my $i = 0;
 while($fth->fileReadByte(my $c)) {
     $i++;
     $buf .= '\x' . unpack("H2", $c);
     if (!($i % $max)) {
-        print "\"$buf\" \\\n";
+        $plus .= "\"$buf\" \\\n";
         $buf = "";
     }
 }
-print "\"$buf\"\n" if (length($buf));
+
+if (!($i % $max)) {
+    print substr($plus, 0, -3) . "\n";
+} else {
+    print $plus . "\"$buf\"\n";
+}
 $fth->fileClose();
 
 # vi:set ft=perl ts=4 sw=4 et fdm=marker:

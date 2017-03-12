@@ -163,6 +163,20 @@ static ngx_command_t ngx_http_vhost_traffic_status_commands[] = {
       offsetof(ngx_http_vhost_traffic_status_loc_conf_t, average_method),
       &ngx_http_vhost_traffic_status_average_method },
 
+    { ngx_string("vhost_traffic_status_bypass_limit"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, bypass_limit),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_bypass_stats"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, bypass_stats),
+      NULL },
+
     ngx_null_command
 };
 
@@ -211,7 +225,7 @@ ngx_http_vhost_traffic_status_handler(ngx_http_request_t *r)
     ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
     vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
 
-    if (!ctx->enable || !vtscf->enable) {
+    if (!ctx->enable || !vtscf->enable || vtscf->bypass_stats) {
         return NGX_DECLINED;
     }
     if (vtscf->shm_zone == NULL) {
@@ -578,6 +592,8 @@ ngx_http_vhost_traffic_status_create_loc_conf(ngx_conf_t *cf)
      *     conf->jsonp = { 0, NULL };
      *     conf->sum_key = { 0, NULL };
      *     conf->average_method = 0;
+     *     conf->bypass_limit = 0;
+     *     conf->bypass_stats = 0;
      */
 
     conf->shm_zone = NGX_CONF_UNSET_PTR;
@@ -593,6 +609,8 @@ ngx_http_vhost_traffic_status_create_loc_conf(ngx_conf_t *cf)
     conf->start_msec = ngx_current_msec;
     conf->format = NGX_CONF_UNSET;
     conf->average_method = NGX_CONF_UNSET;
+    conf->bypass_limit = NGX_CONF_UNSET;
+    conf->bypass_stats = NGX_CONF_UNSET;
 
     conf->node_caches = ngx_pcalloc(cf->pool, sizeof(ngx_rbtree_node_t *)
                                     * (NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG + 1));
@@ -697,6 +715,9 @@ ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf, void *parent, void 
                              NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_SUM_KEY);
     ngx_conf_merge_value(conf->average_method, prev->average_method,
                          NGX_HTTP_VHOST_TRAFFIC_STATUS_AVERAGE_METHOD_AMM);
+    
+    ngx_conf_merge_value(conf->bypass_limit, prev->bypass_limit, 0);
+    ngx_conf_merge_value(conf->bypass_stats, prev->bypass_stats, 0);
 
     name = ctx->shm_name;
 
