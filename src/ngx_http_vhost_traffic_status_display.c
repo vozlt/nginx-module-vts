@@ -1081,6 +1081,10 @@ not_supported:
                     continue;
                 }
 
+                if (us[j].addrs == NULL) {
+                    continue;
+                }
+
                 p = ngx_cpymem(p, uscf->host.data, uscf->host.len);
                 *p++ = NGX_HTTP_VHOST_TRAFFIC_STATUS_KEY_SEPARATOR;
                 p = ngx_cpymem(p, us[j].addrs->name.data, us[j].addrs->name.len);
