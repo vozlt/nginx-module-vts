@@ -41,6 +41,8 @@ Table of Contents
  * [To calculate traffic for individual country using GeoIP](#to-calculate-traffic-for-individual-country-using-geoip)
  * [To calculate traffic for individual storage volume](#to-calculate-traffic-for-individual-storage-volume)
  * [To calculate traffic for individual user agent](#to-calculate-traffic-for-individual-user-agent)
+ * [To calculate traffic for dynamic dns](#to-calculate-traffic-for-dynamic-dns)
+ * [To calculate traffic except for status page](#to-calculate-traffic-except-for-status-page)
 * [Customizing](#customizing)
  * [To customize after the module installed](#to-customize-after-the-module-installed)
  * [To customize before the module installed](#to-customize-before-the-module-installed)
@@ -69,7 +71,7 @@ Table of Contents
 * [Author](#author)
 
 ## Version
-This document describes nginx-module-vts `v0.1.13` released on 6 Mar 2017.
+This document describes nginx-module-vts `v0.1.14` released on 14 Mar 2017.
 
 ## Dependencies
 * [nginx](http://nginx.org)
@@ -84,11 +86,10 @@ This document describes nginx-module-vts `v0.1.13` released on 6 Mar 2017.
 Earlier versions is not tested.
 
 ## Screenshots
-![nginx-module-vts screenshot](https://cloud.githubusercontent.com/assets/3648408/7854611/1386f3b2-0556-11e5-8323-7c624da0fcb3.png "screenshot with deault")
+![screenshot-vts-0](https://cloud.githubusercontent.com/assets/3648408/23890539/a4c0de18-08d5-11e7-9a8b-448662454854.png "screenshot with default")
 
 ---
-
-![nginx-module-vts screenshot](https://cloud.githubusercontent.com/assets/3648408/10876811/77a67b70-8183-11e5-9924-6a6d0c5dc73a.png "screenshot with filter")
+![screenshot-vts-1](https://cloud.githubusercontent.com/assets/3648408/23890545/a9d5b504-08d5-11e7-88c2-eb55f39233db.png "screenshot with filter")
 
 ## Installation
 
@@ -924,6 +925,97 @@ http {
 
 * Calculate traffic for individual `http_user_agent`
 
+### To calculate traffic for dynamic dns
+
+If the domain has multiple DNS A records, you can calculate traffic for individual IPs
+for the domain using the filter feature or a variable in proxy_pass.
+
+```Nginx
+http {
+    vhost_traffic_status_zone;
+
+    upstream backend {
+        elb.example.org:80;
+    }
+
+    ...
+
+    server {
+
+        ...
+
+        location /backend {
+            vhost_traffic_status_filter_by_set_key $upstream_addr upstream::backend;
+            proxy_pass backend;
+        }
+    }
+}
+```
+
+* Calculate traffic for individual IPs for the domain `elb.example.org`.
+If `elb.example.org` has multiple DNS A records, will be display all IPs in `filterZones`.
+In the above settings, as NGINX starts up or reloads it configuration,
+it queries a DNS server to resolve domain and DNS A records is cached in memory.
+Therefore the DNS A records are not changed in memory even if
+DNS A records are chagned by DNS administrator unless NGINX re-starts up or reloads.
+
+```Nginx
+http {
+    vhost_traffic_status_zone;
+
+    resolver 10.10.10.53 valid=10s
+
+    ...
+
+    server {
+
+        ...
+
+        location /backend {
+            set $backend_server elb.example.org;
+            proxy_pass http://$backend_server;
+        }
+    }
+}
+```
+
+* Calculate traffic for individual IPs for the domain `elb.example.org`.
+If `elb.example.org`'s DNS A record is changed,
+will be display both the old IP and the new IP in `::nogroups`.
+Unlike the first upstream group setting, the second setting works well
+even if DNS A records are chagned by DNS administrator.
+
+`Caveats:` Please more details about NGINX DNS see the
+[dns-service-discovery-nginx-plus](https://www.nginx.com/blog/dns-service-discovery-nginx-plus).
+
+### To calculate traffic except for status page
+
+```Nginx
+http {
+    vhost_traffic_status_zone;
+
+    ...
+
+    server {
+
+        ...
+
+        location /status {
+            vhost_traffic_status_bypass_limit on;
+            vhost_traffic_status_bypass_stats on;
+            vhost_traffic_status_display;
+            vhost_traffic_status_display_format html;
+        }
+    }
+}
+```
+
+* The `/status` uri is excluded from the status traffic calculation and limit feature. 
+See the following directives:
+ * [vhost_traffic_status_bypass_limit](#vhost_traffic_status_bypass_limit)
+ * [vhost_traffic_status_bypass_stats](#vhost_traffic_status_bypass_stats)
+
+
 ## Customizing
 ### To customize after the module installed
 1. You need to change the `{{uri}}` string to your status uri in status.template.html as follows:
@@ -1439,7 +1531,7 @@ http {
         ...
 
         location /status {
-            vhost_traffic_status_bypass_limit;
+            vhost_traffic_status_bypass_limit on;
             vhost_traffic_status_display;
             vhost_traffic_status_display_format html;
         }
@@ -1471,7 +1563,7 @@ http {
         ...
 
         location /status {
-            vhost_traffic_status_bypass_stats;
+            vhost_traffic_status_bypass_stats on;
             vhost_traffic_status_display;
             vhost_traffic_status_display_format html;
         }
