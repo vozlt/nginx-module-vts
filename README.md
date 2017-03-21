@@ -16,55 +16,55 @@ Table of Contents
 * [Synopsis](#synopsis)
 * [Description](#description)
 * [Control](#control)
- * [To get status of traffic zones on the fly](#to-get-status-of-traffic-zones-on-the-fly)
+  * [To get status of traffic zones on the fly](#to-get-status-of-traffic-zones-on-the-fly)
     * [To get fully zones](#to-get-fully-zones)
     * [To get group zones](#to-get-group-zones)
     * [To get each zones](#to-get-each-zones)
- * [To reset traffic zones on the fly](#to-reset-traffic-zones-on-the-fly)
+  * [To reset traffic zones on the fly](#to-reset-traffic-zones-on-the-fly)
     * [To reset fully zones](#to-reset-fully-zones)
     * [To reset group zones](#to-reset-group-zones)
     * [To reset each zones](#to-reset-each-zones)
- * [To delete traffic zones on the fly](#to-delete-traffic-zones-on-the-fly)
+  * [To delete traffic zones on the fly](#to-delete-traffic-zones-on-the-fly)
     * [To delete fully zones](#to-delete-fully-zones)
     * [To delete group zones](#to-delete-group-zones)
     * [To delete each zones](#to-delete-each-zones)
 * [Set](#set)
 * [JSON](#json)
- * [Json used by status](#json-used-by-status)
- * [Json used by control](#json-used-by-control)
+  * [Json used by status](#json-used-by-status)
+  * [Json used by control](#json-used-by-control)
 * [Variables](#variables)
 * [Limit](#limit)
- * [To limit traffic for server](#to-limit-traffic-for-server)
- * [To limit traffic for filter](#to-limit-traffic-for-filter)
- * [To limit traffic for upstream](#to-limit-traffic-for-upstream)
+  * [To limit traffic for server](#to-limit-traffic-for-server)
+  * [To limit traffic for filter](#to-limit-traffic-for-filter)
+  * [To limit traffic for upstream](#to-limit-traffic-for-upstream)
 * [Use cases](#use-cases)
- * [To calculate traffic for individual country using GeoIP](#to-calculate-traffic-for-individual-country-using-geoip)
- * [To calculate traffic for individual storage volume](#to-calculate-traffic-for-individual-storage-volume)
- * [To calculate traffic for individual user agent](#to-calculate-traffic-for-individual-user-agent)
- * [To calculate traffic for dynamic dns](#to-calculate-traffic-for-dynamic-dns)
- * [To calculate traffic except for status page](#to-calculate-traffic-except-for-status-page)
+  * [To calculate traffic for individual country using GeoIP](#to-calculate-traffic-for-individual-country-using-geoip)
+  * [To calculate traffic for individual storage volume](#to-calculate-traffic-for-individual-storage-volume)
+  * [To calculate traffic for individual user agent](#to-calculate-traffic-for-individual-user-agent)
+  * [To calculate traffic for dynamic dns](#to-calculate-traffic-for-dynamic-dns)
+  * [To calculate traffic except for status page](#to-calculate-traffic-except-for-status-page)
 * [Customizing](#customizing)
- * [To customize after the module installed](#to-customize-after-the-module-installed)
- * [To customize before the module installed](#to-customize-before-the-module-installed)
+  * [To customize after the module installed](#to-customize-after-the-module-installed)
+  * [To customize before the module installed](#to-customize-before-the-module-installed)
 * [Directives](#directives)
- * [vhost_traffic_status](#vhost_traffic_status)
- * [vhost_traffic_status_zone](#vhost_traffic_status_zone)
- * [vhost_traffic_status_display](#vhost_traffic_status_display)
- * [vhost_traffic_status_display_format](#vhost_traffic_status_display_format)
- * [vhost_traffic_status_display_jsonp](#vhost_traffic_status_display_jsonp)
- * [vhost_traffic_status_display_sum_key](#vhost_traffic_status_display_sum_key)
- * [vhost_traffic_status_filter](#vhost_traffic_status_filter)
- * [vhost_traffic_status_filter_by_host](#vhost_traffic_status_filter_by_host)
- * [vhost_traffic_status_filter_by_set_key](#vhost_traffic_status_filter_by_set_key)
- * [vhost_traffic_status_filter_check_duplicate](#vhost_traffic_status_filter_check_duplicate)
- * [vhost_traffic_status_limit](#vhost_traffic_status_limit)
- * [vhost_traffic_status_limit_traffic](#vhost_traffic_status_limit_traffic)
- * [vhost_traffic_status_limit_traffic_by_set_key](#vhost_traffic_status_limit_traffic_by_set_key)
- * [vhost_traffic_status_limit_check_duplicate](#vhost_traffic_status_limit_check_duplicate)
- * [vhost_traffic_status_set_by_filter](#vhost_traffic_status_set_by_filter)
- * [vhost_traffic_status_average_method](#vhost_traffic_status_average_method)
- * [vhost_traffic_status_bypass_limit](#vhost_traffic_status_bypass_limit)
- * [vhost_traffic_status_bypass_stats](#vhost_traffic_status_bypass_stats)
+  * [vhost_traffic_status](#vhost_traffic_status)
+  * [vhost_traffic_status_zone](#vhost_traffic_status_zone)
+  * [vhost_traffic_status_display](#vhost_traffic_status_display)
+  * [vhost_traffic_status_display_format](#vhost_traffic_status_display_format)
+  * [vhost_traffic_status_display_jsonp](#vhost_traffic_status_display_jsonp)
+  * [vhost_traffic_status_display_sum_key](#vhost_traffic_status_display_sum_key)
+  * [vhost_traffic_status_filter](#vhost_traffic_status_filter)
+  * [vhost_traffic_status_filter_by_host](#vhost_traffic_status_filter_by_host)
+  * [vhost_traffic_status_filter_by_set_key](#vhost_traffic_status_filter_by_set_key)
+  * [vhost_traffic_status_filter_check_duplicate](#vhost_traffic_status_filter_check_duplicate)
+  * [vhost_traffic_status_limit](#vhost_traffic_status_limit)
+  * [vhost_traffic_status_limit_traffic](#vhost_traffic_status_limit_traffic)
+  * [vhost_traffic_status_limit_traffic_by_set_key](#vhost_traffic_status_limit_traffic_by_set_key)
+  * [vhost_traffic_status_limit_check_duplicate](#vhost_traffic_status_limit_check_duplicate)
+  * [vhost_traffic_status_set_by_filter](#vhost_traffic_status_set_by_filter)
+  * [vhost_traffic_status_average_method](#vhost_traffic_status_average_method)
+  * [vhost_traffic_status_bypass_limit](#vhost_traffic_status_bypass_limit)
+  * [vhost_traffic_status_bypass_stats](#vhost_traffic_status_bypass_stats)
 * [See Also](#see-also)
 * [TODO](#todo)
 * [Donation](#donation)
@@ -143,13 +143,13 @@ and then if the directive `vhost_traffic_status_display` is set, can be access t
 
 * /status/control
 
- * If you request `/status/format/json`, will respond with a JSON document containing the current activity data for using in live dashboards and third-party monitoring tools.
+  * If you request `/status/format/json`, will respond with a JSON document containing the current activity data for using in live dashboards and third-party monitoring tools.
 
- * If you request `/status/format/html`, will respond with the built-in live dashboard in HTML that requests internally to `/status/format/json`.
+  * If you request `/status/format/html`, will respond with the built-in live dashboard in HTML that requests internally to `/status/format/json`.
  
- * If you request `/status/format/jsonp`, will respond with a JSONP callback function containing the current activity data for using in live dashboards and third-party monitoring tools. 
+  * If you request `/status/format/jsonp`, will respond with a JSONP callback function containing the current activity data for using in live dashboards and third-party monitoring tools. 
 
- * If you request `/status/control`, will respond with a JSON document after it reset or delete zones through a query string. See the [Control](#control).
+  * If you request `/status/control`, will respond with a JSON document after it reset or delete zones through a query string. See the [Control](#control).
 
 JSON document contains as follows:
 
@@ -290,38 +290,40 @@ JSON document contains as follows:
 ```
 
 * main
- * Basic version, uptime((nowMsec - loadMsec)/1000)
- * nowMsec, loadMsec is a millisecond.
+  * Basic version, uptime((nowMsec - loadMsec)/1000)
+  * nowMsec, loadMsec is a millisecond.
 * connections
- * Total connections and requests(same as stub_status_module in NGINX)
+  * Total connections and requests(same as stub_status_module in NGINX)
+* sharedZones
+  * The shared memory information using in nginx-module-vts.
 * serverZones
- * Traffic(in/out) and request and response counts and cache hit ratio per each server zone
- * Total traffic(In/Out) and request and response counts(It zone name is `*`) and hit ratio
+  * Traffic(in/out) and request and response counts and cache hit ratio per each server zone
+  * Total traffic(In/Out) and request and response counts(It zone name is `*`) and hit ratio
 * filterZones
- * Traffic(in/out) and request and response counts and cache hit ratio per each server zone filtered through the `vhost_traffic_status_filter_by_set_key` directive
- * Total traffic(In/Out) and request and response counts(It zone name is `*`) and hit ratio filtered through the `vhost_traffic_status_filter_by_set_key` directive
+  * Traffic(in/out) and request and response counts and cache hit ratio per each server zone filtered through the `vhost_traffic_status_filter_by_set_key` directive
+  * Total traffic(In/Out) and request and response counts(It zone name is `*`) and hit ratio filtered through the `vhost_traffic_status_filter_by_set_key` directive
 * upstreamZones
- * Traffic(in/out) and request and response counts per server in each upstream group
- * Current settings(weight, maxfails, failtimeout...) in nginx.conf
+  * Traffic(in/out) and request and response counts per server in each upstream group
+  * Current settings(weight, maxfails, failtimeout...) in nginx.conf
 * cacheZones
- * Traffic(in/out) and size(capacity/used) and hit ratio per each cache zone when using the proxy_cache directive.
+  * Traffic(in/out) and size(capacity/used) and hit ratio per each cache zone when using the proxy_cache directive.
 
 The directive `vhost_traffic_status_display_format` sets the default ouput format that is one of json or html. (Default: json)
 
 Traffic calculation as follows:
 
 * ServerZones
- * in += requested_bytes
- * out += sent_bytes
+  * in += requested_bytes
+  * out += sent_bytes
 * FilterZones
- * in += requested_bytes via the filter
- * out += sent_bytes via the filter
+  * in += requested_bytes via the filter
+  * out += sent_bytes via the filter
 * UpstreamZones
- * in += requested_bytes via the ServerZones
- * out += sent_bytes via the ServerZones
+  * in += requested_bytes via the ServerZones
+  * out += sent_bytes via the ServerZones
 * cacheZones
- * in += requested_bytes via the ServerZones
- * out += sent_bytes via the ServerZones
+  * in += requested_bytes via the ServerZones
+  * out += sent_bytes via the ServerZones
 
 All calculations are working in log processing phase of Nginx.
 Internal redirects(X-Accel-Redirect or error_page) does not calculate in the UpstreamZones.
@@ -343,7 +345,7 @@ It is able to reset or delete traffic zones through a query string.
 The request responds with a JSON document.
 
 * URI Syntax
- * /*`{status_uri}`*/control?cmd=*`{command}`*&group=*`{group}`*&zone=*`{name}`*
+  * /*`{status_uri}`*/control?cmd=*`{command}`*&group=*`{group}`*&zone=*`{name}`*
 
 ```Nginx
 http {
@@ -375,30 +377,30 @@ If it set as above, then the control uri is like `example.org/status/control`.
 
 The available request arguments are as follows:
 * **cmd**=\<`status`\|`reset`\|`delete`\>
- * status
-   * It returns status of traffic zones to json format like `status/format/json`.
- * reset
-   * It reset traffic zones without deleting nodes in shared memory.(= init to 0)
- * delete
-   * It delete traffic zones in shared memory. when re-request recreated. 
+  * status
+    * It returns status of traffic zones to json format like `status/format/json`.
+  * reset
+    * It reset traffic zones without deleting nodes in shared memory.(= init to 0)
+  * delete
+    * It delete traffic zones in shared memory. when re-request recreated. 
 * **group**=\<`server`\|`filter`\|`upstream@alone`\|`upstream@group`\|`cache`\|`*`\>
- * server
- * filter
- * upstream@alone
- * upstream@group
- * cache
- * *
+  * server
+  * filter
+  * upstream@alone
+  * upstream@group
+  * cache
+  * \*
 * **zone**=*name*
- * server
-   * *name*
- * filter
-   * *filter_group*@*name*
- * upstream@group
-   * *upstream_group*@*name*
- * upstream@alone
-   * @*name*
- * cache
-   * *name*
+  * server
+    * *name*
+  * filter
+    * *filter_group*@*name*
+  * upstream@group
+    * *upstream_group*@*name*
+  * upstream@alone
+    * @*name*
+  * cache
+    * *name*
 
 
 ### To get status of traffic zones on the fly
@@ -406,35 +408,35 @@ This is similar to the `status/format/json` except that it can get each zones.
 
 #### To get fully zones
 * It is exactly the same with the `status/format/json`.
- * /status/control?cmd=status&group=*
+  * /status/control?cmd=status&group=*
 
 #### To get group zones
 * mainZones
- * /status/control?cmd=status&group=server&zone=::main
+  * /status/control?cmd=status&group=server&zone=::main
 * serverZones
- * /status/control?cmd=status&group=server&zone=*
+  * /status/control?cmd=status&group=server&zone=*
 * filterZones
- * /status/control?cmd=status&group=filter&zone=*
+  * /status/control?cmd=status&group=filter&zone=*
 * upstreamZones
- * /status/control?cmd=status&group=upstream@group&zone=*
+  * /status/control?cmd=status&group=upstream@group&zone=*
 * upstreamZones::nogroups
- * /status/control?cmd=status&group=upstream@alone&zone=*
+  * /status/control?cmd=status&group=upstream@alone&zone=*
 * cacheZones
- * /status/control?cmd=status&group=cache&zone=*
+  * /status/control?cmd=status&group=cache&zone=*
 
 The **mainZones** values are default status values including `hostName`, `nginxVersion`, `loadMsec`, `nowMsec`, `connections`.
 
 #### To get each zones
 * single zone in serverZones
- * /status/control?cmd=status&group=server&zone=*`name`*
+  * /status/control?cmd=status&group=server&zone=*`name`*
 * single zone in filterZones
- * /status/control?cmd=status&group=filter&zone=*`filter_group`*@*`name`*
+  * /status/control?cmd=status&group=filter&zone=*`filter_group`*@*`name`*
 * single zone in upstreamZones
- * /status/control?cmd=status&group=upstream@group&zone=*`upstream_group`*@*`name`*
+  * /status/control?cmd=status&group=upstream@group&zone=*`upstream_group`*@*`name`*
 * single zone in upstreamZones::nogroups
- * /status/control?cmd=status&group=upstream@alone&zone=*`name`*
+  * /status/control?cmd=status&group=upstream@alone&zone=*`name`*
 * single zone in cacheZones
- * /status/control?cmd=status&group=cache&zone=*`name`*
+  * /status/control?cmd=status&group=cache&zone=*`name`*
 
 ### To reset traffic zones on the fly
 It reset the values of specified zones to 0.
@@ -444,27 +446,27 @@ It reset the values of specified zones to 0.
 
 #### To reset group zones
 * serverZones
- * /status/control?cmd=reset&group=server&zone=*
+  * /status/control?cmd=reset&group=server&zone=*
 * filterZones
- * /status/control?cmd=reset&group=filter&zone=*
+  * /status/control?cmd=reset&group=filter&zone=*
 * upstreamZones
- * /status/control?cmd=reset&group=upstream@group&zone=*
+  * /status/control?cmd=reset&group=upstream@group&zone=*
 * upstreamZones::nogroups
- * /status/control?cmd=reset&group=upstream@alone&zone=*
+  * /status/control?cmd=reset&group=upstream@alone&zone=*
 * cacheZones
- * /status/control?cmd=reset&group=cache&zone=*
+  * /status/control?cmd=reset&group=cache&zone=*
 
 #### To reset each zones
 * single zone in serverZones
- * /status/control?cmd=reset&group=server&zone=*`name`*
+  * /status/control?cmd=reset&group=server&zone=*`name`*
 * single zone in filterZones
- * /status/control?cmd=reset&group=filter&zone=*`filter_group`*@*`name`*
+  * /status/control?cmd=reset&group=filter&zone=*`filter_group`*@*`name`*
 * single zone in upstreamZones
- * /status/control?cmd=reset&group=upstream@group&zone=*`upstream_group`*@*`name`*
+  * /status/control?cmd=reset&group=upstream@group&zone=*`upstream_group`*@*`name`*
 * single zone in upstreamZones::nogroups
- * /status/control?cmd=reset&group=upstream@alone&zone=*`name`*
+  * /status/control?cmd=reset&group=upstream@alone&zone=*`name`*
 * single zone in cacheZones
- * /status/control?cmd=reset&group=cache&zone=*`name`*
+  * /status/control?cmd=reset&group=cache&zone=*`name`*
 
 ### To delete traffic zones on the fly
 It delete the specified zones in shared memory.
@@ -474,34 +476,34 @@ It delete the specified zones in shared memory.
 
 #### To delete group zones
 * serverZones
- * /status/control?cmd=delete&group=server&zone=*
+  * /status/control?cmd=delete&group=server&zone=*
 * filterZones
- * /status/control?cmd=delete&group=filter&zone=*
+  * /status/control?cmd=delete&group=filter&zone=*
 * upstreamZones
- * /status/control?cmd=delete&group=upstream@group&zone=*
+  * /status/control?cmd=delete&group=upstream@group&zone=*
 * upstreamZones::nogroups
- * /status/control?cmd=delete&group=upstream@alone&zone=*
+  * /status/control?cmd=delete&group=upstream@alone&zone=*
 * cacheZones
- * /status/control?cmd=delete&group=cache&zone=*
+  * /status/control?cmd=delete&group=cache&zone=*
 
 #### To delete each zones
 * single zone in serverZones
- * /status/control?cmd=delete&group=server&zone=*`name`*
+  * /status/control?cmd=delete&group=server&zone=*`name`*
 * single zone in filterZones
- * /status/control?cmd=delete&group=filter&zone=*`filter_group`*@*`name`*
+  * /status/control?cmd=delete&group=filter&zone=*`filter_group`*@*`name`*
 * single zone in upstreamZones
- * /status/control?cmd=delete&group=upstream@group&zone=*`upstream_group`*@*`name`*
+  * /status/control?cmd=delete&group=upstream@group&zone=*`upstream_group`*@*`name`*
 * single zone in upstreamZones::nogroups
- * /status/control?cmd=delete&group=upstream@alone&zone=*`name`*
+  * /status/control?cmd=delete&group=upstream@alone&zone=*`name`*
 * single zone in cacheZones
- * /status/control?cmd=delete&group=cache&zone=*`name`*
+  * /status/control?cmd=delete&group=cache&zone=*`name`*
 
 ## Set
 It can get the status values in nginx configuration separately using `vhost_traffic_status_set_by_filter` directive.
 It can acquire almost all status values and the obtained value is stored in user-defined-variable which is first argument.
 
 * Directive Syntax
- * **vhost_traffic_status_set_by_filter** *$variable* *group*/*zone*/*name*
+  * **vhost_traffic_status_set_by_filter** *$variable* *group*/*zone*/*name*
 
 ```Nginx
 http {
@@ -539,11 +541,11 @@ http {
 The above settings are as follows:
 
 * $requestCounter
- * serverZones -> example.org -> requestCounter
+  * serverZones -> example.org -> requestCounter
 * $requestCounterKR
- * filterZones -> country::example.org -> KR -> requestCounter
+  * filterZones -> country::example.org -> KR -> requestCounter
 * $requestCounterB1
- * upstreamZones -> backend -> 10.0.10.11:80 -> requestCounter
+  * upstreamZones -> backend -> 10.0.10.11:80 -> requestCounter
 
 Please see the [vhost_traffic_status_set_by_filter](#vhost_traffic_status_set_by_filter) directive for detailed usage.
 
@@ -556,45 +558,45 @@ The following status information is provided in the JSON format:
 /*`{status_uri}`*/control?cmd=status&...
 
 * hostName
- * Host name.
+  * Host name.
 * nginxVersion
- * Version of the provided.
+  * Version of the provided.
 * loadMsec
- * Loaded process time in milliseconds.
+  * Loaded process time in milliseconds.
 * nowMsec
- * Current time in milliseconds
+  * Current time in milliseconds
 * connections
- * active
-   * The current number of active client connections.
- * reading
-   * The total number of reading client connections.
- * writing
-   * The total number of writing client connections.
- * waiting
-   * The total number of wating client connections.
- * accepted
-   * The total number of accepted client connections.
- * handled
-   * The total number of handled client connections.
- * requests
-   * The total number of requested client connections.
+  * active
+    * The current number of active client connections.
+  * reading
+    * The total number of reading client connections.
+  * writing
+    * The total number of writing client connections.
+  * waiting
+    * The total number of wating client connections.
+  * accepted
+    * The total number of accepted client connections.
+  * handled
+    * The total number of handled client connections.
+  * requests
+    * The total number of requested client connections.
 * sharedZones
- * name
-   * The name of shared memory specified in the configuration.(default: `vhost_traffic_status`)
- * maxSize
-   * The limit on the maximum size of the shared memory specified in the configuration.
- * usedSize
-   * The current size of the shared memory.
- * usedNode
-   * The current number of node using in shared memory. It can get an approximate size for one node with the following formula: (*usedSize* / *usedNode*)
+  * name
+    * The name of shared memory specified in the configuration.(default: `vhost_traffic_status`)
+  * maxSize
+    * The limit on the maximum size of the shared memory specified in the configuration.
+  * usedSize
+    * The current size of the shared memory.
+  * usedNode
+    * The current number of node using in shared memory. It can get an approximate size for one node with the following formula: (*usedSize* / *usedNode*)
 * serverZones
- * requestCounter
-   * The total number of client requests received from clients.
- * inBytes
-   * The total number of bytes received from clients.
- * outBytes
-   * The total number of bytes sent to clients.
- * responses
+  * requestCounter
+    * The total number of client requests received from clients.
+  * inBytes
+    * The total number of bytes received from clients.
+  * outBytes
+    * The total number of bytes sent to clients.
+  * responses
     * 1xx, 2xx, 3xx, 4xx, 5xx
       * The number of responses with status codes 1xx, 2xx, 3xx, 4xx, and 5xx.
     * miss
@@ -613,61 +615,61 @@ The following status information is provided in the JSON format:
       * The number of cache hit.
     * scarce
       * The number of cache scare.
- * requestMsec
-   * The average of request processing times in milliseconds.
- * requestMsecs
+  * requestMsec
+    * The average of request processing times in milliseconds.
+  * requestMsecs
     * times
       * The times in milliseconds at request processing times.
     * msecs
       * The request processing times in milliseconds.
 * filterZones
- * It provides the same fields with `serverZones` except that it included group names.
+  * It provides the same fields with `serverZones` except that it included group names.
 * upstreamZones
- * server
-   * An address of the server.
- * requestCounter
-   * The total number of client connections forwarded to this server.
- * inBytes
-   * The total number of bytes received from this server.
- * outBytes
-   * The total number of bytes sent to this server.
- * responses
-   * 1xx, 2xx, 3xx, 4xx, 5xx
-     * The number of responses with status codes 1xx, 2xx, 3xx, 4xx, and 5xx.
- * requestMsec
-   * The average of request processing times including upstream in milliseconds.
- * requestMsecs
+  * server
+    * An address of the server.
+  * requestCounter
+    * The total number of client connections forwarded to this server.
+  * inBytes
+    * The total number of bytes received from this server.
+  * outBytes
+    * The total number of bytes sent to this server.
+  * responses
+    * 1xx, 2xx, 3xx, 4xx, 5xx
+      * The number of responses with status codes 1xx, 2xx, 3xx, 4xx, and 5xx.
+  * requestMsec
+    * The average of request processing times including upstream in milliseconds.
+  * requestMsecs
     * times
       * The times in milliseconds at request processing times.
     * msecs
       * The request processing times including upstream in milliseconds.
- * responseMsec
-   * The average of only upstream response processing times in milliseconds.
- * responseMsecs
+  * responseMsec
+    * The average of only upstream response processing times in milliseconds.
+  * responseMsecs
     * times
       * The times in milliseconds at request processing times.
     * msecs
       * The only upstream response processing times in milliseconds.
- * weight
-   * Current `weight` setting of the server.
- * maxFails
-   * Current `max_fails` setting of the server.
- * failTimeout
-   * Current `fail_timeout` setting of the server.
- * backup
-   * Current `backup` setting of the server.
- * down
-   * Current `down` setting of the server.
+  * weight
+    * Current `weight` setting of the server.
+  * maxFails
+    * Current `max_fails` setting of the server.
+  * failTimeout
+    * Current `fail_timeout` setting of the server.
+  * backup
+    * Current `backup` setting of the server.
+  * down
+    * Current `down` setting of the server.
 * cacheZones
- * maxSize
-   * The limit on the maximum size of the cache specified in the configuration.
- * usedSize
-   * The current size of the cache.
- * inBytes
-   * The total number of bytes received from the cache.
- * outBytes
-   * The total number of bytes sent from the cache.
- * responses
+  * maxSize
+    * The limit on the maximum size of the cache specified in the configuration.
+  * usedSize
+    * The current size of the cache.
+  * inBytes
+    * The total number of bytes received from the cache.
+  * outBytes
+    * The total number of bytes sent from the cache.
+  * responses
     * miss
       * The number of cache miss.
     * bypass
@@ -691,53 +693,53 @@ The following status information is provided in the JSON format:
 /*`{status_uri}`*/control?cmd=delete&...
 
 * processingReturn
- * The result of true or false.
+  * The result of true or false.
 * processingCommandString
- * The requested command string.
+  * The requested command string.
 * processingGroupString
- * The requested group string.
+  * The requested group string.
 * processingZoneString
- * The requested zone string.
+  * The requested zone string.
 * processingCounts
- * The actual processing number.
+  * The actual processing number.
 
 ## Variables
 The following embedded variables are provided:
 
 * **$vts_request_counter**
- * The total number of client requests received from clients.
+  * The total number of client requests received from clients.
 * **$vts_in_bytes**
- * The total number of bytes received from clients.
+  * The total number of bytes received from clients.
 * **$vts_out_bytes**
- * The total number of bytes sent to clients.
+  * The total number of bytes sent to clients.
 * **$vts_1xx_counter**
- * The number of responses with status codes 1xx.
+  * The number of responses with status codes 1xx.
 * **$vts_2xx_counter**
- * The number of responses with status codes 2xx.
+  * The number of responses with status codes 2xx.
 * **$vts_3xx_counter**
- * The number of responses with status codes 3xx.
+  * The number of responses with status codes 3xx.
 * **$vts_4xx_counter**
- * The number of responses with status codes 4xx.
+  * The number of responses with status codes 4xx.
 * **$vts_5xx_counter**
- * The number of responses with status codes 5xx.
+  * The number of responses with status codes 5xx.
 * **$vts_cache_miss_counter**
- * The number of cache miss.
+  * The number of cache miss.
 * **$vts_cache_bypass_counter**
- * The number of cache bypass.
+  * The number of cache bypass.
 * **$vts_cache_expired_counter**
- * The number of cache expired.
+  * The number of cache expired.
 * **$vts_cache_stale_counter**
- * The number of cache stale.
+  * The number of cache stale.
 * **$vts_cache_updating_counter**
- * The number of cache updating.
+  * The number of cache updating.
 * **$vts_cache_revalidated_counter**
- * The number of cache revalidated.
+  * The number of cache revalidated.
 * **$vts_cache_hit_counter**
- * The number of cache hit.
+  * The number of cache hit.
 * **$vts_cache_scarce_counter**
- * The number of cache scare.
+  * The number of cache scare.
 * **$vts_request_time**
- * The average of request processing times.
+  * The average of request processing times.
 
 ## Limit
 
@@ -1012,8 +1014,8 @@ http {
 
 * The `/status` uri is excluded from the status traffic calculation and limit feature. 
 See the following directives:
- * [vhost_traffic_status_bypass_limit](#vhost_traffic_status_bypass_limit)
- * [vhost_traffic_status_bypass_stats](#vhost_traffic_status_bypass_stats)
+  * [vhost_traffic_status_bypass_limit](#vhost_traffic_status_bypass_limit)
+  * [vhost_traffic_status_bypass_stats](#vhost_traffic_status_bypass_stats)
 
 
 ## Customizing
@@ -1080,43 +1082,43 @@ See the following directives:
 
 ### vhost_traffic_status
 
--   | -
---- | ---
-**Syntax**  | **vhost_traffic_status** \<on\|off\>
-**Default** | off
-**Context** | http, server, location
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status** \<on\|off\> |
+| **Default** | off |
+| **Context** | http, server, location |
 
 `Description:` Enables or disables the module working.
 If you set `vhost_traffic_status_zone` directive, is automatically enabled.
 
 ### vhost_traffic_status_zone
 
--   | -
---- | ---
-**Syntax**  | **vhost_traffic_status_zone** [shared:*name:size*]
-**Default** | shared:vhost_traffic_status:1m
-**Context** | http
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_zone** [shared:*name:size*] |
+| **Default** | shared:vhost_traffic_status:1m |
+| **Context** | http |
 
 `Description:` Sets parameters for a shared memory zone that will keep states for various keys.
 The cache is shared between all worker processes.
 
 ### vhost_traffic_status_display
 
--   | -
---- | ---
-**Syntax**  | **vhost_traffic_status_display**
-**Default** | -
-**Context** | http, server, location
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_display** |
+| **Default** | - |
+| **Context** | http, server, location |
 
 `Description:` Enables or disables the module display handler.
 
 ### vhost_traffic_status_display_format
 
--   | -
---- | ---
-**Syntax**  | **vhost_traffic_status_display_format** \<json\|html\|jsonp\>
-**Default** | json
-**Context** | http, server, location
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_display_format** \<json\|html\|jsonp\> |
+| **Default** | json |
+| **Context** | http, server, location |
 
 `Description:` Sets the display handler's output format.
 If you set `json`, will respond with a JSON document.
@@ -1125,41 +1127,41 @@ If you set `jsonp`, will respond with a JSONP callback function(default: *ngx_ht
 
 ### vhost_traffic_status_display_jsonp
 
--   | -
---- | ---
-**Syntax**  | **vhost_traffic_status_display_jsonp** *callback*
-**Default** | ngx_http_vhost_traffic_status_jsonp_callback
-**Context** | http, server, location
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_display_jsonp** *callback* |
+| **Default** | ngx_http_vhost_traffic_status_jsonp_callback |
+| **Context** | http, server, location |
 
 `Description:` Sets the callback name for the JSONP.
 
 ### vhost_traffic_status_display_sum_key
 
--   | -
---- | ---
-**Syntax**  | **vhost_traffic_status_display_sum_key** *name*
-**Default** | *
-**Context** | http, server, location
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_display_sum_key** *name* |
+| **Default** | * |
+| **Context** | http, server, location |
 
 `Description:` Sets the sum key string in serverZones field's JSON. The default sum key string is the "*".
 
 ### vhost_traffic_status_filter
 
--   | -
---- | ---
-**Syntax**  | **vhost_traffic_status_filter** \<on\|off\>
-**Default** | on
-**Context** | http, server, location
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_filter** \<on\|off\> |
+| **Default** | on |
+| **Context** | http, server, location |
 
 `Description:` Enables or disables the filter features.
 
 ### vhost_traffic_status_filter_by_host
 
--   | -
---- | ---
-**Syntax**  | **vhost_traffic_status_filter_by_host** \<on\|off\>
-**Default** | off
-**Context** | http, server, location
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_filter_by_host** \<on\|off\> |
+| **Default** | off |
+| **Context** | http, server, location |
 
 `Description:` Enables or disables the keys by Host header field.
 If you set `on` and nginx's server_name directive set several or wildcard name starting with an asterisk, e.g. “*.example.org”
@@ -1197,11 +1199,11 @@ It provides the same function that set `vhost_traffic_status_filter_by_set_key $
 
 ### vhost_traffic_status_filter_by_set_key
 
--   | -
---- | ---
-**Syntax**  | **vhost_traffic_status_filter_by_set_key** *key* [*name*]
-**Default** | -
-**Context** | http, server, location
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_filter_by_set_key** *key* [*name*] |
+| **Default** | - |
+| **Context** | http, server, location |
 
 `Description:` Enables the keys by user defined variable.
 The *key* is a key string to calculate traffic.
@@ -1262,32 +1264,32 @@ server {
 
 ### vhost_traffic_status_filter_check_duplicate
 
--   | -
---- | ---
-**Syntax**  | **vhost_traffic_status_filter_check_duplicate** \<on\|off\>
-**Default** | on
-**Context** | http, server, location
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_filter_check_duplicate** \<on\|off\> |
+| **Default** | on |
+| **Context** | http, server, location |
 
 `Description:` Enables or disables the deduplication of vhost_traffic_status_filter_by_set_key.
 It is processed only one of duplicate values(`key` + `name`) in each directives(http, server, location) if this option is enabled.
 
 ### vhost_traffic_status_limit
 
--   | -
---- | ---
-**Syntax**  | **vhost_traffic_status_limit** \<on\|off\>
-**Default** | on
-**Context** | http, server, location
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_limit** \<on\|off\> |
+| **Default** | on |
+| **Context** | http, server, location |
 
 `Description:` Enables or disables the limit features.
 
 ### vhost_traffic_status_limit_traffic
 
--   | -
---- | ---
-**Syntax**  | **vhost_traffic_status_limit_traffic** *member*:*size* [*code*]
-**Default** | -
-**Context** | http, server, location
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_limit_traffic** *member*:*size* [*code*] |
+| **Default** | - |
+| **Context** | http, server, location |
 
 `Description:` Enables the traffic limit for specified *member*.
 The *member* is a member string to limit traffic.
@@ -1296,45 +1298,45 @@ The *code* is a code to return in response to rejected requests.(Default: 503)
 
 The available *`member`* strings are as follows:
 * **request**
- * The total number of client requests received from clients.
+  * The total number of client requests received from clients.
 * **in**
- * The total number of bytes received from clients.
+  * The total number of bytes received from clients.
 * **out**
- * The total number of bytes sent to clients.
+  * The total number of bytes sent to clients.
 * **1xx**
- * The number of responses with status codes 1xx.
+  * The number of responses with status codes 1xx.
 * **2xx**
- * The number of responses with status codes 2xx.
+  * The number of responses with status codes 2xx.
 * **3xx**
- * The number of responses with status codes 3xx.
+  * The number of responses with status codes 3xx.
 * **4xx**
- * The number of responses with status codes 4xx.
+  * The number of responses with status codes 4xx.
 * **5xx**
- * The number of responses with status codes 5xx.
+  * The number of responses with status codes 5xx.
 * **cache_miss**
- * The number of cache miss.
+  * The number of cache miss.
 * **cache_bypass**
- * The number of cache bypass.
+  * The number of cache bypass.
 * **cache_expired**
- * The number of cache expired.
+  * The number of cache expired.
 * **cache_stale**
- * The number of cache stale.
+  * The number of cache stale.
 * **cache_updating**
- * The number of cache updating.
+  * The number of cache updating.
 * **cache_revalidated**
- * The number of cache revalidated.
+  * The number of cache revalidated.
 * **cache_hit**
- * The number of cache hit.
+  * The number of cache hit.
 * **cache_scarce**
- * The number of cache scare.
+  * The number of cache scare.
 
 ### vhost_traffic_status_limit_traffic_by_set_key
 
--   | -
---- | ---
-**Syntax**  | **vhost_traffic_status_limit_traffic_by_set_key** *key* *member*:*size* [*code*]
-**Default** | -
-**Context** | http, server, location
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_limit_traffic_by_set_key** *key* *member*:*size* [*code*] |
+| **Default** | - |
+| **Context** | http, server, location|
 
 `Description:` Enables the traffic limit for specified *key* and *member*.
 The *key* is a key string to limit traffic.
@@ -1348,59 +1350,59 @@ The *`key`* syntax is as follows:
 
 The available *`group`* strings are as follows:
 * **NO**
- * The group of server.
+  * The group of server.
 * **UA**
- * The group of upstream alone.
+  * The group of upstream alone.
 * **UG**
- * The group of upstream group.(use *`subgroup`*)
+  * The group of upstream group.(use *`subgroup`*)
 * **CC**
- * The group of cache.
+  * The group of cache.
 * **FG**
- * The group of filter.(use *`subgroup`*)
+  * The group of filter.(use *`subgroup`*)
 
 The available *`member`* strings are as follows:
 * **request**
- * The total number of client requests received from clients.
+  * The total number of client requests received from clients.
 * **in**
- * The total number of bytes received from clients.
+  * The total number of bytes received from clients.
 * **out**
- * The total number of bytes sent to clients.
+  * The total number of bytes sent to clients.
 * **1xx**
- * The number of responses with status codes 1xx.
+  * The number of responses with status codes 1xx.
 * **2xx**
- * The number of responses with status codes 2xx.
+  * The number of responses with status codes 2xx.
 * **3xx**
- * The number of responses with status codes 3xx.
+  * The number of responses with status codes 3xx.
 * **4xx**
- * The number of responses with status codes 4xx.
+  * The number of responses with status codes 4xx.
 * **5xx**
- * The number of responses with status codes 5xx.
+  * The number of responses with status codes 5xx.
 * **cache_miss**
- * The number of cache miss.
+  * The number of cache miss.
 * **cache_bypass**
- * The number of cache bypass.
+  * The number of cache bypass.
 * **cache_expired**
- * The number of cache expired.
+  * The number of cache expired.
 * **cache_stale**
- * The number of cache stale.
+  * The number of cache stale.
 * **cache_updating**
- * The number of cache updating.
+  * The number of cache updating.
 * **cache_revalidated**
- * The number of cache revalidated.
+  * The number of cache revalidated.
 * **cache_hit**
- * The number of cache hit.
+  * The number of cache hit.
 * **cache_scarce**
- * The number of cache scare.
+  * The number of cache scare.
 
 The *member* is the same as `vhost_traffic_status_limit_traffic` directive.
 
 ### vhost_traffic_status_limit_check_duplicate
 
--   | -
---- | ---
-**Syntax**  | **vhost_traffic_status_limit_check_duplicate** \<on\|off\>
-**Default** | on
-**Context** | http, server, location
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_limit_check_duplicate** \<on\|off\> |
+| **Default** | on |
+| **Context** | http, server, location |
 
 `Description:` Enables or disables the deduplication of vhost_traffic_status_limit_by_set_key.
 It is processed only one of duplicate values(`member` | `key` + `member`)
@@ -1408,113 +1410,113 @@ in each directives(http, server, location) if this option is enabled.
 
 ### vhost_traffic_status_set_by_filter
 
--   | -
---- | ---
-**Syntax**  | **vhost_traffic_status_set_by_filter** *$variable* *group*/*zone*/*name*
-**Default** | -
-**Context** | http, server, location, if
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_set_by_filter** *$variable* *group*/*zone*/*name* |
+| **Default** | - |
+| **Context** | http, server, location, if |
 
 `Description:` Get the specified status value stored in shared memory.
 It can acquire almost all status values and the obtained value is stored in *$variable* which is first argument.
 
 * **group**
- * server
- * filter
- * upstream@alone
- * upstream@group
- * cache
+  * server
+  * filter
+  * upstream@alone
+  * upstream@group
+  * cache
 * **zone**
- * server
-   * *name*
- * filter
-   * *filter_group*@*name*
- * upstream@group
-   * *upstream_group*@*name*
- * upstream@alone
-   * @*name*
- * cache
-   * *name*
+  * server
+    * *name*
+  * filter
+    * *filter_group*@*name*
+  * upstream@group
+    * *upstream_group*@*name*
+  * upstream@alone
+    * @*name*
+  * cache
+    * *name*
 * **name**
- * requestCounter
-   * The total number of client requests received from clients.
- * requestMsec
-   * The average of request processing times in milliseconds.
- * responseMsec
-   * The average of only upstream response processing times in milliseconds.
- * inBytes
-   * The total number of bytes received from clients.
- * outBytes
-   * The total number of bytes sent to clients.
- * 1xx, 2xx, 3xx, 4xx, 5xx
-   * The number of responses with status codes 1xx, 2xx, 3xx, 4xx, and 5xx.
- * cacheMaxSize
-   * The limit on the maximum size of the cache specified in the configuration.
- * cacheUsedSize
-   * The current size of the cache.
- * cacheMiss
-   * The number of cache miss.
- * cacheBypass
-   * The number of cache bypass.
- * cacheExpired
-   * The number of cache expired.
- * cacheStale
-   * The number of cache stale.
- * cacheUpdating
-   * The number of cache updating.
- * cacheRevalidated
-   * The number of cache revalidated.
- * cacheHit
-   * The number of cache hit.
- * cacheScarce
-   * The number of cache scare.
- * weight
-   * Current weight setting of the server.
- * maxFails
-   * Current max_fails setting of the server.
- * failTimeout
-   * Current fail_timeout setting of the server.
- * backup
-   * Current backup setting of the server.(0\|1)
- * down
-   * Current down setting of the server.(0\|1)
+  * requestCounter
+    * The total number of client requests received from clients.
+  * requestMsec
+    * The average of request processing times in milliseconds.
+  * responseMsec
+    * The average of only upstream response processing times in milliseconds.
+  * inBytes
+    * The total number of bytes received from clients.
+  * outBytes
+    * The total number of bytes sent to clients.
+  * 1xx, 2xx, 3xx, 4xx, 5xx
+    * The number of responses with status codes 1xx, 2xx, 3xx, 4xx, and 5xx.
+  * cacheMaxSize
+    * The limit on the maximum size of the cache specified in the configuration.
+  * cacheUsedSize
+    * The current size of the cache.
+  * cacheMiss
+    * The number of cache miss.
+  * cacheBypass
+    * The number of cache bypass.
+  * cacheExpired
+    * The number of cache expired.
+  * cacheStale
+    * The number of cache stale.
+  * cacheUpdating
+    * The number of cache updating.
+  * cacheRevalidated
+    * The number of cache revalidated.
+  * cacheHit
+    * The number of cache hit.
+  * cacheScarce
+    * The number of cache scare.
+  * weight
+    * Current weight setting of the server.
+  * maxFails
+    * Current max_fails setting of the server.
+  * failTimeout
+    * Current fail_timeout setting of the server.
+  * backup
+    * Current backup setting of the server.(0\|1)
+  * down
+    * Current down setting of the server.(0\|1)
 
 `Caveats:` The *name* is case sensitive. All return values take the integer type.
 
 For examples:
 * requestCounter in serverZones
- * **vhost_traffic_status_set_by_filter** `$requestCounter` `server/example.org/requestCounter`
+  * **vhost_traffic_status_set_by_filter** `$requestCounter` `server/example.org/requestCounter`
 * requestCounter in filterZones
- * **vhost_traffic_status_set_by_filter** `$requestCounter` `filter/country::example.org@KR/requestCounter`
+  * **vhost_traffic_status_set_by_filter** `$requestCounter` `filter/country::example.org@KR/requestCounter`
 * requestCounter in upstreamZones
- * **vhost_traffic_status_set_by_filter** `$requestCounter` `upstream@group/backend@10.10.10.11:80/requestCounter`
+  * **vhost_traffic_status_set_by_filter** `$requestCounter` `upstream@group/backend@10.10.10.11:80/requestCounter`
 * requestCounter in upstreamZones::nogroups
- * **vhost_traffic_status_set_by_filter** `$requestCounter` `upstream@alone/10.10.10.11:80/requestCounter`
+  * **vhost_traffic_status_set_by_filter** `$requestCounter` `upstream@alone/10.10.10.11:80/requestCounter`
 * cacheHit in cacheZones
- * **vhost_traffic_status_set_by_filter** `$cacheHit` `cache/my_cache_name/cacheHit`
+  * **vhost_traffic_status_set_by_filter** `$cacheHit` `cache/my_cache_name/cacheHit`
 
 ### vhost_traffic_status_average_method
 
--   | -
---- | ---
-**Syntax**  | **vhost_traffic_status_average_method** \<AMM\|WMA\>
-**Default** | AMM
-**Context** | http, server, location
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_average_method** \<AMM\|WMA\> |
+| **Default** | AMM |
+| **Context** | http, server, location |
 
 `Description:` Sets the method which is a formula that calculate the average of response processing times.
 The corresponding values are `requestMsec` and `responseMsec` in JSON.
 
 * **AMM**
- * The AMM is the [arithmetic mean](https://en.wikipedia.org/wiki/Arithmetic_mean).
+  * The AMM is the [arithmetic mean](https://en.wikipedia.org/wiki/Arithmetic_mean).
 * **WMA**
- * THE WMA is the [weighted moving average](https://en.wikipedia.org/wiki/Moving_average#Weighted_moving_average).
+  * THE WMA is the [weighted moving average](https://en.wikipedia.org/wiki/Moving_average#Weighted_moving_average).
 
 ### vhost_traffic_status_bypass_limit
 
--   | -
---- | ---
-**Syntax**  | **vhost_traffic_status_bypass_limit** \<on\|off\>
-**Default** | off
-**Context** | http, server, location
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_bypass_limit** \<on\|off\> |
+| **Default** | off |
+| **Context** | http, server, location |
 
 `Description:` Enables or disables to bypass `vhost_traffic_status_limit` directives.
 The limit features is bypassed if this option is enabled.
@@ -1541,11 +1543,11 @@ http {
 
 ### vhost_traffic_status_bypass_stats
 
--   | -
---- | ---
-**Syntax**  | **vhost_traffic_status_bypass_stats** \<on\|off\>
-**Default** | off
-**Context** | http, server, location
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_bypass_stats** \<on\|off\> |
+| **Default** | off |
+| **Context** | http, server, location |
 
 `Description:` Enables or disables to bypass `vhost_traffic_status`.
 The traffic status stats features is bypassed if this option is enabled.
@@ -1573,14 +1575,14 @@ http {
 
 ## See Also
 * Stream traffic status
- * [nginx-module-sts](https://github.com/vozlt/nginx-module-sts)
- * [nginx-module-stream-sts](https://github.com/vozlt/nginx-module-stream-sts)
+  * [nginx-module-sts](https://github.com/vozlt/nginx-module-sts)
+  * [nginx-module-stream-sts](https://github.com/vozlt/nginx-module-stream-sts)
 
 * Prometheus
- * [nginx-vts-exporter](https://github.com/hnlq715/nginx-vts-exporter)
+  * [nginx-vts-exporter](https://github.com/hnlq715/nginx-vts-exporter)
 
 * System protection
- * [nginx-module-sysguard](https://github.com/vozlt/nginx-module-sysguard)
+  * [nginx-module-sysguard](https://github.com/vozlt/nginx-module-sysguard)
 
 ## TODO
 
