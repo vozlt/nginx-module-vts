@@ -432,10 +432,58 @@ ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
 
 
 ngx_int_t
+ngx_http_vhost_traffic_status_display_get_upstream_nelts(ngx_http_request_t *r)
+{
+    ngx_uint_t                      i, j;
+#if (NGX_HTTP_UPSTREAM_ZONE)
+    ngx_http_upstream_rr_peer_t    *peer;
+    ngx_http_upstream_rr_peers_t   *peers;
+#endif
+    ngx_http_upstream_srv_conf_t   *uscf, **uscfp;
+    ngx_http_upstream_main_conf_t  *umcf;
+
+    umcf = ngx_http_get_module_main_conf(r, ngx_http_upstream_module);
+    uscfp = umcf->upstreams.elts;
+
+    for (i = 0, j = 0; i < umcf->upstreams.nelts; i++) {
+
+        uscf = uscfp[i];
+
+        /* groups */
+        if (uscf->servers && !uscf->port) {
+
+#if (NGX_HTTP_UPSTREAM_ZONE)
+            if (uscf->shm_zone == NULL) {
+                goto not_supported;
+            }
+
+            peers = uscf->peer.data;
+
+            ngx_http_upstream_rr_peers_rlock(peers);
+
+            for (peer = peers->peer; peer; peer = peer->next) {
+                j++;
+            }
+
+            ngx_http_upstream_rr_peers_unlock(peers);
+
+#endif
+
+not_supported:
+
+            j += uscf->servers->nelts;
+        }
+    }
+
+    return j;
+}
+
+
+ngx_int_t
 ngx_http_vhost_traffic_status_display_get_size(ngx_http_request_t *r,
     ngx_int_t format)
 {
-    ngx_uint_t                                 size;
+    ngx_uint_t                                 size, un;
     ngx_http_vhost_traffic_status_shm_info_t  *shm_info;
 
     shm_info = ngx_pcalloc(r->pool, sizeof(ngx_http_vhost_traffic_status_shm_info_t));
@@ -445,6 +493,10 @@ ngx_http_vhost_traffic_status_display_get_size(ngx_http_request_t *r,
 
     ngx_http_vhost_traffic_status_shm_info(r, shm_info);
 
+    /* allocate memory for the upstream groups even if upstream node not exists */
+    un = shm_info->used_node
+         + (ngx_uint_t) ngx_http_vhost_traffic_status_display_get_upstream_nelts(r);
+
     size = 0;
 
     switch (format) {
@@ -452,8 +504,9 @@ ngx_http_vhost_traffic_status_display_get_size(ngx_http_request_t *r,
     case NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSON:
     case NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSONP:
         size = sizeof(ngx_http_vhost_traffic_status_node_t) / NGX_PTR_SIZE
-               * NGX_ATOMIC_T_LEN * shm_info->used_node 
-               + (shm_info->used_node * 1024);
+               * NGX_ATOMIC_T_LEN * un  /* values size */
+               + (un * 1024)            /* names  size */
+               + 4096;                  /* main   size */
         break;
 
     case NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_HTML:
@@ -1023,7 +1076,7 @@ ngx_http_vhost_traffic_status_display_set_upstream_group(ngx_http_request_t *r,
 
             ngx_http_upstream_rr_peers_rlock(peers);
 
-            for (peer = peers->peer; peer ; peer = peer->next) {
+            for (peer = peers->peer; peer; peer = peer->next) {
                 p = ngx_cpymem(p, uscf->host.data, uscf->host.len);
                 *p++ = NGX_HTTP_VHOST_TRAFFIC_STATUS_KEY_SEPARATOR;
                 p = ngx_cpymem(p, peer->name.data, peer->name.len);
