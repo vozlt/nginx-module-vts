@@ -468,9 +468,9 @@ ngx_http_vhost_traffic_status_display_get_upstream_nelts(ngx_http_request_t *r)
 
             ngx_http_upstream_rr_peers_unlock(peers);
 
-#endif
-
 not_supported:
+
+#endif
 
             j += uscf->servers->nelts;
         }
