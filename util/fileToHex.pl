@@ -110,10 +110,10 @@ if ($type eq "define") {
     }
 
     if (!($i % $max)) {
-        print substr($plus, 0, -3) . "\n";
+        print $plus . "0x00\n";
 
     } else {
-        print $plus . substr($buf, 0, -2) . "\n";
+        print $plus . $buf . "0x00\n";
     }
 }
 $fth->fileClose();

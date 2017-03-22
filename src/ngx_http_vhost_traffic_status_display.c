@@ -836,7 +836,8 @@ ngx_http_vhost_traffic_status_display_set_filter(ngx_http_request_t *r,
                       ngx_http_traffic_status_filter_cmp_keys);
         }
 
-        key.len = 0;
+        ngx_memzero(&key, sizeof(ngx_str_t));
+
         for (i = 0; i < n; i++) {
             if (keys[i].key.len == key.len) {
                 if (ngx_strncmp(keys[i].key.data, key.data, key.len) == 0) {
