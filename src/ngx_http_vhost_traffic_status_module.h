@@ -12,7 +12,6 @@
 #include <ngx_core.h>
 #include <ngx_http.h>
 
-#include "ngx_http_vhost_traffic_status_module_html.h"
 #include "ngx_http_vhost_traffic_status_string.h"
 #include "ngx_http_vhost_traffic_status_node.h"
 
@@ -392,59 +391,59 @@
 
 
 typedef struct {
-    ngx_rbtree_t                *rbtree;
+    ngx_rbtree_t                           *rbtree;
 
     /* array of ngx_http_vhost_traffic_status_filter_t */
-    ngx_array_t                 *filter_keys;
+    ngx_array_t                            *filter_keys;
 
     /* array of ngx_http_vhost_traffic_status_limit_t */
-    ngx_array_t                 *limit_traffics;
+    ngx_array_t                            *limit_traffics;
 
     /* array of ngx_http_vhost_traffic_status_limit_t */
-    ngx_array_t                 *limit_filter_traffics;
+    ngx_array_t                            *limit_filter_traffics;
 
-    ngx_flag_t                   enable;
-    ngx_flag_t                   filter_check_duplicate;
-    ngx_flag_t                   limit_check_duplicate;
-    ngx_str_t                    shm_name;
-    ssize_t                      shm_size;
+    ngx_flag_t                              enable;
+    ngx_flag_t                              filter_check_duplicate;
+    ngx_flag_t                              limit_check_duplicate;
+    ngx_str_t                               shm_name;
+    ssize_t                                 shm_size;
 } ngx_http_vhost_traffic_status_ctx_t;
 
 
 typedef struct {
-    ngx_shm_zone_t                                  *shm_zone;
-    ngx_flag_t                                       enable;
-    ngx_flag_t                                       filter;
-    ngx_flag_t                                       filter_host;
-    ngx_flag_t                                       filter_check_duplicate;
+    ngx_shm_zone_t                         *shm_zone;
+    ngx_flag_t                              enable;
+    ngx_flag_t                              filter;
+    ngx_flag_t                              filter_host;
+    ngx_flag_t                              filter_check_duplicate;
 
     /* array of ngx_http_vhost_traffic_status_filter_t */
-    ngx_array_t                                     *filter_keys;
+    ngx_array_t                            *filter_keys;
 
     /* array of ngx_http_vhost_traffic_status_filter_variable_t */
-    ngx_array_t                                     *filter_vars;
+    ngx_array_t                            *filter_vars;
 
-    ngx_flag_t                                       limit;
-    ngx_flag_t                                       limit_check_duplicate;
-
-    /* array of ngx_http_vhost_traffic_status_limit_t */
-    ngx_array_t                                     *limit_traffics;
+    ngx_flag_t                              limit;
+    ngx_flag_t                              limit_check_duplicate;
 
     /* array of ngx_http_vhost_traffic_status_limit_t */
-    ngx_array_t                                     *limit_filter_traffics;
+    ngx_array_t                            *limit_traffics;
 
-    ngx_str_t                                        shm_name;
-    ngx_http_vhost_traffic_status_node_t             stats;
-    ngx_msec_t                                       start_msec;
-    ngx_flag_t                                       format;
-    ngx_str_t                                        jsonp;
-    ngx_str_t                                        sum_key;
-    ngx_flag_t                                       average_method;
+    /* array of ngx_http_vhost_traffic_status_limit_t */
+    ngx_array_t                            *limit_filter_traffics;
 
-    ngx_flag_t                                       bypass_limit;
-    ngx_flag_t                                       bypass_stats;
+    ngx_str_t                               shm_name;
+    ngx_http_vhost_traffic_status_node_t    stats;
+    ngx_msec_t                              start_msec;
+    ngx_flag_t                              format;
+    ngx_str_t                               jsonp;
+    ngx_str_t                               sum_key;
+    ngx_flag_t                              average_method;
 
-    ngx_rbtree_node_t                              **node_caches;
+    ngx_flag_t                              bypass_limit;
+    ngx_flag_t                              bypass_stats;
+
+    ngx_rbtree_node_t                     **node_caches;
 } ngx_http_vhost_traffic_status_loc_conf_t;
 
 

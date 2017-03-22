@@ -25,9 +25,11 @@ if [ -f "$tmp" ]; then
     perl -p -i -e 's/{{uri}}/%V/g' $tmp
 fi
 
-echo "#define NGX_HTTP_VHOST_TRAFFIC_STATUS_HTML_DATA \\"
+echo "static char  NGX_HTTP_VHOST_TRAFFIC_STATUS_HTML_DATA[] = {"
 
-\perl fileToHex.pl $tmp 16 define
+\perl fileToHex.pl $tmp 16 buffer
+
+echo "};"
 
 \rm -f $tmp
 
