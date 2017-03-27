@@ -621,8 +621,11 @@ ngx_http_vhost_traffic_status_display_set_server_node(
     u_char *buf, ngx_str_t *key,
     ngx_http_vhost_traffic_status_node_t *vtsn)
 {
-    ngx_int_t  rc;
-    ngx_str_t  tmp, dst;
+    ngx_int_t                                  rc;
+    ngx_str_t                                  tmp, dst;
+    ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
+
+    vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
 
     tmp = *key;
 
@@ -652,7 +655,9 @@ ngx_http_vhost_traffic_status_display_set_server_node(
                       vtsn->stat_cache_revalidated_counter,
                       vtsn->stat_cache_hit_counter,
                       vtsn->stat_cache_scarce_counter,
-                      vtsn->stat_request_time,
+                      ngx_http_vhost_traffic_status_node_time_queue_average(
+                          &vtsn->stat_request_times, vtscf->average_method,
+                          vtscf->average_period),
                       ngx_http_vhost_traffic_status_display_get_time_queue_times(r,
                           &vtsn->stat_request_times),
                       ngx_http_vhost_traffic_status_display_get_time_queue_msecs(r,
@@ -684,7 +689,9 @@ ngx_http_vhost_traffic_status_display_set_server_node(
                       vtsn->stat_3xx_counter,
                       vtsn->stat_4xx_counter,
                       vtsn->stat_5xx_counter,
-                      vtsn->stat_request_time,
+                      ngx_http_vhost_traffic_status_node_time_queue_average(
+                          &vtsn->stat_request_times, vtscf->average_method,
+                          vtscf->average_period),
                       ngx_http_vhost_traffic_status_display_get_time_queue_times(r,
                           &vtsn->stat_request_times),
                       ngx_http_vhost_traffic_status_display_get_time_queue_msecs(r,
@@ -737,7 +744,9 @@ ngx_http_vhost_traffic_status_display_set_server(ngx_http_request_t *r,
             vtscf->stats.stat_3xx_counter += vtsn->stat_3xx_counter;
             vtscf->stats.stat_4xx_counter += vtsn->stat_4xx_counter;
             vtscf->stats.stat_5xx_counter += vtsn->stat_5xx_counter;
-            vtscf->stats.stat_request_time += vtsn->stat_request_time;
+            ngx_http_vhost_traffic_status_node_time_queue_merge(
+                &vtscf->stats.stat_request_times,
+                &vtsn->stat_request_times);
 
             vtscf->stats.stat_request_counter_oc += vtsn->stat_request_counter_oc;
             vtscf->stats.stat_in_bytes_oc += vtsn->stat_in_bytes_oc;
@@ -895,8 +904,11 @@ ngx_http_vhost_traffic_status_display_set_upstream_node(ngx_http_request_t *r,
 #endif
      )
 {
-    ngx_int_t  rc;
-    ngx_str_t  key;
+    ngx_int_t                                  rc;
+    ngx_str_t                                  key;
+    ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
+
+    vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
 
 #if nginx_version > 1007001
     rc = ngx_http_vhost_traffic_status_escape_json_pool(r->pool, &key, &us->name);
@@ -916,12 +928,16 @@ ngx_http_vhost_traffic_status_display_set_upstream_node(ngx_http_request_t *r,
                 vtsn->stat_1xx_counter, vtsn->stat_2xx_counter,
                 vtsn->stat_3xx_counter, vtsn->stat_4xx_counter,
                 vtsn->stat_5xx_counter,
-                vtsn->stat_request_time,
+                ngx_http_vhost_traffic_status_node_time_queue_average(
+                    &vtsn->stat_request_times, vtscf->average_method,
+                    vtscf->average_period),
                 ngx_http_vhost_traffic_status_display_get_time_queue_times(r,
                     &vtsn->stat_request_times),
                 ngx_http_vhost_traffic_status_display_get_time_queue_msecs(r,
                     &vtsn->stat_request_times),
-                vtsn->stat_upstream.response_time,
+                ngx_http_vhost_traffic_status_node_time_queue_average(
+                    &vtsn->stat_upstream.response_times, vtscf->average_method,
+                    vtscf->average_period),
                 ngx_http_vhost_traffic_status_display_get_time_queue_times(r,
                     &vtsn->stat_upstream.response_times),
                 ngx_http_vhost_traffic_status_display_get_time_queue_msecs(r,
@@ -1308,11 +1324,13 @@ ngx_http_vhost_traffic_status_display_set(ngx_http_request_t *r,
 
     node = ctx->rbtree->root;
 
+    /* init stats */
     ngx_memzero(&vtscf->stats, sizeof(vtscf->stats));
-
-    buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_S);
+    ngx_http_vhost_traffic_status_node_time_queue_init(&vtscf->stats.stat_request_times);
 
     /* main & connections */
+    buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_S);
+
     buf = ngx_http_vhost_traffic_status_display_set_main(r, buf);
 
     /* serverZones */
@@ -1328,8 +1346,6 @@ ngx_http_vhost_traffic_status_display_set(ngx_http_request_t *r,
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_NEXT);
 
     /* filterZones */
-    ngx_memzero(&vtscf->stats, sizeof(vtscf->stats));
-
     o = buf;
 
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_FILTER_S);

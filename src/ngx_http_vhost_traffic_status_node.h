@@ -116,11 +116,16 @@ ngx_int_t ngx_http_vhost_traffic_status_node_time_queue_pop(
 
 ngx_msec_t ngx_http_vhost_traffic_status_node_time_queue_average(
     ngx_http_vhost_traffic_status_node_time_queue_t *q,
-    ngx_int_t method);
+    ngx_int_t method, ngx_msec_t period);
 ngx_msec_t ngx_http_vhost_traffic_status_node_time_queue_amm(
-    ngx_http_vhost_traffic_status_node_time_queue_t *q);
+    ngx_http_vhost_traffic_status_node_time_queue_t *q,
+    ngx_msec_t period);
 ngx_msec_t ngx_http_vhost_traffic_status_node_time_queue_wma(
-    ngx_http_vhost_traffic_status_node_time_queue_t *q);
+    ngx_http_vhost_traffic_status_node_time_queue_t *q,
+    ngx_msec_t period);
+void ngx_http_vhost_traffic_status_node_time_queue_merge(
+    ngx_http_vhost_traffic_status_node_time_queue_t *a,
+    ngx_http_vhost_traffic_status_node_time_queue_t *b);
 
 void ngx_http_vhost_traffic_status_find_name(ngx_http_request_t *r,
     ngx_str_t *buf);

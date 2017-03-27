@@ -262,7 +262,7 @@ ngx_http_vhost_traffic_status_node_status_zone(
         control->count++;
 
         return;
-    } 
+    }
 
     rc = ngx_http_vhost_traffic_status_node_generate_key(control->r->pool, &key, control->zone,
                                                          control->group);

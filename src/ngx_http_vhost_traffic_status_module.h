@@ -41,6 +41,7 @@
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_SHM_SIZE     0xfffff
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_JSONP        "ngx_http_vhost_traffic_status_jsonp_callback"
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_SUM_KEY      "*"
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_AVG_PERIOD   60
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_S           "{"
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_OBJECT_S    "\"%V\":{"
@@ -440,6 +441,7 @@ typedef struct {
     ngx_str_t                               jsonp;
     ngx_str_t                               sum_key;
     ngx_flag_t                              average_method;
+    ngx_msec_t                              average_period;
 
     ngx_flag_t                              bypass_limit;
     ngx_flag_t                              bypass_stats;

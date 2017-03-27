@@ -1498,11 +1498,14 @@ For examples:
 
 | -   | - |
 | --- | --- |
-| **Syntax**  | **vhost_traffic_status_average_method** \<AMM\|WMA\> |
-| **Default** | AMM |
+| **Syntax**  | **vhost_traffic_status_average_method** \<AMM\|WMA\> [*period*] |
+| **Default** | AMM 60s |
 | **Context** | http, server, location |
 
 `Description:` Sets the method which is a formula that calculate the average of response processing times.
+The *period* is an effective time of the values used for the average calculation.(Default: 60s)
+If *period* set to 0, effective time is ignored.
+In this case, the last average value is displayed even if there is no reqeusts and after the elapse of time.
 The corresponding values are `requestMsec` and `responseMsec` in JSON.
 
 * **AMM**
@@ -1585,6 +1588,7 @@ http {
   * [nginx-module-sysguard](https://github.com/vozlt/nginx-module-sysguard)
 
 ## TODO
+* Add support for implementing data restore.
 
 ## Donation
 [![License](http://img.shields.io/badge/PAYPAL-DONATE-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=PWWSYKQ9VKH38&lc=KR&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)

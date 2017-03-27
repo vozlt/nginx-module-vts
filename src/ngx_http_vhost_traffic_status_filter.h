@@ -9,24 +9,24 @@
 
 
 typedef struct {
-    ngx_http_complex_value_t     filter_key;
-    ngx_http_complex_value_t     filter_name;
+    ngx_http_complex_value_t               filter_key;
+    ngx_http_complex_value_t               filter_name;
 } ngx_http_vhost_traffic_status_filter_t;
 
 
 typedef struct {
-    ngx_str_t                    key;
+    ngx_str_t                              key;
 } ngx_http_vhost_traffic_status_filter_key_t;
 
 
 typedef struct {
-    uint32_t                     hash;
-    ngx_uint_t                   index;
+    uint32_t                               hash;
+    ngx_uint_t                             index;
 } ngx_http_vhost_traffic_status_filter_uniq_t;
 
 
 typedef struct {
-    ngx_http_vhost_traffic_status_node_t            *node;
+    ngx_http_vhost_traffic_status_node_t  *node;
 } ngx_http_vhost_traffic_status_filter_node_t;
 
 

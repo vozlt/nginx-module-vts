@@ -72,7 +72,7 @@ ngx_http_vhost_traffic_status_set_init(ngx_http_request_t *r,
     }
 
     return NGX_OK;
-} 
+}
 
 
 static ngx_atomic_uint_t
@@ -211,7 +211,7 @@ ngx_http_vhost_traffic_status_set_by_filter_init(
     ngx_int_t            rc;
     ngx_str_t           *arg_group, *arg_zone, *arg_name, alpha, slash;
     ngx_http_request_t  *r;
-    
+
     control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_STATUS;
     arg_group = control->arg_group;
     arg_zone = control->arg_zone;
@@ -388,7 +388,7 @@ ngx_http_vhost_traffic_status_set_by_filter_variables(ngx_http_request_t *r)
     ngx_http_vhost_traffic_status_loc_conf_t         *vtscf;
     ngx_http_vhost_traffic_status_filter_variable_t  *fv, *last;
     ngx_http_core_main_conf_t                        *cmcf;
-    
+
     control = ngx_pcalloc(r->pool, sizeof(ngx_http_vhost_traffic_status_control_t));
     if (control == NULL) {
         return NGX_ERROR;

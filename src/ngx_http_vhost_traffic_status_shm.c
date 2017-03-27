@@ -187,7 +187,7 @@ ngx_http_vhost_traffic_status_shm_add_node_upstream(ngx_http_request_t *r,
     } else {
         vtsn->stat_upstream.response_time = ngx_http_vhost_traffic_status_node_time_queue_average(
                                                 &vtsn->stat_upstream.response_times,
-                                                vtscf->average_method);
+                                                vtscf->average_method, vtscf->average_period);
     }
 
     return NGX_OK;

@@ -30,6 +30,8 @@ static char *ngx_http_vhost_traffic_status_init_main_conf(ngx_conf_t *cf,
 static void *ngx_http_vhost_traffic_status_create_loc_conf(ngx_conf_t *cf);
 static char *ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf,
     void *parent, void *child);
+char *ngx_http_vhost_traffic_status_average_method(ngx_conf_t *cf,
+    ngx_command_t *cmd, void *conf);
 static ngx_int_t ngx_http_vhost_traffic_status_init(ngx_conf_t *cf);
 
 
@@ -41,7 +43,7 @@ static ngx_conf_enum_t  ngx_http_vhost_traffic_status_display_format[] = {
 };
 
 
-static ngx_conf_enum_t  ngx_http_vhost_traffic_status_average_method[] = {
+static ngx_conf_enum_t  ngx_http_vhost_traffic_status_average_method_post[] = {
     { ngx_string("AMM"), NGX_HTTP_VHOST_TRAFFIC_STATUS_AVERAGE_METHOD_AMM },
     { ngx_string("WMA"), NGX_HTTP_VHOST_TRAFFIC_STATUS_AVERAGE_METHOD_WMA },
     { ngx_null_string, 0 }
@@ -157,11 +159,11 @@ static ngx_command_t ngx_http_vhost_traffic_status_commands[] = {
       NULL },
 
     { ngx_string("vhost_traffic_status_average_method"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
-      ngx_conf_set_enum_slot,
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE12,
+      ngx_http_vhost_traffic_status_average_method,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, average_method),
-      &ngx_http_vhost_traffic_status_average_method },
+      0,
+      NULL },
 
     { ngx_string("vhost_traffic_status_bypass_limit"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
@@ -592,6 +594,7 @@ ngx_http_vhost_traffic_status_create_loc_conf(ngx_conf_t *cf)
      *     conf->jsonp = { 0, NULL };
      *     conf->sum_key = { 0, NULL };
      *     conf->average_method = 0;
+     *     conf->average_period = 0;
      *     conf->bypass_limit = 0;
      *     conf->bypass_stats = 0;
      */
@@ -609,6 +612,7 @@ ngx_http_vhost_traffic_status_create_loc_conf(ngx_conf_t *cf)
     conf->start_msec = ngx_current_msec;
     conf->format = NGX_CONF_UNSET;
     conf->average_method = NGX_CONF_UNSET;
+    conf->average_period = NGX_CONF_UNSET_MSEC;
     conf->bypass_limit = NGX_CONF_UNSET;
     conf->bypass_stats = NGX_CONF_UNSET;
 
@@ -715,7 +719,9 @@ ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf, void *parent, void 
                              NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_SUM_KEY);
     ngx_conf_merge_value(conf->average_method, prev->average_method,
                          NGX_HTTP_VHOST_TRAFFIC_STATUS_AVERAGE_METHOD_AMM);
-    
+    ngx_conf_merge_msec_value(conf->average_period, prev->average_period,
+                              NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_AVG_PERIOD * 1000);
+
     ngx_conf_merge_value(conf->bypass_limit, prev->bypass_limit, 0);
     ngx_conf_merge_value(conf->bypass_stats, prev->bypass_stats, 0);
 
@@ -731,6 +737,45 @@ ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf, void *parent, void 
     conf->shm_name = name;
 
     return NGX_CONF_OK;
+}
+
+
+char *
+ngx_http_vhost_traffic_status_average_method(ngx_conf_t *cf, ngx_command_t *cmd,
+    void *conf)
+{
+    ngx_http_vhost_traffic_status_loc_conf_t *vtscf = conf;
+
+    char       *rv;
+    ngx_int_t   rc;
+    ngx_str_t  *value;
+
+    value = cf->args->elts;
+
+    cmd->offset = offsetof(ngx_http_vhost_traffic_status_loc_conf_t, average_method);
+    cmd->post = &ngx_http_vhost_traffic_status_average_method_post;
+
+    rv = ngx_conf_set_enum_slot(cf, cmd, conf);
+    if (rv != NGX_CONF_OK) {
+        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "invalid parameter \"%V\"", &value[1]);
+        goto invalid;
+    }
+
+    /* second argument process */
+    if (cf->args->nelts == 3) {
+        rc = ngx_parse_time(&value[2], 0);
+        if (rc == NGX_ERROR) {
+            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "invalid parameter \"%V\"", &value[2]);
+            goto invalid;
+        }
+        vtscf->average_period = (ngx_msec_t) rc;
+    }
+
+    return NGX_CONF_OK;
+
+invalid:
+
+    return NGX_CONF_ERROR;
 }
 
 
