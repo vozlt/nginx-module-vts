@@ -42,6 +42,7 @@
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_JSONP        "ngx_http_vhost_traffic_status_jsonp_callback"
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_SUM_KEY      "*"
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_AVG_PERIOD   60
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_DUMP_PERIOD  60
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_S           "{"
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_OBJECT_S    "\"%V\":{"
@@ -407,13 +408,20 @@ typedef struct {
     ngx_flag_t                              enable;
     ngx_flag_t                              filter_check_duplicate;
     ngx_flag_t                              limit_check_duplicate;
+    ngx_shm_zone_t                         *shm_zone;
     ngx_str_t                               shm_name;
     ssize_t                                 shm_size;
+
+    ngx_flag_t                              dump;
+    ngx_str_t                               dump_file;
+    ngx_msec_t                              dump_period;
+    ngx_event_t                             dump_event;
 } ngx_http_vhost_traffic_status_ctx_t;
 
 
 typedef struct {
     ngx_shm_zone_t                         *shm_zone;
+    ngx_str_t                               shm_name;
     ngx_flag_t                              enable;
     ngx_flag_t                              filter;
     ngx_flag_t                              filter_host;
@@ -434,12 +442,12 @@ typedef struct {
     /* array of ngx_http_vhost_traffic_status_limit_t */
     ngx_array_t                            *limit_filter_traffics;
 
-    ngx_str_t                               shm_name;
     ngx_http_vhost_traffic_status_node_t    stats;
     ngx_msec_t                              start_msec;
     ngx_flag_t                              format;
     ngx_str_t                               jsonp;
     ngx_str_t                               sum_key;
+
     ngx_flag_t                              average_method;
     ngx_msec_t                              average_period;
 

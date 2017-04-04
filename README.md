@@ -43,12 +43,14 @@ Table of Contents
   * [To calculate traffic for individual user agent](#to-calculate-traffic-for-individual-user-agent)
   * [To calculate traffic for dynamic dns](#to-calculate-traffic-for-dynamic-dns)
   * [To calculate traffic except for status page](#to-calculate-traffic-except-for-status-page)
+  * [To maintain statistics data permanently](#to-maintain-statistics-data-permanently)
 * [Customizing](#customizing)
   * [To customize after the module installed](#to-customize-after-the-module-installed)
   * [To customize before the module installed](#to-customize-before-the-module-installed)
 * [Directives](#directives)
   * [vhost_traffic_status](#vhost_traffic_status)
   * [vhost_traffic_status_zone](#vhost_traffic_status_zone)
+  * [vhost_traffic_status_dump](#vhost_traffic_status_dump)
   * [vhost_traffic_status_display](#vhost_traffic_status_display)
   * [vhost_traffic_status_display_format](#vhost_traffic_status_display_format)
   * [vhost_traffic_status_display_jsonp](#vhost_traffic_status_display_jsonp)
@@ -71,17 +73,18 @@ Table of Contents
 * [Author](#author)
 
 ## Version
-This document describes nginx-module-vts `v0.1.14` released on 14 Mar 2017.
+This document describes nginx-module-vts `v0.1.15` released on 3 Apr 2017.
 
 ## Dependencies
 * [nginx](http://nginx.org)
 
 ## Compatibility
-* 1.11.x (last tested: 1.11.10)
-* 1.10.x (last tested: 1.10.3)
-* 1.8.x (last tested: 1.8.0)
-* 1.6.x (last tested: 1.6.3)
-* 1.4.x (last tested: 1.4.7)
+* Nginx
+  * 1.11.x (last tested: 1.11.10)
+  * 1.10.x (last tested: 1.10.3)
+  * 1.8.x (last tested: 1.8.0)
+  * 1.6.x (last tested: 1.6.3)
+  * 1.4.x (last tested: 1.4.7)
 
 Earlier versions is not tested.
 
@@ -1018,6 +1021,27 @@ See the following directives:
   * [vhost_traffic_status_bypass_stats](#vhost_traffic_status_bypass_stats)
 
 
+### To maintain statistics data permanently
+
+```Nginx
+http {
+    vhost_traffic_status_zone;
+    vhost_traffic_status_dump /var/log/nginx/vts.db;
+
+    ...
+
+    server {
+
+        ...
+
+    }
+}
+```
+
+* The `vhost_traffic_status_dump` directive maintains statistics data permanently
+even if system has been rebooted or nginx has been restarted.
+Please see the [vhost_traffic_status_dump](#vhost_traffic_status_dump) directive for detailed usage.
+
 ## Customizing
 ### To customize after the module installed
 1. You need to change the `{{uri}}` string to your status uri in status.template.html as follows:
@@ -1101,6 +1125,19 @@ If you set `vhost_traffic_status_zone` directive, is automatically enabled.
 
 `Description:` Sets parameters for a shared memory zone that will keep states for various keys.
 The cache is shared between all worker processes.
+
+### vhost_traffic_status_dump
+
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_dump** *path* [*period*] |
+| **Default** | - |
+| **Context** | http |
+
+`Description:` Enables the statistics data dump and restore.
+The *path* is a location to dump the statistics data.(e.g. `/var/log/nginx/vts.db`)
+The *period* is a backup cycle time.(Default: 60s)
+It is backed up immediately regardless of the backup cycle if nginx is exited by signal(`SIGKILL`).
 
 ### vhost_traffic_status_display
 

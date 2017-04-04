@@ -88,7 +88,7 @@ ngx_http_vhost_traffic_status_node_upstream_lookup(
         uscf = uscfp[i];
 
         /* nogroups */
-        if(uscf->servers == NULL && uscf->port != 0) {
+        if (uscf->servers == NULL && uscf->port != 0) {
             continue;
         }
 
@@ -135,7 +135,7 @@ ngx_http_vhost_traffic_status_node_control_range_set(
             state = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_RANGE_NONE;
 
         } else if (control->zone->len == 1) {
-            if(ngx_strncmp(control->zone->data, "*", 1) == 0) {
+            if (ngx_strncmp(control->zone->data, "*", 1) == 0) {
                 state = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_RANGE_GROUP;
             }
         }
