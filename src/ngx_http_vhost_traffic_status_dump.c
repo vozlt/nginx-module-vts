@@ -232,6 +232,10 @@ ngx_http_vhost_traffic_status_dump_handler(ngx_event_t *ev)
 
     ctx = ev->data;
 
+    if (ngx_exiting) {
+        return;
+    }
+
     rc = ngx_http_vhost_traffic_status_dump_update_valid(ev);
     if (rc != NGX_OK) {
         goto invalid;
