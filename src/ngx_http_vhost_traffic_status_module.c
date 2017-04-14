@@ -910,7 +910,7 @@ ngx_http_vhost_traffic_status_init_worker(ngx_cycle_t *cycle)
     dump_event->handler = ngx_http_vhost_traffic_status_dump_handler;
     dump_event->log = ngx_cycle->log;
     dump_event->data = ctx;
-    ngx_add_timer(dump_event, ctx->dump_period);
+    ngx_add_timer(dump_event, 1000);
 
     /* restore */
     ngx_http_vhost_traffic_status_dump_restore(dump_event);

@@ -227,10 +227,7 @@ ngx_http_vhost_traffic_status_dump_execute(ngx_event_t *ev)
 void
 ngx_http_vhost_traffic_status_dump_handler(ngx_event_t *ev)
 {
-    ngx_int_t                             rc;
-    ngx_http_vhost_traffic_status_ctx_t  *ctx;
-
-    ctx = ev->data;
+    ngx_int_t  rc;
 
     if (ngx_exiting) {
         return;
@@ -249,7 +246,7 @@ ngx_http_vhost_traffic_status_dump_handler(ngx_event_t *ev)
 
 invalid:
 
-    ngx_add_timer(ev, ctx->dump_period);
+    ngx_add_timer(ev, 1000);
 }
 
 
