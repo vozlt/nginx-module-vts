@@ -15,7 +15,7 @@ Table of Contents
 * [Installation](#installation)
 * [Synopsis](#synopsis)
 * [Description](#description)
-* [Calculations and Intervals](#calculations and intervals)
+* [Calculations and Intervals](#calculations-and-intervals)
 * [Control](#control)
   * [To get status of traffic zones on the fly](#to-get-status-of-traffic-zones-on-the-fly)
     * [To get fully zones](#to-get-fully-zones)
