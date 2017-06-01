@@ -348,7 +348,7 @@ See the following modules for the `stream` traffic statistics:
 
 ### Averages
 
-All averages are currently calculated as [WMA](https://en.wikipedia.org/wiki/Moving_average#Weighted_moving_average)(Weighted Moving Average) over the last [64](https://github.com/vozlt/nginx-module-vts/blob/master/src/ngx_http_vhost_traffic_status_node.h#L11) values.
+All averages are currently calculated as [AMM](https://en.wikipedia.org/wiki/Arithmetic_mean)(Arithmetic Mean) over the last [64](https://github.com/vozlt/nginx-module-vts/blob/master/src/ngx_http_vhost_traffic_status_node.h#L11) values.
 
 ## Control
 It is able to reset or delete traffic zones through a query string.
