@@ -15,6 +15,7 @@ Table of Contents
 * [Installation](#installation)
 * [Synopsis](#synopsis)
 * [Description](#description)
+* [Calculations and Intervals](#calculations-and-intervals)
 * [Control](#control)
   * [To get status of traffic zones on the fly](#to-get-status-of-traffic-zones-on-the-fly)
     * [To get fully zones](#to-get-fully-zones)
@@ -342,6 +343,12 @@ If you don't want it, see the [vhost_traffic_status_filter_by_host](#vhost_traff
 See the following modules for the `stream` traffic statistics:
 * [nginx-module-sts](https://github.com/vozlt/nginx-module-sts)
 * [nginx-module-stream-sts](https://github.com/vozlt/nginx-module-stream-sts)
+
+## Calculations and Intervals
+
+### Averages
+
+All averages are currently calculated as [AMM](https://en.wikipedia.org/wiki/Arithmetic_mean)(Arithmetic Mean) over the last [64](https://github.com/vozlt/nginx-module-vts/blob/master/src/ngx_http_vhost_traffic_status_node.h#L11) values.
 
 ## Control
 It is able to reset or delete traffic zones through a query string.
