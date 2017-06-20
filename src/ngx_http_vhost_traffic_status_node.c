@@ -422,16 +422,26 @@ ngx_http_vhost_traffic_status_node_time_queue_wma(
 void
 ngx_http_vhost_traffic_status_node_time_queue_merge(
     ngx_http_vhost_traffic_status_node_time_queue_t *a,
-    ngx_http_vhost_traffic_status_node_time_queue_t *b)
+    ngx_http_vhost_traffic_status_node_time_queue_t *b,
+    ngx_msec_t period)
 {
-    ngx_int_t  i;
+    ngx_int_t   i;
+    ngx_msec_t  x;
+
+    x = period ? (ngx_current_msec - period) : 0;
 
     for (i = a->front; i != a->rear; i = (i + 1) % a->len) {
             a->times[i].time = (a->times[i].time > b->times[i].time)
                                ? a->times[i].time
                                : b->times[i].time;
 
-            a->times[i].msec += b->times[i].msec;
+            if (x < a->times[i].time) {
+                a->times[i].msec = (a->times[i].msec + b->times[i].msec) / 2
+                                   + (a->times[i].msec + b->times[i].msec) % 2;
+
+            } else {
+                a->times[i].msec = 0;
+            }
     }
 }
 
