@@ -1,3 +1,6 @@
+v0.1.15 [Tue Jun 20 2017 YoungJoo.Kim <vozltx@gmail.com>]
+    * Feature: changed ngx_http_vhost_traffic_status_node_time_queue_merge()
+
 v0.1.14 [Tue Mar 21 2017 YoungJoo.Kim <vozltx@gmail.com>]
     * Bugfix: fixed issues/76 worker process exited on signal 11
 

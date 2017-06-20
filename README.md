@@ -74,7 +74,7 @@ Table of Contents
 * [Author](#author)
 
 ## Version
-This document describes nginx-module-vts `v0.1.15` released on 3 Apr 2017.
+This document describes nginx-module-vts `v0.1.15` released on 20 Jun 2017.
 
 ## Dependencies
 * [nginx](http://nginx.org)
@@ -1632,7 +1632,7 @@ http {
   * [nginx-module-sysguard](https://github.com/vozlt/nginx-module-sysguard)
 
 ## TODO
-* Add support for implementing data restore.
+* Add support for implementing accumulated request processing time.
 
 ## Donation
 [![License](http://img.shields.io/badge/PAYPAL-DONATE-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=PWWSYKQ9VKH38&lc=KR&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
