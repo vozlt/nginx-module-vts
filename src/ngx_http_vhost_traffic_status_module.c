@@ -900,7 +900,7 @@ ngx_http_vhost_traffic_status_init_worker(ngx_cycle_t *cycle)
 
     ctx = ngx_http_cycle_get_module_main_conf(cycle, ngx_http_vhost_traffic_status_module);
 
-    if(!ctx){
+    if (ctx == NULL) {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, cycle->log, 0,
                        "vts::init_worker(): is bypassed due to no http block in configure file");
         return NGX_OK;
@@ -937,7 +937,7 @@ ngx_http_vhost_traffic_status_exit_worker(ngx_cycle_t *cycle)
 
     ctx = ngx_http_cycle_get_module_main_conf(cycle, ngx_http_vhost_traffic_status_module);
 
-    if(!ctx){
+    if (ctx == NULL) {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, cycle->log, 0,
                        "vts::exit_worker(): is bypassed due to no http block in configure file");
         return;
