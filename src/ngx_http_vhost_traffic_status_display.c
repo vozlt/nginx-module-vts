@@ -6,6 +6,7 @@
 
 #include "ngx_http_vhost_traffic_status_module_html.h"
 #include "ngx_http_vhost_traffic_status_module.h"
+#include "ngx_http_vhost_traffic_status_prom_display.h"
 #include "ngx_http_vhost_traffic_status_shm.h"
 #include "ngx_http_vhost_traffic_status_filter.h"
 #include "ngx_http_vhost_traffic_status_display.h"
@@ -328,6 +329,9 @@ ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
             } else if (ngx_strncasecmp(s, (u_char *) "html", sizeof("html") - 1) == 0) {
                 format = NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_HTML;
 
+            } else if (ngx_strncasecmp(s, (u_char *) "prometheus", sizeof("prometheus") - 1) == 0) {
+                format = NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_PROM;
+
             } else {
                 s -= 2;
             }
@@ -360,6 +364,9 @@ ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
 
     } else if (format == NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSONP) {
         ngx_str_set(&type, "application/javascript");
+
+    } else if (format == NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_PROM) {
+        ngx_str_set(&type, "text/plain");
 
     } else {
         ngx_str_set(&type, "text/html");
@@ -409,6 +416,11 @@ ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
         b->last = ngx_sprintf(b->last, ")");
         ngx_shmtx_unlock(&shpool->mutex);
 
+    } else if (format == NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_PROM) {
+        shpool = (ngx_slab_pool_t *) vtscf->shm_zone->shm.addr;
+        ngx_shmtx_lock(&shpool->mutex);
+        b->last = ngx_http_vhost_traffic_status_prom_display_set(r, b->last);
+        ngx_shmtx_unlock(&shpool->mutex);
     }
     else {
         b->last = ngx_sprintf(b->last, NGX_HTTP_VHOST_TRAFFIC_STATUS_HTML_DATA, &uri, &uri);
@@ -501,7 +513,7 @@ ngx_http_vhost_traffic_status_display_get_size(ngx_http_request_t *r,
     size = 0;
 
     switch (format) {
-
+    case NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_PROM:
     case NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSON:
     case NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSONP:
         size = sizeof(ngx_http_vhost_traffic_status_node_t) / NGX_PTR_SIZE

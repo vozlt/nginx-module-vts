@@ -11,6 +11,7 @@ HTTP_VTS_SRCS=" \
                  $ngx_addon_dir/src/ngx_http_vhost_traffic_status_control.c     \
                  $ngx_addon_dir/src/ngx_http_vhost_traffic_status_limit.c       \
                  $ngx_addon_dir/src/ngx_http_vhost_traffic_status_display.c     \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_prom_display.c     \
                  $ngx_addon_dir/src/ngx_http_vhost_traffic_status_set.c         \
                  $ngx_addon_dir/src/ngx_http_vhost_traffic_status_dump.c        \
                  "
@@ -25,6 +26,7 @@ HTTP_VTS_DEPS=" \
                  $ngx_addon_dir/src/ngx_http_vhost_traffic_status_control.h     \
                  $ngx_addon_dir/src/ngx_http_vhost_traffic_status_limit.h       \
                  $ngx_addon_dir/src/ngx_http_vhost_traffic_status_display.h     \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_prom_display.h     \
                  $ngx_addon_dir/src/ngx_http_vhost_traffic_status_set.h         \
                  $ngx_addon_dir/src/ngx_http_vhost_traffic_status_dump.h        \
                  $ngx_addon_dir/src/ngx_http_vhost_traffic_status_module_html.h \

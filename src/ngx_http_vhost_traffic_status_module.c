@@ -44,6 +44,7 @@ static ngx_conf_enum_t  ngx_http_vhost_traffic_status_display_format[] = {
     { ngx_string("json"), NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSON },
     { ngx_string("html"), NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_HTML },
     { ngx_string("jsonp"), NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSONP },
+    { ngx_string("prometheus"), NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_PROM },
     { ngx_null_string, 0 }
 };
 
