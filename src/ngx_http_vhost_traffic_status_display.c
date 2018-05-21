@@ -1114,7 +1114,7 @@ ngx_http_vhost_traffic_status_display_set_upstream_group(ngx_http_request_t *r,
                 usn.max_fails = peer->max_fails;
                 usn.fail_timeout = peer->fail_timeout;
                 usn.backup = 0;
-                usn.down = peer->down;
+                usn.down = (peer->fails >= peer->max_fails || peer->down);
 
 #if nginx_version > 1007001
                 usn.name = peer->name;
