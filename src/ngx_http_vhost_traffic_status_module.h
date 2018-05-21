@@ -458,6 +458,7 @@ typedef struct {
 } ngx_http_vhost_traffic_status_loc_conf_t;
 
 
+ngx_msec_t ngx_http_vhost_traffic_status_current_msec(void);
 ngx_msec_int_t ngx_http_vhost_traffic_status_request_time(ngx_http_request_t *r);
 ngx_msec_int_t ngx_http_vhost_traffic_status_upstream_response_time(ngx_http_request_t *r);
 
