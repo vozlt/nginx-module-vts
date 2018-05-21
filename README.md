@@ -42,6 +42,7 @@ Table of Contents
   * [To calculate traffic for individual country using GeoIP](#to-calculate-traffic-for-individual-country-using-geoip)
   * [To calculate traffic for individual storage volume](#to-calculate-traffic-for-individual-storage-volume)
   * [To calculate traffic for individual user agent](#to-calculate-traffic-for-individual-user-agent)
+  * [To calculate traffic for detailed http status code](#to-calculate-traffic-for-detailed-http-status-code)
   * [To calculate traffic for dynamic dns](#to-calculate-traffic-for-dynamic-dns)
   * [To calculate traffic except for status page](#to-calculate-traffic-except-for-status-page)
   * [To maintain statistics data permanently](#to-maintain-statistics-data-permanently)
@@ -74,13 +75,16 @@ Table of Contents
 * [Author](#author)
 
 ## Version
-This document describes nginx-module-vts `v0.1.15` released on 20 Jun 2017.
+This document describes nginx-module-vts `v0.1.16` released on 21 May 2018.
 
 ## Dependencies
 * [nginx](http://nginx.org)
 
 ## Compatibility
 * Nginx
+  * 1.14.x (last tested: 1.14.0)
+  * 1.13.x (last tested: 1.13.12)
+  * 1.12.x (last tested: 1.12.2)
   * 1.11.x (last tested: 1.11.10)
   * 1.10.x (last tested: 1.10.3)
   * 1.8.x (last tested: 1.8.0)
@@ -669,7 +673,7 @@ The following status information is provided in the JSON format:
   * backup
     * Current `backup` setting of the server.
   * down
-    * Current `down` setting of the server.
+    * Current `down` setting of the server. Basically, this is just a mark the [ngx_http_upstream_module](http://nginx.org/en/docs/http/ngx_http_upstream_module.html#server)'s server down(eg. `server backend3.example.com down`), not actual upstream server state. It will changed to actual state if you enabled the upstream zone directive.
 * cacheZones
   * maxSize
     * The limit on the maximum size of the cache specified in the configuration.
@@ -936,6 +940,29 @@ http {
 ```
 
 * Calculate traffic for individual `http_user_agent`
+
+### To calculate traffic for detailed http status code
+```Nginx
+http {
+    vhost_traffic_status_zone;
+
+    server {
+
+        ...
+
+        vhost_traffic_status_filter_by_set_key $status $server_name;
+
+        location /status {
+            vhost_traffic_status_display;
+            vhost_traffic_status_display_format html;
+        }
+    }
+}
+```
+
+* Calculate traffic for detailed `http status code`
+
+`Caveats:` [$status](http://nginx.org/en/docs/http/ngx_http_core_module.html#variables) variable is available in nginx-(1.3.2, 1.2.2).
 
 ### To calculate traffic for dynamic dns
 

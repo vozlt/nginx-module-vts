@@ -1,3 +1,15 @@
+v0.1.16 [Mon May 21 2018 YoungJoo.Kim <vozltx@gmail.com>]
+    * Compatibility: fixed ngx_current_msec that changed in nginx-1.13.10 for
+      the issues/121.
+
+    * Feature: upstream server state is changed to the actual state when using
+      upstream zone directive by pull/112.
+      Thanks to oleg-jukovec.
+
+    * Bugfix: nginx will crash at vts module when configure file has no http
+      block by pull/92.
+      Thanks to gemfield.
+
 v0.1.15 [Tue Jun 20 2017 YoungJoo.Kim <vozltx@gmail.com>]
     * Feature: changed ngx_http_vhost_traffic_status_node_time_queue_merge()
 
