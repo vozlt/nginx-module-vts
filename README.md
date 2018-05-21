@@ -1159,6 +1159,17 @@ If you set `vhost_traffic_status_zone` directive, is automatically enabled.
 
 `Description:` Sets parameters for a shared memory zone that will keep states for various keys.
 The cache is shared between all worker processes.
+In most cases, the shared memory size used by nginx-module-vts does not increase much.
+The shared memory size is increased pretty when using `vhost_traffic_status_filter_by_set_key`
+directive but if filter's keys are fixed(*eg. the total number of the country code is about 240*)
+it does not continuously increase.
+
+If you use `vhost_traffic_status_filter_by_set_key` directive, set it as follows:
+
+* Set to more than 32M shared memory size by default.
+(`vhost_traffic_status_zone shared:vhost_traffic_status:32m`)
+* If the message(*`"ngx_slab_alloc() failed: no memory in vhost_traffic_status_zone"`*)
+printed in error_log, increase to more than (usedSize * 2).
 
 ### vhost_traffic_status_dump
 
