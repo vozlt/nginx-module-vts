@@ -202,6 +202,7 @@ JSON document contains as follows:
                 "hit":...,
                 "scarce":...
             },
+            "requestMsecCounter":...,
             "requestMsec":...,
             "requestMsecs":{
                 "times":[...],
@@ -231,6 +232,7 @@ JSON document contains as follows:
                     "hit":...,
                     "scarce":...
                 },
+                "requestMsecCounter":...,
                 "requestMsec":...,
                 "requestMsecs":{
                     "times":[...],
@@ -255,11 +257,13 @@ JSON document contains as follows:
                     "4xx":...,
                     "5xx":...
                 },
+                "requestMsecCounter":...,
                 "requestMsec":...,
                 "requestMsecs":{
                     "times":[...],
                     "msecs":[...]
                 },
+                "responseMsecCounter":...,
                 "responseMsec":...,
                 "responseMsecs":{
                     "times":[...],
@@ -629,6 +633,8 @@ The following status information is provided in the JSON format:
       * The number of cache hit.
     * scarce
       * The number of cache scare.
+  * requestMsecCounter
+    * The number of accumulated request processing time in milliseconds.
   * requestMsec
     * The average of request processing times in milliseconds.
   * requestMsecs
@@ -650,6 +656,8 @@ The following status information is provided in the JSON format:
   * responses
     * 1xx, 2xx, 3xx, 4xx, 5xx
       * The number of responses with status codes 1xx, 2xx, 3xx, 4xx, and 5xx.
+  * requestMsecCounter
+    * The number of accumulated request processing time including upstream in milliseconds.
   * requestMsec
     * The average of request processing times including upstream in milliseconds.
   * requestMsecs
@@ -657,6 +665,8 @@ The following status information is provided in the JSON format:
       * The times in milliseconds at request processing times.
     * msecs
       * The request processing times including upstream in milliseconds.
+  * responseMsecCounter
+    * The number of accumulated only upstream response processing time in milliseconds.
   * responseMsec
     * The average of only upstream response processing times in milliseconds.
   * responseMsecs
@@ -752,6 +762,8 @@ The following embedded variables are provided:
   * The number of cache hit.
 * **$vts_cache_scarce_counter**
   * The number of cache scare.
+* **$vts_request_time_counter**
+  * The number of accumulated request processing time.
 * **$vts_request_time**
   * The average of request processing times.
 
@@ -1331,7 +1343,12 @@ server {
                   "hit":...,
                   "scarce":...
               },
-              "requestMsec":...
+              "requestMsecCounter":...,
+              "requestMsec":...,
+              "requestMsecs":{
+                  "times":[...],
+                  "msecs":[...]
+              },
           },
           "US": {
           ...
@@ -1521,8 +1538,12 @@ It can acquire almost all status values and the obtained value is stored in *$va
 * **name**
   * requestCounter
     * The total number of client requests received from clients.
+  * requestMsecCounter
+    * The number of accumulated request processing time in milliseconds.
   * requestMsec
     * The average of request processing times in milliseconds.
+  * responseMsecCounter
+    * The number of accumulated only upstream response processing time in milliseconds.
   * responseMsec
     * The average of only upstream response processing times in milliseconds.
   * inBytes

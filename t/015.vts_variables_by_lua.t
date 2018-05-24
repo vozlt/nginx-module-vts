@@ -24,6 +24,8 @@ __DATA__
                                 ngx.var.vts_3xx_counter,
                                 ngx.var.vts_4xx_counter,
                                 ngx.var.vts_5xx_counter,
+                                ngx.var.vts_request_time_counter,
+                                ngx.var.vts_request_time,
                                 ngx.var.vts_cache_miss_counter,
                                 ngx.var.vts_cache_bypass_counter,
                                 ngx.var.vts_cache_expired_counter,
@@ -33,7 +35,7 @@ __DATA__
                                 ngx.var.vts_cache_hit_counter,
                                 ngx.var.vts_cache_scarce_counter
                               }
-            ngx.print("embeded_variables: 16, find_variables: ", table.getn(variables), ", variables: ");
+            ngx.print("embeded_variables: 18, find_variables: ", table.getn(variables), ", variables: ");
             for i=1, table.getn(variables) do
                 if variables[i] then
                     ngx.print(i, ":[", variables[i], "] ")
@@ -60,6 +62,6 @@ __DATA__
 --- response_body_like eval
 [
     'OK',
-    'find_variables: 16',
-    'find_variables: 16'
+    'find_variables: 18',
+    'find_variables: 18'
 ]
