@@ -2,32 +2,36 @@ ngx_addon_name=ngx_http_vhost_traffic_status_module
 have=NGX_STAT_STUB . auto/have
 
 HTTP_VTS_SRCS=" \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_module.c      \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_variables.c   \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_string.c      \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_shm.c         \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_node.c        \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_filter.c      \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_control.c     \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_limit.c       \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_display.c     \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_set.c         \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_dump.c        \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_module.c             \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_variables.c          \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_string.c             \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_shm.c                \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_node.c               \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_filter.c             \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_control.c            \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_limit.c              \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_display.c            \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_display_json.c       \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_display_prometheus.c \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_set.c                \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_dump.c               \
                  "
 
 HTTP_VTS_DEPS=" \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_module.h      \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_variables.h   \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_string.h      \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_shm.h         \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_node.h        \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_filter.h      \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_control.h     \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_limit.h       \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_display.h     \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_set.h         \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_dump.h        \
-                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_module_html.h \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_module.h             \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_variables.h          \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_string.h             \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_shm.h                \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_node.h               \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_filter.h             \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_control.h            \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_limit.h              \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_display.h            \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_display_json.h       \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_display_prometheus.h \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_set.h                \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_dump.h               \
+                 $ngx_addon_dir/src/ngx_http_vhost_traffic_status_module_html.h        \
                  "
 if test -n "$ngx_module_link"; then
     ngx_module_type=HTTP

@@ -144,19 +144,14 @@ First of all, the directive `vhost_traffic_status_zone` is required,
 and then if the directive `vhost_traffic_status_display` is set, can be access to as follows:
 
 * /status/format/json
-
-* /status/format/html
-
-* /status/format/jsonp
-
-* /status/control
-
   * If you request `/status/format/json`, will respond with a JSON document containing the current activity data for using in live dashboards and third-party monitoring tools.
-
+* /status/format/html
   * If you request `/status/format/html`, will respond with the built-in live dashboard in HTML that requests internally to `/status/format/json`.
- 
+* /status/format/jsonp
   * If you request `/status/format/jsonp`, will respond with a JSONP callback function containing the current activity data for using in live dashboards and third-party monitoring tools. 
-
+* /status/format/prometheus
+  * If you request `/status/format/prometheus`, will respond with a [prometheus](https://prometheus.io) document containing the current activity data.
+* /status/control
   * If you request `/status/control`, will respond with a JSON document after it reset or delete zones through a query string. See the [Control](#control).
 
 JSON document contains as follows:
@@ -1210,7 +1205,7 @@ It is backed up immediately regardless of the backup cycle if nginx is exited by
 
 | -   | - |
 | --- | --- |
-| **Syntax**  | **vhost_traffic_status_display_format** \<json\|html\|jsonp\> |
+| **Syntax**  | **vhost_traffic_status_display_format** \<json\|html\|jsonp\|prometheus\> |
 | **Default** | json |
 | **Context** | http, server, location |
 
@@ -1218,6 +1213,7 @@ It is backed up immediately regardless of the backup cycle if nginx is exited by
 If you set `json`, will respond with a JSON document.
 If you set `html`, will respond with the built-in live dashboard in HTML.
 If you set `jsonp`, will respond with a JSONP callback function(default: *ngx_http_vhost_traffic_status_jsonp_callback*).
+If you set `prometheus`, will respond with a [prometheus](https://prometheus.io) document.
 
 ### vhost_traffic_status_display_jsonp
 
@@ -1691,7 +1687,7 @@ http {
   * [nginx-module-sysguard](https://github.com/vozlt/nginx-module-sysguard)
 
 ## TODO
-* Add support for implementing accumulated request processing time.
+* Add support for implementing LRU(least recently used) for filter.
 
 ## Donation
 [![License](http://img.shields.io/badge/PAYPAL-DONATE-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=PWWSYKQ9VKH38&lc=KR&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
