@@ -197,6 +197,7 @@ ngx_http_vhost_traffic_status_node_status_group(
                             control->r, *control->buf);
         break;
 
+#if (NGX_HTTP_CACHE)
     case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_CC:
         *control->buf = ngx_sprintf(*control->buf,
                                     NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_CACHE_S);
@@ -204,6 +205,7 @@ ngx_http_vhost_traffic_status_node_status_group(
         *control->buf = ngx_http_vhost_traffic_status_display_set_cache(
                             control->r, *control->buf, node);
         break;
+#endif
 
     case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG:
         *control->buf = ngx_sprintf(*control->buf,
@@ -318,10 +320,12 @@ ngx_http_vhost_traffic_status_node_status_zone(
         }
         break;
 
+#if (NGX_HTTP_CACHE)
     case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_CC:
         *control->buf = ngx_http_vhost_traffic_status_display_set_cache_node(control->r,
                             *control->buf, vtsn);
         break;
+#endif
 
     case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG:
         (void) ngx_http_vhost_traffic_status_node_position_key(&dst, 2);
