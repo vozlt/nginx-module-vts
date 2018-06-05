@@ -315,7 +315,8 @@ JSON document contains as follows:
 * cacheZones
   * Traffic(in/out) and size(capacity/used) and hit ratio per each cache zone when using the proxy_cache directive.
 
-The directive `vhost_traffic_status_display_format` sets the default ouput format that is one of json or html. (Default: json)
+The `overCounts` objects in JSON document are mostly for 32bit system and will be increment by 1 if its value is overflowed.
+The directive `vhost_traffic_status_display_format` sets the default ouput format that is one of json, jsonp, html, prometheus. (Default: json)
 
 Traffic calculation as follows:
 
