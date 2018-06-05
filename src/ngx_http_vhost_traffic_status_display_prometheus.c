@@ -69,10 +69,10 @@ ngx_http_vhost_traffic_status_display_prometheus_set_server_node(
                       &server, vtsn->stat_4xx_counter,
                       &server, vtsn->stat_5xx_counter,
                       &server, vtsn->stat_request_counter,
-                      &server, vtsn->stat_request_time_counter,
-                      &server, ngx_http_vhost_traffic_status_node_time_queue_average(
+                      &server, (double) vtsn->stat_request_time_counter / 1000,
+                      &server, (double) ngx_http_vhost_traffic_status_node_time_queue_average(
                                    &vtsn->stat_request_times, vtscf->average_method,
-                                   vtscf->average_period));
+                                   vtscf->average_period) / 1000);
 
 #if (NGX_HTTP_CACHE)
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_CACHE,
@@ -179,11 +179,11 @@ ngx_http_vhost_traffic_status_display_prometheus_set_filter_node(
                       &filter, &filter_name, vtsn->stat_4xx_counter,
                       &filter, &filter_name, vtsn->stat_5xx_counter,
                       &filter, &filter_name, vtsn->stat_request_counter,
-                      &filter, &filter_name, vtsn->stat_request_time_counter,
+                      &filter, &filter_name, (double) vtsn->stat_request_time_counter / 1000,
                       &filter, &filter_name,
-                      ngx_http_vhost_traffic_status_node_time_queue_average(
+                      (double) ngx_http_vhost_traffic_status_node_time_queue_average(
                           &vtsn->stat_request_times, vtscf->average_method,
-                          vtscf->average_period));
+                          vtscf->average_period) / 1000);
 
 #if (NGX_HTTP_CACHE)
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_FILTER_CACHE,
@@ -260,16 +260,16 @@ ngx_http_vhost_traffic_status_display_prometheus_set_upstream_node(
                       &upstream, &upstream_server, vtsn->stat_4xx_counter,
                       &upstream, &upstream_server, vtsn->stat_5xx_counter,
                       &upstream, &upstream_server, vtsn->stat_request_counter,
-                      &upstream, &upstream_server, vtsn->stat_request_time_counter,
+                      &upstream, &upstream_server, (double) vtsn->stat_request_time_counter / 1000,
                       &upstream, &upstream_server,
-                      ngx_http_vhost_traffic_status_node_time_queue_average(
+                      (double) ngx_http_vhost_traffic_status_node_time_queue_average(
                           &vtsn->stat_request_times, vtscf->average_method,
-                          vtscf->average_period),
-                      &upstream, &upstream_server, vtsn->stat_upstream.response_time_counter,
+                          vtscf->average_period) / 1000,
+                      &upstream, &upstream_server, (double) vtsn->stat_upstream.response_time_counter / 1000,
                       &upstream, &upstream_server,
-                      ngx_http_vhost_traffic_status_node_time_queue_average(
+                      (double) ngx_http_vhost_traffic_status_node_time_queue_average(
                           &vtsn->stat_upstream.response_times, vtscf->average_method,
-                          vtscf->average_period));
+                          vtscf->average_period) / 1000);
 
     return buf;
 }
