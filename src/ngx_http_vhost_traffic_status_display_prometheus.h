@@ -9,10 +9,12 @@
 
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_MAIN                      \
-    "# HELP nginx_vts_main_uptime_seconds_total nginx uptime info\n"           \
-    "# TYPE nginx_vts_main_uptime_seconds_total counter\n"                     \
-    "nginx_vts_main_uptime_seconds_total{hostname=\"%V\","                     \
-    "version=\"%s\"} %.1f\n"                                                   \
+    "# HELP nginx_vts_info nginx info\n"                                       \
+    "# TYPE nginx_vts_info gauge\n"                                            \
+    "nginx_vts_info{hostname=\"%V\",version=\"%s\"} 1\n"                       \
+    "# HELP nginx_vts_start_time_seconds nginx start time\n"                   \
+    "# TYPE nginx_vts_start_time_seconds gauge\n"                              \
+    "nginx_vts_start_time_seconds %.3f\n"                                      \
     "# HELP nginx_vts_main_connections nginx connections\n"                    \
     "# TYPE nginx_vts_main_connections gauge\n"                                \
     "nginx_vts_main_connections{status=\"accepted\"} %uA\n"                    \
