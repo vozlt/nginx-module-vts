@@ -9,10 +9,12 @@
 
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_MAIN                      \
-    "# HELP nginx_vts_main_uptime_seconds_total nginx uptime info\n"           \
-    "# TYPE nginx_vts_main_uptime_seconds_total counter\n"                     \
-    "nginx_vts_main_uptime_seconds_total{hostname=\"%V\","                     \
-    "version=\"%s\"} %.1f\n"                                                   \
+    "# HELP nginx_vts_info nginx info\n"                                       \
+    "# TYPE nginx_vts_info gauge\n"                                            \
+    "nginx_vts_info{hostname=\"%V\",version=\"%s\"} 1\n"                       \
+    "# HELP nginx_vts_start_time_seconds nginx start time\n"                   \
+    "# TYPE nginx_vts_start_time_seconds gauge\n"                              \
+    "nginx_vts_start_time_seconds %.3f\n"                                      \
     "# HELP nginx_vts_main_connections nginx connections\n"                    \
     "# TYPE nginx_vts_main_connections gauge\n"                                \
     "nginx_vts_main_connections{status=\"accepted\"} %uA\n"                    \
@@ -33,12 +35,12 @@
     "# TYPE nginx_vts_server_bytes_total counter\n"                            \
     "# HELP nginx_vts_server_requests_total requests counter\n"                \
     "# TYPE nginx_vts_server_requests_total counter\n"                         \
-    "# HELP nginx_vts_server_request_msecs_total request processing "          \
-    "time in milliseconds counter\n"                                           \
-    "# TYPE nginx_vts_server_request_msecs_total counter\n"                    \
-    "# HELP nginx_vts_server_request_msecs average of request "                \
-    "processing times in milliseconds\n"                                       \
-    "# TYPE nginx_vts_server_request_msecs gauge\n"
+    "# HELP nginx_vts_server_request_seconds_total request processing "        \
+    "time in seconds\n"                                                        \
+    "# TYPE nginx_vts_server_request_seconds_total counter\n"                  \
+    "# HELP nginx_vts_server_request_seconds average of request "              \
+    "processing times in seconds\n"                                            \
+    "# TYPE nginx_vts_server_request_seconds gauge\n"
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER                    \
     "nginx_vts_server_bytes_total{host=\"%V\",direction=\"in\"} %uA\n"         \
@@ -49,8 +51,8 @@
     "nginx_vts_server_requests_total{host=\"%V\",code=\"4xx\"} %uA\n"          \
     "nginx_vts_server_requests_total{host=\"%V\",code=\"5xx\"} %uA\n"          \
     "nginx_vts_server_requests_total{host=\"%V\",code=\"total\"} %uA\n"        \
-    "nginx_vts_server_request_msecs_total{host=\"%V\"} %uA\n"                  \
-    "nginx_vts_server_request_msecs{host=\"%V\"} %M\n"
+    "nginx_vts_server_request_seconds_total{host=\"%V\"} %.3f\n"               \
+    "nginx_vts_server_request_seconds{host=\"%V\"} %.3f\n"
 
 #if (NGX_HTTP_CACHE)
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_CACHE_S            \
@@ -73,12 +75,12 @@
     "# TYPE nginx_vts_filter_bytes_total counter\n"                            \
     "# HELP nginx_vts_filter_requests_total requests counter\n"                \
     "# TYPE nginx_vts_filter_requests_total counter\n"                         \
-    "# HELP nginx_vts_filter_request_msecs_total request processing "          \
-    "time in milliseconds counter\n"                                           \
-    "# TYPE nginx_vts_filter_request_msecs_total counter\n"                    \
-    "# HELP nginx_vts_filter_request_msecs average of request processing "     \
-    "times in milliseconds\n"                                                  \
-    "# TYPE nginx_vts_filter_request_msecs gauge\n"
+    "# HELP nginx_vts_filter_request_seconds_total request processing "        \
+    "time in seconds counter\n"                                                \
+    "# TYPE nginx_vts_filter_request_seconds_total counter\n"                  \
+    "# HELP nginx_vts_filter_request_seconds average of request processing "   \
+    "times in seconds\n"                                                       \
+    "# TYPE nginx_vts_filter_request_seconds gauge\n"
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_FILTER                    \
     "nginx_vts_filter_bytes_total{filter=\"%V\",filter_name=\"%V\","           \
@@ -97,9 +99,9 @@
     "direction=\"5xx\"} %uA\n"                                                 \
     "nginx_vts_filter_requests_total{filter=\"%V\",filter_name=\"%V\","        \
     "direction=\"total\"} %uA\n"                                               \
-    "nginx_vts_filter_request_msecs_total{filter=\"%V\","                      \
-    "filter_name=\"%V\"} %uA\n"                                                \
-    "nginx_vts_filter_request_msecs{filter=\"%V\",filter_name=\"%V\"} %M\n"
+    "nginx_vts_filter_request_seconds_total{filter=\"%V\","                    \
+    "filter_name=\"%V\"} %.3f\n"                                               \
+    "nginx_vts_filter_request_seconds{filter=\"%V\",filter_name=\"%V\"} %.3f\n"
 
 #if (NGX_HTTP_CACHE)
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_FILTER_CACHE_S            \
@@ -130,18 +132,18 @@
     "# TYPE nginx_vts_upstream_bytes_total counter\n"                          \
     "# HELP nginx_vts_upstream_requests_total upstream requests counter\n"     \
     "# TYPE nginx_vts_upstream_requests_total counter\n"                       \
-    "# HELP nginx_vts_upstream_request_msecs_total request "                   \
-    "processing time including upstream in milliseconds counter\n"             \
-    "# TYPE nginx_vts_upstream_request_msecs_total counter\n"                  \
-    "# HELP nginx_vts_upstream_request_msecs average of request "              \
-    "processing times including upstream in milliseconds\n"                    \
-    "# TYPE nginx_vts_upstream_request_msecs gauge\n"                          \
-    "# HELP nginx_vts_upstream_response_msecs_total only upstream "            \
-    "response processing time in milliseconds counter\n"                       \
-    "# TYPE nginx_vts_upstream_response_msecs_total counter\n"                 \
-    "# HELP nginx_vts_upstream_response_msecs average of only "                \
-    "upstream response processing times in milliseconds\n"                     \
-    "# TYPE nginx_vts_upstream_response_msecs gauge\n"
+    "# HELP nginx_vts_upstream_request_seconds_total request "                 \
+    "processing time including upstream in seconds counter\n"                  \
+    "# TYPE nginx_vts_upstream_request_seconds_total counter\n"                \
+    "# HELP nginx_vts_upstream_request_seconds average of request "            \
+    "processing times including upstream in seconds\n"                         \
+    "# TYPE nginx_vts_upstream_request_seconds gauge\n"                        \
+    "# HELP nginx_vts_upstream_response_seconds_total only upstream "          \
+    "response processing time in seconds counter\n"                            \
+    "# TYPE nginx_vts_upstream_response_seconds_total counter\n"               \
+    "# HELP nginx_vts_upstream_response_seconds average of only "              \
+    "upstream response processing times in seconds\n"                          \
+    "# TYPE nginx_vts_upstream_response_seconds gauge\n"
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM                  \
     "nginx_vts_upstream_bytes_total{upstream=\"%V\",backend=\"%V\","           \
@@ -160,13 +162,13 @@
     "code=\"5xx\"} %uA\n"                                                      \
     "nginx_vts_upstream_requests_total{upstream=\"%V\",backend=\"%V\","        \
     "code=\"total\"} %uA\n"                                                    \
-    "nginx_vts_upstream_request_msecs_total{upstream=\"%V\","                  \
-    "backend=\"%V\"} %uA\n"                                                    \
-    "nginx_vts_upstream_request_msecs{upstream=\"%V\","                        \
-    "backend=\"%V\"} %M\n"                                                     \
-    "nginx_vts_upstream_response_msecs_total{upstream=\"%V\","                 \
-    "backend=\"%V\"} %uA\n"                                                    \
-    "nginx_vts_upstream_response_msecs{upstream=\"%V\",backend=\"%V\"} %M\n"
+    "nginx_vts_upstream_request_seconds_total{upstream=\"%V\","                \
+    "backend=\"%V\"} %.3f\n"                                                   \
+    "nginx_vts_upstream_request_seconds{upstream=\"%V\","                      \
+    "backend=\"%V\"} %.3f\n"                                                   \
+    "nginx_vts_upstream_response_seconds_total{upstream=\"%V\","               \
+    "backend=\"%V\"} %.3f\n"                                                   \
+    "nginx_vts_upstream_response_seconds{upstream=\"%V\",backend=\"%V\"} %.3f\n"
 
 #if (NGX_HTTP_CACHE)
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_CACHE_S                   \
