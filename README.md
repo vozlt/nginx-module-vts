@@ -42,6 +42,7 @@ Table of Contents
   * [To calculate traffic for individual country using GeoIP](#to-calculate-traffic-for-individual-country-using-geoip)
   * [To calculate traffic for individual storage volume](#to-calculate-traffic-for-individual-storage-volume)
   * [To calculate traffic for individual user agent](#to-calculate-traffic-for-individual-user-agent)
+  * [To calculate traffic for detailed http status code](#to-calculate-traffic-for-detailed-http-status-code)
   * [To calculate traffic for dynamic dns](#to-calculate-traffic-for-dynamic-dns)
   * [To calculate traffic except for status page](#to-calculate-traffic-except-for-status-page)
   * [To maintain statistics data permanently](#to-maintain-statistics-data-permanently)
@@ -74,13 +75,16 @@ Table of Contents
 * [Author](#author)
 
 ## Version
-This document describes nginx-module-vts `v0.1.15` released on 20 Jun 2017.
+This document describes nginx-module-vts `v0.1.16` released on 21 May 2018.
 
 ## Dependencies
 * [nginx](http://nginx.org)
 
 ## Compatibility
 * Nginx
+  * 1.14.x (last tested: 1.14.0)
+  * 1.13.x (last tested: 1.13.12)
+  * 1.12.x (last tested: 1.12.2)
   * 1.11.x (last tested: 1.11.10)
   * 1.10.x (last tested: 1.10.3)
   * 1.8.x (last tested: 1.8.0)
@@ -140,19 +144,14 @@ First of all, the directive `vhost_traffic_status_zone` is required,
 and then if the directive `vhost_traffic_status_display` is set, can be access to as follows:
 
 * /status/format/json
-
-* /status/format/html
-
-* /status/format/jsonp
-
-* /status/control
-
   * If you request `/status/format/json`, will respond with a JSON document containing the current activity data for using in live dashboards and third-party monitoring tools.
-
+* /status/format/html
   * If you request `/status/format/html`, will respond with the built-in live dashboard in HTML that requests internally to `/status/format/json`.
- 
+* /status/format/jsonp
   * If you request `/status/format/jsonp`, will respond with a JSONP callback function containing the current activity data for using in live dashboards and third-party monitoring tools. 
-
+* /status/format/prometheus
+  * If you request `/status/format/prometheus`, will respond with a [prometheus](https://prometheus.io) document containing the current activity data.
+* /status/control
   * If you request `/status/control`, will respond with a JSON document after it reset or delete zones through a query string. See the [Control](#control).
 
 JSON document contains as follows:
@@ -198,6 +197,7 @@ JSON document contains as follows:
                 "hit":...,
                 "scarce":...
             },
+            "requestMsecCounter":...,
             "requestMsec":...,
             "requestMsecs":{
                 "times":[...],
@@ -227,6 +227,7 @@ JSON document contains as follows:
                     "hit":...,
                     "scarce":...
                 },
+                "requestMsecCounter":...,
                 "requestMsec":...,
                 "requestMsecs":{
                     "times":[...],
@@ -251,11 +252,13 @@ JSON document contains as follows:
                     "4xx":...,
                     "5xx":...
                 },
+                "requestMsecCounter":...,
                 "requestMsec":...,
                 "requestMsecs":{
                     "times":[...],
                     "msecs":[...]
                 },
+                "responseMsecCounter":...,
                 "responseMsec":...,
                 "responseMsecs":{
                     "times":[...],
@@ -312,7 +315,8 @@ JSON document contains as follows:
 * cacheZones
   * Traffic(in/out) and size(capacity/used) and hit ratio per each cache zone when using the proxy_cache directive.
 
-The directive `vhost_traffic_status_display_format` sets the default ouput format that is one of json or html. (Default: json)
+The `overCounts` objects in JSON document are mostly for 32bit system and will be increment by 1 if its value is overflowed.
+The directive `vhost_traffic_status_display_format` sets the default ouput format that is one of json, jsonp, html, prometheus. (Default: json)
 
 Traffic calculation as follows:
 
@@ -625,6 +629,8 @@ The following status information is provided in the JSON format:
       * The number of cache hit.
     * scarce
       * The number of cache scare.
+  * requestMsecCounter
+    * The number of accumulated request processing time in milliseconds.
   * requestMsec
     * The average of request processing times in milliseconds.
   * requestMsecs
@@ -646,6 +652,8 @@ The following status information is provided in the JSON format:
   * responses
     * 1xx, 2xx, 3xx, 4xx, 5xx
       * The number of responses with status codes 1xx, 2xx, 3xx, 4xx, and 5xx.
+  * requestMsecCounter
+    * The number of accumulated request processing time including upstream in milliseconds.
   * requestMsec
     * The average of request processing times including upstream in milliseconds.
   * requestMsecs
@@ -653,6 +661,8 @@ The following status information is provided in the JSON format:
       * The times in milliseconds at request processing times.
     * msecs
       * The request processing times including upstream in milliseconds.
+  * responseMsecCounter
+    * The number of accumulated only upstream response processing time in milliseconds.
   * responseMsec
     * The average of only upstream response processing times in milliseconds.
   * responseMsecs
@@ -669,7 +679,7 @@ The following status information is provided in the JSON format:
   * backup
     * Current `backup` setting of the server.
   * down
-    * Current `down` setting of the server.
+    * Current `down` setting of the server. Basically, this is just a mark the [ngx_http_upstream_module](http://nginx.org/en/docs/http/ngx_http_upstream_module.html#server)'s server down(eg. `server backend3.example.com down`), not actual upstream server state. It will changed to actual state if you enabled the upstream zone directive.
 * cacheZones
   * maxSize
     * The limit on the maximum size of the cache specified in the configuration.
@@ -748,6 +758,8 @@ The following embedded variables are provided:
   * The number of cache hit.
 * **$vts_cache_scarce_counter**
   * The number of cache scare.
+* **$vts_request_time_counter**
+  * The number of accumulated request processing time.
 * **$vts_request_time**
   * The average of request processing times.
 
@@ -936,6 +948,29 @@ http {
 ```
 
 * Calculate traffic for individual `http_user_agent`
+
+### To calculate traffic for detailed http status code
+```Nginx
+http {
+    vhost_traffic_status_zone;
+
+    server {
+
+        ...
+
+        vhost_traffic_status_filter_by_set_key $status $server_name;
+
+        location /status {
+            vhost_traffic_status_display;
+            vhost_traffic_status_display_format html;
+        }
+    }
+}
+```
+
+* Calculate traffic for detailed `http status code`
+
+`Caveats:` [$status](http://nginx.org/en/docs/http/ngx_http_core_module.html#variables) variable is available in nginx-(1.3.2, 1.2.2).
 
 ### To calculate traffic for dynamic dns
 
@@ -1132,6 +1167,17 @@ If you set `vhost_traffic_status_zone` directive, is automatically enabled.
 
 `Description:` Sets parameters for a shared memory zone that will keep states for various keys.
 The cache is shared between all worker processes.
+In most cases, the shared memory size used by nginx-module-vts does not increase much.
+The shared memory size is increased pretty when using `vhost_traffic_status_filter_by_set_key`
+directive but if filter's keys are fixed(*eg. the total number of the country code is about 240*)
+it does not continuously increase.
+
+If you use `vhost_traffic_status_filter_by_set_key` directive, set it as follows:
+
+* Set to more than 32M shared memory size by default.
+(`vhost_traffic_status_zone shared:vhost_traffic_status:32m`)
+* If the message(*`"ngx_slab_alloc() failed: no memory in vhost_traffic_status_zone"`*)
+printed in error_log, increase to more than (usedSize * 2).
 
 ### vhost_traffic_status_dump
 
@@ -1160,7 +1206,7 @@ It is backed up immediately regardless of the backup cycle if nginx is exited by
 
 | -   | - |
 | --- | --- |
-| **Syntax**  | **vhost_traffic_status_display_format** \<json\|html\|jsonp\> |
+| **Syntax**  | **vhost_traffic_status_display_format** \<json\|html\|jsonp\|prometheus\> |
 | **Default** | json |
 | **Context** | http, server, location |
 
@@ -1168,6 +1214,7 @@ It is backed up immediately regardless of the backup cycle if nginx is exited by
 If you set `json`, will respond with a JSON document.
 If you set `html`, will respond with the built-in live dashboard in HTML.
 If you set `jsonp`, will respond with a JSONP callback function(default: *ngx_http_vhost_traffic_status_jsonp_callback*).
+If you set `prometheus`, will respond with a [prometheus](https://prometheus.io) document.
 
 ### vhost_traffic_status_display_jsonp
 
@@ -1293,7 +1340,12 @@ server {
                   "hit":...,
                   "scarce":...
               },
-              "requestMsec":...
+              "requestMsecCounter":...,
+              "requestMsec":...,
+              "requestMsecs":{
+                  "times":[...],
+                  "msecs":[...]
+              },
           },
           "US": {
           ...
@@ -1483,8 +1535,12 @@ It can acquire almost all status values and the obtained value is stored in *$va
 * **name**
   * requestCounter
     * The total number of client requests received from clients.
+  * requestMsecCounter
+    * The number of accumulated request processing time in milliseconds.
   * requestMsec
     * The average of request processing times in milliseconds.
+  * responseMsecCounter
+    * The number of accumulated only upstream response processing time in milliseconds.
   * responseMsec
     * The average of only upstream response processing times in milliseconds.
   * inBytes
@@ -1632,7 +1688,7 @@ http {
   * [nginx-module-sysguard](https://github.com/vozlt/nginx-module-sysguard)
 
 ## TODO
-* Add support for implementing accumulated request processing time.
+* Add support for implementing LRU(least recently used) for filter.
 
 ## Donation
 [![License](http://img.shields.io/badge/PAYPAL-DONATE-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=PWWSYKQ9VKH38&lc=KR&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)

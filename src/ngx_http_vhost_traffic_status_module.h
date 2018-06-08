@@ -33,7 +33,7 @@
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSON          1
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_HTML          2
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSONP         3
-#define NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_PROM          4
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_PROMETHEUS    4
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_AVERAGE_METHOD_AMM   0
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_AVERAGE_METHOD_WMA   1
@@ -96,6 +96,7 @@
     "\"hit\":%uA,"                                                             \
     "\"scarce\":%uA"                                                           \
     "},"                                                                       \
+    "\"requestMsecCounter\":%uA,"                                              \
     "\"requestMsec\":%M,"                                                      \
     "\"requestMsecs\":{"                                                       \
     "\"times\":[%s],"                                                          \
@@ -118,7 +119,8 @@
     "\"updating\":%uA,"                                                        \
     "\"revalidated\":%uA,"                                                     \
     "\"hit\":%uA,"                                                             \
-    "\"scarce\":%uA"                                                           \
+    "\"scarce\":%uA,"                                                          \
+    "\"requestMsecCounter\":%uA"                                               \
     "}"                                                                        \
     "},"
 #else
@@ -133,6 +135,7 @@
     "\"4xx\":%uA,"                                                             \
     "\"5xx\":%uA"                                                              \
     "},"                                                                       \
+    "\"requestMsecCounter\":%uA,"                                              \
     "\"requestMsec\":%M,"                                                      \
     "\"requestMsecs\":{"                                                       \
     "\"times\":[%s],"                                                          \
@@ -147,7 +150,8 @@
     "\"2xx\":%uA,"                                                             \
     "\"3xx\":%uA,"                                                             \
     "\"4xx\":%uA,"                                                             \
-    "\"5xx\":%uA"                                                              \
+    "\"5xx\":%uA,"                                                             \
+    "\"requestMsecCounter\":%uA"                                               \
     "}"                                                                        \
     "},"
 #endif
@@ -166,11 +170,13 @@
     "\"4xx\":%uA,"                                                             \
     "\"5xx\":%uA"                                                              \
     "},"                                                                       \
+    "\"requestMsecCounter\":%uA,"                                              \
     "\"requestMsec\":%M,"                                                      \
     "\"requestMsecs\":{"                                                       \
     "\"times\":[%s],"                                                          \
     "\"msecs\":[%s]"                                                           \
     "},"                                                                       \
+    "\"responseMsecCounter\":%uA,"                                             \
     "\"responseMsec\":%M,"                                                     \
     "\"responseMsecs\":{"                                                      \
     "\"times\":[%s],"                                                          \
@@ -190,7 +196,9 @@
     "\"2xx\":%uA,"                                                             \
     "\"3xx\":%uA,"                                                             \
     "\"4xx\":%uA,"                                                             \
-    "\"5xx\":%uA"                                                              \
+    "\"5xx\":%uA,"                                                             \
+    "\"requestMsecCounter\":%uA,"                                              \
+    "\"responseMsecCounter\":%uA"                                              \
     "}"                                                                        \
     "},"
 
@@ -304,6 +312,9 @@
     if (o->stat_5xx_counter > c->stat_5xx_counter) {                           \
         c->stat_5xx_counter_oc++;                                              \
     }                                                                          \
+    if (o->stat_request_time_counter > c->stat_request_time_counter) {         \
+        c->stat_request_time_counter_oc++;                                     \
+    }                                                                          \
     if (o->stat_cache_miss_counter > c->stat_cache_miss_counter) {             \
         c->stat_cache_miss_counter_oc++;                                       \
     }                                                                          \
@@ -355,6 +366,9 @@
     }                                                                          \
     if (o->stat_5xx_counter > c->stat_5xx_counter) {                           \
         c->stat_5xx_counter_oc++;                                              \
+    }                                                                          \
+    if (o->stat_request_time_counter > c->stat_request_time_counter) {         \
+        c->stat_request_time_counter_oc++;                                     \
     }                                                                          \
 }
 #endif
@@ -459,6 +473,7 @@ typedef struct {
 } ngx_http_vhost_traffic_status_loc_conf_t;
 
 
+ngx_msec_t ngx_http_vhost_traffic_status_current_msec(void);
 ngx_msec_int_t ngx_http_vhost_traffic_status_request_time(ngx_http_request_t *r);
 ngx_msec_int_t ngx_http_vhost_traffic_status_upstream_response_time(ngx_http_request_t *r);
 

@@ -94,7 +94,7 @@ ngx_http_vhost_traffic_status_dump_header_write(ngx_event_t *ev, ngx_file_t *fil
 
     p = file_header.name;
     p = ngx_cpymem(p, ctx->shm_name.data, len);
-    file_header.time = ngx_current_msec;
+    file_header.time = ngx_http_vhost_traffic_status_current_msec();
     file_header.version = nginx_version;
 
     n = ngx_write_fd(file->fd, &file_header, sizeof(ngx_http_vhost_traffic_status_dump_header_t));
@@ -133,6 +133,7 @@ ngx_http_vhost_traffic_status_dump_update_valid(ngx_event_t *ev)
     ssize_t                                       n;
     ngx_fd_t                                      fd;
     ngx_int_t                                     rc;
+    ngx_msec_t                                    current_msec;
     ngx_file_t                                    file;
     ngx_http_vhost_traffic_status_ctx_t          *ctx;
     ngx_http_vhost_traffic_status_dump_header_t   file_header;
@@ -171,7 +172,9 @@ ngx_http_vhost_traffic_status_dump_update_valid(ngx_event_t *ev)
         return NGX_OK;
     }
 
-    rc = ((ngx_current_msec - file_header.time) > ctx->dump_period) ? NGX_OK : NGX_ERROR;
+    current_msec = ngx_http_vhost_traffic_status_current_msec();
+
+    rc = ((current_msec - file_header.time) > ctx->dump_period) ? NGX_OK : NGX_ERROR;
 
     return rc;
 }

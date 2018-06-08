@@ -89,9 +89,17 @@ ngx_http_vhost_traffic_status_set_by_filter_node_member(
     {
         return vtsn->stat_request_counter;
     }
+    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "requestMsecCounter") == 0)
+    {
+        return vtsn->stat_request_time_counter;
+    }
     else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "requestMsec") == 0)
     {
         return vtsn->stat_request_time;
+    }
+    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "responseMsecCounter") == 0)
+    {
+        return vtsn->stat_upstream.response_time_counter;
     }
     else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "responseMsec") == 0)
     {
