@@ -27,6 +27,8 @@ static char *ngx_http_vhost_traffic_status_dump(ngx_conf_t *cf,
     ngx_command_t *cmd, void *conf);
 static char *ngx_http_vhost_traffic_status_average_method(ngx_conf_t *cf,
     ngx_command_t *cmd, void *conf);
+static char *ngx_http_vhost_traffic_status_histogram_buckets(ngx_conf_t *cf,
+    ngx_command_t *cmd, void *conf);
 
 static ngx_int_t ngx_http_vhost_traffic_status_preconfiguration(ngx_conf_t *cf);
 static ngx_int_t ngx_http_vhost_traffic_status_init(ngx_conf_t *cf);
@@ -174,6 +176,13 @@ static ngx_command_t ngx_http_vhost_traffic_status_commands[] = {
     { ngx_string("vhost_traffic_status_average_method"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE12,
       ngx_http_vhost_traffic_status_average_method,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      0,
+      NULL },
+
+    { ngx_string("vhost_traffic_status_histogram_buckets"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_1MORE,
+      ngx_http_vhost_traffic_status_histogram_buckets,
       NGX_HTTP_LOC_CONF_OFFSET,
       0,
       NULL },
@@ -590,6 +599,58 @@ invalid:
 }
 
 
+static char *
+ngx_http_vhost_traffic_status_histogram_buckets(ngx_conf_t *cf, ngx_command_t *cmd,
+    void *conf)
+{
+    ngx_http_vhost_traffic_status_loc_conf_t *vtscf = conf;
+
+    ngx_str_t                                       *value;
+    ngx_int_t                                        n;
+    ngx_uint_t                                       i;
+    ngx_array_t                                     *histogram_buckets;
+    ngx_http_vhost_traffic_status_node_histogram_t  *buckets;
+
+    histogram_buckets = ngx_array_create(cf->pool, 1,
+                            sizeof(ngx_http_vhost_traffic_status_node_histogram_t));
+    if (histogram_buckets == NULL) {
+        goto invalid;
+    }
+
+    value = cf->args->elts;
+
+    /* arguments process */
+    for (i = 1; i < cf->args->nelts; i++) {
+        if (i > NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_BUCKET_LEN) {
+            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "histogram bucket size exceeds %d",
+                               NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_BUCKET_LEN);
+            break;
+        }
+
+        n = ngx_atofp(value[i].data, value[i].len, 3);
+        if (n == NGX_ERROR || n == 0) {
+            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "invalid parameter \"%V\"", &value[i]);
+            goto invalid;
+        }
+
+        buckets = ngx_array_push(histogram_buckets);
+        if (buckets == NULL) {
+            goto invalid;
+        }
+
+        buckets->msec = (ngx_msec_int_t) n;
+    }
+
+    vtscf->histogram_buckets = histogram_buckets;
+
+    return NGX_CONF_OK;
+
+invalid:
+
+    return NGX_CONF_ERROR;
+}
+
+
 static ngx_int_t
 ngx_http_vhost_traffic_status_preconfiguration(ngx_conf_t *cf)
 {
@@ -761,6 +822,7 @@ ngx_http_vhost_traffic_status_create_loc_conf(ngx_conf_t *cf)
      *     conf->sum_key = { 0, NULL };
      *     conf->average_method = 0;
      *     conf->average_period = 0;
+     *     conf->histogram_buckets = { NULL, ... };
      *     conf->bypass_limit = 0;
      *     conf->bypass_stats = 0;
      */
@@ -779,6 +841,7 @@ ngx_http_vhost_traffic_status_create_loc_conf(ngx_conf_t *cf)
     conf->format = NGX_CONF_UNSET;
     conf->average_method = NGX_CONF_UNSET;
     conf->average_period = NGX_CONF_UNSET_MSEC;
+    conf->histogram_buckets = NGX_CONF_UNSET_PTR;
     conf->bypass_limit = NGX_CONF_UNSET;
     conf->bypass_stats = NGX_CONF_UNSET;
 
@@ -887,6 +950,7 @@ ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf, void *parent, void 
                          NGX_HTTP_VHOST_TRAFFIC_STATUS_AVERAGE_METHOD_AMM);
     ngx_conf_merge_msec_value(conf->average_period, prev->average_period,
                               NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_AVG_PERIOD * 1000);
+    ngx_conf_merge_ptr_value(conf->histogram_buckets, prev->histogram_buckets, NULL);
 
     ngx_conf_merge_value(conf->bypass_limit, prev->bypass_limit, 0);
     ngx_conf_merge_value(conf->bypass_stats, prev->bypass_stats, 0);

@@ -51,8 +51,10 @@ ngx_http_vhost_traffic_status_display_prometheus_set_server_node(
     u_char *buf, ngx_str_t *key,
     ngx_http_vhost_traffic_status_node_t *vtsn)
 {
-    ngx_str_t                                  server;
-    ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
+    ngx_str_t                                               server;
+    ngx_uint_t                                              i, n;
+    ngx_http_vhost_traffic_status_loc_conf_t               *vtscf;
+    ngx_http_vhost_traffic_status_node_histogram_bucket_t  *b;
 
     vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
 
@@ -73,6 +75,35 @@ ngx_http_vhost_traffic_status_display_prometheus_set_server_node(
                       &server, (double) ngx_http_vhost_traffic_status_node_time_queue_average(
                                    &vtsn->stat_request_times, vtscf->average_method,
                                    vtscf->average_period) / 1000);
+
+    /* histogram */
+    b = &vtsn->stat_request_buckets;
+
+    n = b->len;
+
+    if (n > 0) {
+
+        /* histogram:bucket */
+        for (i = 0; i < n; i++) {
+            buf = ngx_sprintf(buf,
+                      NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_HISTOGRAM_BUCKET,
+                      &server, (double) b->buckets[i].msec / 1000, b->buckets[i].counter);
+        }
+
+        buf = ngx_sprintf(buf,
+                  NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_HISTOGRAM_BUCKET_E,
+                  &server, vtsn->stat_request_counter);
+
+        /* histogram:sum */
+        buf = ngx_sprintf(buf,
+                  NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_HISTOGRAM_SUM,
+                  &server, (double) vtsn->stat_request_time_counter / 1000);
+
+        /* histogram:count */
+        buf = ngx_sprintf(buf,
+                  NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_HISTOGRAM_COUNT,
+                  &server, vtsn->stat_request_counter);
+    }
 
 #if (NGX_HTTP_CACHE)
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_CACHE,
@@ -160,8 +191,10 @@ ngx_http_vhost_traffic_status_display_prometheus_set_filter_node(
     u_char *buf, ngx_str_t *key,
     ngx_http_vhost_traffic_status_node_t *vtsn)
 {
-    ngx_str_t                                  filter, filter_name;
-    ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
+    ngx_str_t                                               filter, filter_name;
+    ngx_uint_t                                              i, n;
+    ngx_http_vhost_traffic_status_loc_conf_t               *vtscf;
+    ngx_http_vhost_traffic_status_node_histogram_bucket_t  *b;
 
     vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
 
@@ -184,6 +217,36 @@ ngx_http_vhost_traffic_status_display_prometheus_set_filter_node(
                       (double) ngx_http_vhost_traffic_status_node_time_queue_average(
                           &vtsn->stat_request_times, vtscf->average_method,
                           vtscf->average_period) / 1000);
+
+    /* histogram */
+    b = &vtsn->stat_request_buckets;
+
+    n = b->len;
+
+    if (n > 0) {
+
+        /* histogram:bucket */
+        for (i = 0; i < n; i++) {
+            buf = ngx_sprintf(buf,
+                      NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_FILTER_HISTOGRAM_BUCKET,
+                      &filter, &filter_name, (double) b->buckets[i].msec / 1000,
+                      b->buckets[i].counter);
+        }
+
+        buf = ngx_sprintf(buf,
+                  NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_FILTER_HISTOGRAM_BUCKET_E,
+                  &filter, &filter_name, vtsn->stat_request_counter);
+
+        /* histogram:sum */
+        buf = ngx_sprintf(buf,
+                  NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_FILTER_HISTOGRAM_SUM,
+                  &filter, &filter_name, (double) vtsn->stat_request_time_counter / 1000);
+
+        /* histogram:count */
+        buf = ngx_sprintf(buf,
+                  NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_FILTER_HISTOGRAM_COUNT,
+                  &filter, &filter_name, vtsn->stat_request_counter);
+    }
 
 #if (NGX_HTTP_CACHE)
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_FILTER_CACHE,
@@ -235,8 +298,10 @@ ngx_http_vhost_traffic_status_display_prometheus_set_upstream_node(
     u_char *buf, ngx_str_t *key,
     ngx_http_vhost_traffic_status_node_t *vtsn)
 {
-    ngx_str_t                                  upstream, upstream_server;
-    ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
+    ngx_str_t                                               target, upstream, upstream_server;
+    ngx_uint_t                                              i, n, len;
+    ngx_http_vhost_traffic_status_loc_conf_t               *vtscf;
+    ngx_http_vhost_traffic_status_node_histogram_bucket_t  *b;
 
     vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
 
@@ -270,6 +335,47 @@ ngx_http_vhost_traffic_status_display_prometheus_set_upstream_node(
                       (double) ngx_http_vhost_traffic_status_node_time_queue_average(
                           &vtsn->stat_upstream.response_times, vtscf->average_method,
                           vtscf->average_period) / 1000);
+
+    /* histogram */
+    len = 2;
+
+    while (len--) {
+        if (len > 0) {
+            b = &vtsn->stat_request_buckets;
+            ngx_str_set(&target, "request");
+
+        } else {
+            b = &vtsn->stat_upstream.response_buckets;
+            ngx_str_set(&target, "response");
+        }
+
+        n = b->len;
+
+        if (n > 0) {
+            /* histogram:bucket */
+            for (i = 0; i < n; i++) {
+                buf = ngx_sprintf(buf,
+                        NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM_HISTOGRAM_BUCKET,
+                        &target, &upstream, &upstream_server, (double) b->buckets[i].msec / 1000,
+                        b->buckets[i].counter);
+            }
+
+            buf = ngx_sprintf(buf,
+                    NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM_HISTOGRAM_BUCKET_E,
+                    &target, &upstream, &upstream_server, vtsn->stat_request_counter);
+
+            /* histogram:sum */
+            buf = ngx_sprintf(buf,
+                    NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM_HISTOGRAM_SUM,
+                    &target, &upstream, &upstream_server, (double) vtsn->stat_request_time_counter / 1000);
+
+            /* histogram:count */
+            buf = ngx_sprintf(buf,
+                    NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM_HISTOGRAM_COUNT,
+                    &target, &upstream, &upstream_server, vtsn->stat_request_counter);
+        }
+
+    }
 
     return buf;
 }

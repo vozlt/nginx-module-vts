@@ -223,12 +223,15 @@ ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
     /* init serverZone */
     ngx_http_vhost_traffic_status_node_zero(vtsn);
     ngx_http_vhost_traffic_status_node_time_queue_init(&vtsn->stat_request_times);
+    ngx_http_vhost_traffic_status_node_histogram_bucket_init(r, &vtsn->stat_request_buckets);
 
     /* init upstreamZone */
     vtsn->stat_upstream.type = NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_NO;
     vtsn->stat_upstream.response_time_counter = 0;
     vtsn->stat_upstream.response_time = 0;
     ngx_http_vhost_traffic_status_node_time_queue_init(&vtsn->stat_upstream.response_times);
+    ngx_http_vhost_traffic_status_node_histogram_bucket_init(r,
+        &vtsn->stat_upstream.response_buckets);
 
     /* set serverZone */
     vtsn->stat_request_counter = 1;
@@ -277,6 +280,9 @@ ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
     vtsn->stat_request_time_counter += (ngx_atomic_uint_t) ms;
 
     ngx_http_vhost_traffic_status_node_time_queue_insert(&vtsn->stat_request_times,
+                                                         ms);
+
+    ngx_http_vhost_traffic_status_node_histogram_observe(&vtsn->stat_request_buckets,
                                                          ms);
 
     vtsn->stat_request_time = ngx_http_vhost_traffic_status_node_time_queue_average(
@@ -455,6 +461,49 @@ ngx_http_vhost_traffic_status_node_time_queue_merge(
             } else {
                 a->times[i].msec = 0;
             }
+    }
+}
+
+
+void
+ngx_http_vhost_traffic_status_node_histogram_bucket_init(ngx_http_request_t *r,
+    ngx_http_vhost_traffic_status_node_histogram_bucket_t *b)
+{
+    ngx_uint_t                                       i, n;
+    ngx_http_vhost_traffic_status_loc_conf_t        *vtscf;
+    ngx_http_vhost_traffic_status_node_histogram_t  *buckets;
+
+    vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
+
+    if (vtscf->histogram_buckets == NULL) {
+        b->len = 0;
+        return;
+    }
+
+    buckets = vtscf->histogram_buckets->elts;
+    n = vtscf->histogram_buckets->nelts;
+    b->len = n;
+
+    for (i = 0; i < n; i++) {
+        b->buckets[i].msec = buckets[i].msec;
+        b->buckets[i].counter = 0;
+    }
+}
+
+
+void
+ngx_http_vhost_traffic_status_node_histogram_observe(
+    ngx_http_vhost_traffic_status_node_histogram_bucket_t *b,
+    ngx_msec_int_t x)
+{
+    ngx_uint_t  i, n;
+
+    n = b->len;
+
+    for (i = 0; i < n; i++) {
+        if (x <= b->buckets[i].msec) {
+            b->buckets[i].counter++;
+        }
     }
 }
 

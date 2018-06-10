@@ -8,85 +8,100 @@
 #define _NGX_HTTP_VTS_NODE_H_INCLUDED_
 
 
-#define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_QUEUE_LEN  64
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_QUEUE_LEN    64
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_BUCKET_LEN   32
 
 
 typedef struct {
-    ngx_msec_t                                       time;
-    ngx_msec_int_t                                   msec;
+    ngx_msec_t                                             time;
+    ngx_msec_int_t                                         msec;
 } ngx_http_vhost_traffic_status_node_time_t;
 
 
 typedef struct {
-    ngx_http_vhost_traffic_status_node_time_t        times[NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_QUEUE_LEN];
-    ngx_int_t                                        front;
-    ngx_int_t                                        rear;
-    ngx_int_t                                        len;
+    ngx_http_vhost_traffic_status_node_time_t              times[NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_QUEUE_LEN];
+    ngx_int_t                                              front;
+    ngx_int_t                                              rear;
+    ngx_int_t                                              len;
 } ngx_http_vhost_traffic_status_node_time_queue_t;
 
 
 typedef struct {
+    ngx_msec_int_t                                         msec;
+    ngx_atomic_t                                           counter;
+} ngx_http_vhost_traffic_status_node_histogram_t;
+
+
+typedef struct {
+    ngx_http_vhost_traffic_status_node_histogram_t         buckets[NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_BUCKET_LEN];
+    ngx_int_t                                              len;
+} ngx_http_vhost_traffic_status_node_histogram_bucket_t;
+
+
+typedef struct {
     /* unsigned type:5 */
-    unsigned                                         type;
-    ngx_atomic_t                                     response_time_counter;
-    ngx_msec_t                                       response_time;
-    ngx_http_vhost_traffic_status_node_time_queue_t  response_times;
+    unsigned                                               type;
+    ngx_atomic_t                                           response_time_counter;
+    ngx_msec_t                                             response_time;
+    ngx_http_vhost_traffic_status_node_time_queue_t        response_times;
+    ngx_http_vhost_traffic_status_node_histogram_bucket_t  response_buckets;
 } ngx_http_vhost_traffic_status_node_upstream_t;
 
 
 typedef struct {
-    u_char                                           color;
-    ngx_atomic_t                                     stat_request_counter;
-    ngx_atomic_t                                     stat_in_bytes;
-    ngx_atomic_t                                     stat_out_bytes;
-    ngx_atomic_t                                     stat_1xx_counter;
-    ngx_atomic_t                                     stat_2xx_counter;
-    ngx_atomic_t                                     stat_3xx_counter;
-    ngx_atomic_t                                     stat_4xx_counter;
-    ngx_atomic_t                                     stat_5xx_counter;
+    u_char                                                 color;
+    ngx_atomic_t                                           stat_request_counter;
+    ngx_atomic_t                                           stat_in_bytes;
+    ngx_atomic_t                                           stat_out_bytes;
+    ngx_atomic_t                                           stat_1xx_counter;
+    ngx_atomic_t                                           stat_2xx_counter;
+    ngx_atomic_t                                           stat_3xx_counter;
+    ngx_atomic_t                                           stat_4xx_counter;
+    ngx_atomic_t                                           stat_5xx_counter;
 
-    ngx_atomic_t                                     stat_request_time_counter;
-    ngx_msec_t                                       stat_request_time;
-    ngx_http_vhost_traffic_status_node_time_queue_t  stat_request_times;
+    ngx_atomic_t                                           stat_request_time_counter;
+    ngx_msec_t                                             stat_request_time;
+    ngx_http_vhost_traffic_status_node_time_queue_t        stat_request_times;
+    ngx_http_vhost_traffic_status_node_histogram_bucket_t  stat_request_buckets;
 
     /* deals with the overflow of variables */
-    ngx_atomic_t                                     stat_request_counter_oc;
-    ngx_atomic_t                                     stat_in_bytes_oc;
-    ngx_atomic_t                                     stat_out_bytes_oc;
-    ngx_atomic_t                                     stat_1xx_counter_oc;
-    ngx_atomic_t                                     stat_2xx_counter_oc;
-    ngx_atomic_t                                     stat_3xx_counter_oc;
-    ngx_atomic_t                                     stat_4xx_counter_oc;
-    ngx_atomic_t                                     stat_5xx_counter_oc;
-    ngx_atomic_t                                     stat_request_time_counter_oc;
-    ngx_atomic_t                                     stat_response_time_counter_oc;
+    ngx_atomic_t                                           stat_request_counter_oc;
+    ngx_atomic_t                                           stat_in_bytes_oc;
+    ngx_atomic_t                                           stat_out_bytes_oc;
+    ngx_atomic_t                                           stat_1xx_counter_oc;
+    ngx_atomic_t                                           stat_2xx_counter_oc;
+    ngx_atomic_t                                           stat_3xx_counter_oc;
+    ngx_atomic_t                                           stat_4xx_counter_oc;
+    ngx_atomic_t                                           stat_5xx_counter_oc;
+    ngx_atomic_t                                           stat_request_time_counter_oc;
+    ngx_atomic_t                                           stat_response_time_counter_oc;
 
 #if (NGX_HTTP_CACHE)
-    ngx_atomic_t                                     stat_cache_max_size;
-    ngx_atomic_t                                     stat_cache_used_size;
-    ngx_atomic_t                                     stat_cache_miss_counter;
-    ngx_atomic_t                                     stat_cache_bypass_counter;
-    ngx_atomic_t                                     stat_cache_expired_counter;
-    ngx_atomic_t                                     stat_cache_stale_counter;
-    ngx_atomic_t                                     stat_cache_updating_counter;
-    ngx_atomic_t                                     stat_cache_revalidated_counter;
-    ngx_atomic_t                                     stat_cache_hit_counter;
-    ngx_atomic_t                                     stat_cache_scarce_counter;
+    ngx_atomic_t                                           stat_cache_max_size;
+    ngx_atomic_t                                           stat_cache_used_size;
+    ngx_atomic_t                                           stat_cache_miss_counter;
+    ngx_atomic_t                                           stat_cache_bypass_counter;
+    ngx_atomic_t                                           stat_cache_expired_counter;
+    ngx_atomic_t                                           stat_cache_stale_counter;
+    ngx_atomic_t                                           stat_cache_updating_counter;
+    ngx_atomic_t                                           stat_cache_revalidated_counter;
+    ngx_atomic_t                                           stat_cache_hit_counter;
+    ngx_atomic_t                                           stat_cache_scarce_counter;
 
     /* deals with the overflow of variables */
-    ngx_atomic_t                                     stat_cache_miss_counter_oc;
-    ngx_atomic_t                                     stat_cache_bypass_counter_oc;
-    ngx_atomic_t                                     stat_cache_expired_counter_oc;
-    ngx_atomic_t                                     stat_cache_stale_counter_oc;
-    ngx_atomic_t                                     stat_cache_updating_counter_oc;
-    ngx_atomic_t                                     stat_cache_revalidated_counter_oc;
-    ngx_atomic_t                                     stat_cache_hit_counter_oc;
-    ngx_atomic_t                                     stat_cache_scarce_counter_oc;
+    ngx_atomic_t                                           stat_cache_miss_counter_oc;
+    ngx_atomic_t                                           stat_cache_bypass_counter_oc;
+    ngx_atomic_t                                           stat_cache_expired_counter_oc;
+    ngx_atomic_t                                           stat_cache_stale_counter_oc;
+    ngx_atomic_t                                           stat_cache_updating_counter_oc;
+    ngx_atomic_t                                           stat_cache_revalidated_counter_oc;
+    ngx_atomic_t                                           stat_cache_hit_counter_oc;
+    ngx_atomic_t                                           stat_cache_scarce_counter_oc;
 #endif
 
-    ngx_http_vhost_traffic_status_node_upstream_t    stat_upstream;
-    u_short                                          len;
-    u_char                                           data[1];
+    ngx_http_vhost_traffic_status_node_upstream_t          stat_upstream;
+    u_short                                                len;
+    u_char                                                 data[1];
 } ngx_http_vhost_traffic_status_node_t;
 
 
@@ -131,6 +146,13 @@ void ngx_http_vhost_traffic_status_node_time_queue_merge(
     ngx_http_vhost_traffic_status_node_time_queue_t *a,
     ngx_http_vhost_traffic_status_node_time_queue_t *b,
     ngx_msec_t period);
+
+void ngx_http_vhost_traffic_status_node_histogram_bucket_init(
+    ngx_http_request_t *r,
+    ngx_http_vhost_traffic_status_node_histogram_bucket_t *b);
+void ngx_http_vhost_traffic_status_node_histogram_observe(
+    ngx_http_vhost_traffic_status_node_histogram_bucket_t *b,
+    ngx_msec_int_t x);
 
 void ngx_http_vhost_traffic_status_find_name(ngx_http_request_t *r,
     ngx_str_t *buf);

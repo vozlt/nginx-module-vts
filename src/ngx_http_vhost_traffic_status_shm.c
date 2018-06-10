@@ -182,6 +182,8 @@ ngx_http_vhost_traffic_status_shm_add_node_upstream(ngx_http_request_t *r,
 
     ngx_http_vhost_traffic_status_node_time_queue_insert(&vtsn->stat_upstream.response_times,
                                                          ms);
+    ngx_http_vhost_traffic_status_node_histogram_observe(&vtsn->stat_upstream.response_buckets,
+                                                         ms);
 
     if (init == NGX_HTTP_VHOST_TRAFFIC_STATUS_NODE_NONE) {
         vtsn->stat_upstream.response_time_counter = (ngx_atomic_uint_t) ms;

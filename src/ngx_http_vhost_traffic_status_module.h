@@ -466,6 +466,9 @@ typedef struct {
     ngx_flag_t                              average_method;
     ngx_msec_t                              average_period;
 
+    /* array of ngx_http_vhost_traffic_status_node_histogram_t */
+    ngx_array_t                            *histogram_buckets;
+
     ngx_flag_t                              bypass_limit;
     ngx_flag_t                              bypass_stats;
 

@@ -67,6 +67,7 @@ Table of Contents
   * [vhost_traffic_status_limit_check_duplicate](#vhost_traffic_status_limit_check_duplicate)
   * [vhost_traffic_status_set_by_filter](#vhost_traffic_status_set_by_filter)
   * [vhost_traffic_status_average_method](#vhost_traffic_status_average_method)
+  * [vhost_traffic_status_histogram_buckets](#vhost_traffic_status_histogram_buckets)
   * [vhost_traffic_status_bypass_limit](#vhost_traffic_status_bypass_limit)
   * [vhost_traffic_status_bypass_stats](#vhost_traffic_status_bypass_stats)
 * [See Also](#see-also)
@@ -82,6 +83,7 @@ This document describes nginx-module-vts `v0.1.16` released on 21 May 2018.
 
 ## Compatibility
 * Nginx
+  * 1.15.x (last tested: 1.15.0)
   * 1.14.x (last tested: 1.14.0)
   * 1.13.x (last tested: 1.13.12)
   * 1.12.x (last tested: 1.12.2)
@@ -1612,6 +1614,33 @@ The corresponding values are `requestMsec` and `responseMsec` in JSON.
   * The AMM is the [arithmetic mean](https://en.wikipedia.org/wiki/Arithmetic_mean).
 * **WMA**
   * THE WMA is the [weighted moving average](https://en.wikipedia.org/wiki/Moving_average#Weighted_moving_average).
+
+### vhost_traffic_status_histogram_buckets
+
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_histogram_buckets** *second* ... |
+| **Default** | - |
+| **Context** | http, server, location |
+
+`Description:` Sets the observe buckets to be used in the histograms.
+By default, if you do not set this directive, it will not work.
+The *second* can be expressed in decimal places with a minimum value of 0.001(1ms).
+The maximum size of the buckets is 32. If this value is insufficient for you,
+change the `NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_BUCKET_LEN` in the `src/ngx_http_vhost_traffic_status_node.h`
+
+For examples:
+* **vhost_traffic_status_histogram_buckets** `0.005` `0.01` `0.05` `0.1` `0.5` `1` `5` `10`
+  * The observe buckets are [5ms 10ms 50ms 1s 5s 10s].
+* **vhost_traffic_status_histogram_buckets** `0.005` `0.01` `0.05` `0.1`
+  * The observe buckets are [5ms 10ms 50ms 1s].
+
+`Caveats:` By default, if you do not set this directive, the histogram statistics does not work.
+The restored histograms by `vhost_traffic_status_dump` directive have no affected by changes to the buckets
+by `vhost_traffic_status_histogram_buckets` directive.
+So you must first delete the zone or the dump file before changing the buckets
+by `vhost_traffic_status_histogram_buckets` directive.
+Similar to the above, delete the dump file when using the histogram for the first time.
 
 ### vhost_traffic_status_bypass_limit
 
