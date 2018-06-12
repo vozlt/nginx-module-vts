@@ -205,6 +205,10 @@ JSON document contains as follows:
                 "times":[...],
                 "msecs":[...]
             },
+            "requestBuckets":{
+                "msecs":[...],
+                "counters":[...]
+            },
         }
         ...
     },
@@ -235,6 +239,10 @@ JSON document contains as follows:
                     "times":[...],
                     "msecs":[...]
                 },
+                "requestBuckets":{
+                    "msecs":[...],
+                    "counters":[...]
+                },
             },
             ...
         },
@@ -260,11 +268,19 @@ JSON document contains as follows:
                     "times":[...],
                     "msecs":[...]
                 },
+                "requestBuckets":{
+                    "msecs":[...],
+                    "counters":[...]
+                },
                 "responseMsecCounter":...,
                 "responseMsec":...,
                 "responseMsecs":{
                     "times":[...],
                     "msecs":[...]
+                },
+                "responseBuckets":{
+                    "msecs":[...],
+                    "counters":[...]
                 },
                 "weight":...,
                 "maxFails":...,
@@ -640,6 +656,11 @@ The following status information is provided in the JSON format:
       * The times in milliseconds at request processing times.
     * msecs
       * The request processing times in milliseconds.
+  * requestBuckets
+    * msecs
+      * The bucket values of histogram set by `vhost_traffic_status_histogram_buckets` directive.
+    * counters
+      * The cumulative values for the reason that each bucket value is greater than or equal to the request processing time. 
 * filterZones
   * It provides the same fields with `serverZones` except that it included group names.
 * upstreamZones
@@ -663,6 +684,11 @@ The following status information is provided in the JSON format:
       * The times in milliseconds at request processing times.
     * msecs
       * The request processing times including upstream in milliseconds.
+  * requestBuckets
+    * msecs
+      * The bucket values of histogram set by `vhost_traffic_status_histogram_buckets` directive.
+    * counters
+      * The cumulative values for the reason that each bucket value is greater than or equal to the request processing time including upstream.
   * responseMsecCounter
     * The number of accumulated only upstream response processing time in milliseconds.
   * responseMsec
@@ -672,6 +698,11 @@ The following status information is provided in the JSON format:
       * The times in milliseconds at request processing times.
     * msecs
       * The only upstream response processing times in milliseconds.
+  * responseBuckets
+    * msecs
+      * The bucket values of histogram set by `vhost_traffic_status_histogram_buckets` directive.
+    * counters
+      * The cumulative values for the reason that each bucket value is greater than or equal to the only upstream response processing time.
   * weight
     * Current `weight` setting of the server.
   * maxFails

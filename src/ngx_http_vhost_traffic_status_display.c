@@ -596,6 +596,69 @@ ngx_http_vhost_traffic_status_display_get_time_queue_msecs(
                offsetof(ngx_http_vhost_traffic_status_node_time_t, msec));
 }
 
+    
+u_char *
+ngx_http_vhost_traffic_status_display_get_histogram_bucket(
+    ngx_http_request_t *r,
+    ngx_http_vhost_traffic_status_node_histogram_bucket_t *b,
+    ngx_uint_t offset,
+    const char *fmt)
+{
+    char        *dst;
+    u_char      *p, *s;
+    ngx_uint_t   i, n;
+
+    n = b->len;
+
+    if (n == 0) {
+        return (u_char *) "";
+    }
+
+    p = ngx_pcalloc(r->pool, n * NGX_INT_T_LEN);
+    if (p == NULL) {
+        return (u_char *) "";
+    }
+
+    s = p;
+
+    for (i = 0; i < n; i++) {
+        dst = (char *) &(b->buckets[i]) + offset;
+
+        if (ngx_strncmp(fmt, "%M", 2) == 0) {
+            s = ngx_sprintf(s, fmt, *((ngx_msec_t *) dst));
+
+        } else if (ngx_strncmp(fmt, "%uA", 3) == 0) {
+            s = ngx_sprintf(s, fmt, *((ngx_atomic_uint_t *) dst));
+        }
+    }
+
+    if (s > p) {
+       *(s - 1) = '\0';
+    }
+
+    return p;
+}
+
+
+u_char *
+ngx_http_vhost_traffic_status_display_get_histogram_bucket_msecs(
+    ngx_http_request_t *r,
+    ngx_http_vhost_traffic_status_node_histogram_bucket_t *b)
+{
+    return ngx_http_vhost_traffic_status_display_get_histogram_bucket(r, b,
+               offsetof(ngx_http_vhost_traffic_status_node_histogram_t, msec), "%M,");
+}
+
+
+u_char *
+ngx_http_vhost_traffic_status_display_get_histogram_bucket_counters(
+    ngx_http_request_t *r,
+    ngx_http_vhost_traffic_status_node_histogram_bucket_t *b)
+{
+    return ngx_http_vhost_traffic_status_display_get_histogram_bucket(r, b,
+               offsetof(ngx_http_vhost_traffic_status_node_histogram_t, counter), "%uA,");
+}
+
 
 char *
 ngx_http_vhost_traffic_status_display(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
