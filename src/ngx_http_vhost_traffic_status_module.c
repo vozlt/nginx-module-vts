@@ -25,6 +25,8 @@ static char *ngx_http_vhost_traffic_status_zone(ngx_conf_t *cf,
     ngx_command_t *cmd, void *conf);
 static char *ngx_http_vhost_traffic_status_dump(ngx_conf_t *cf,
     ngx_command_t *cmd, void *conf);
+static char *ngx_http_vhost_traffic_status_filter_max_node(ngx_conf_t *cf,
+    ngx_command_t *cmd, void *conf);
 static char *ngx_http_vhost_traffic_status_average_method(ngx_conf_t *cf,
     ngx_command_t *cmd, void *conf);
 static char *ngx_http_vhost_traffic_status_histogram_buckets(ngx_conf_t *cf,
@@ -92,6 +94,13 @@ static ngx_command_t ngx_http_vhost_traffic_status_commands[] = {
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE12,
       ngx_http_vhost_traffic_status_filter_by_set_key,
       NGX_HTTP_LOC_CONF_OFFSET,
+      0,
+      NULL },
+
+    { ngx_string("vhost_traffic_status_filter_max_node"),
+      NGX_HTTP_MAIN_CONF|NGX_CONF_1MORE,
+      ngx_http_vhost_traffic_status_filter_max_node,
+      0,
       0,
       NULL },
 
@@ -561,6 +570,56 @@ invalid:
 
 
 static char *
+ngx_http_vhost_traffic_status_filter_max_node(ngx_conf_t *cf, ngx_command_t *cmd,
+    void *conf)
+{
+    ngx_http_vhost_traffic_status_ctx_t  *ctx = conf;
+
+    ngx_str_t                                     *value;
+    ngx_int_t                                      n;
+    ngx_uint_t                                     i;
+    ngx_array_t                                   *filter_max_node_matches;
+    ngx_http_vhost_traffic_status_filter_match_t  *matches;
+
+    filter_max_node_matches = ngx_array_create(cf->pool, 1,
+                                  sizeof(ngx_http_vhost_traffic_status_filter_match_t));
+    if (filter_max_node_matches == NULL) {
+        goto invalid;
+    }
+
+    value = cf->args->elts;
+
+    n = ngx_atoi(value[1].data, value[1].len);
+    if (n < 0) {
+        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                           "invalid number of filter_max_node \"%V\"", &value[1]);
+        return NGX_CONF_ERROR;
+    }
+
+    ctx->filter_max_node = (ngx_uint_t) n;
+
+    /* arguments process */
+    for (i = 2; i < cf->args->nelts; i++) {
+        matches = ngx_array_push(filter_max_node_matches);
+        if (matches == NULL) {
+            goto invalid;
+        }
+
+        matches->match.data = value[i].data;
+        matches->match.len = value[i].len;
+    }
+
+    ctx->filter_max_node_matches = filter_max_node_matches;
+
+    return NGX_CONF_OK;
+
+invalid:
+
+    return NGX_CONF_ERROR;
+}
+
+
+static char *
 ngx_http_vhost_traffic_status_average_method(ngx_conf_t *cf, ngx_command_t *cmd,
     void *conf)
 {
@@ -715,6 +774,9 @@ ngx_http_vhost_traffic_status_create_main_conf(ngx_conf_t *cf)
      *     ctx->limit_traffics = { NULL, ... };
      *     ctx->limit_filter_traffics = { NULL, ... };
      *
+     *     ctx->filter_max_node_matches = { NULL, ... };
+     *     ctx->filter_max_node = 0;
+     *
      *     ctx->enable = 0;
      *     ctx->filter_check_duplicate = 0;
      *     ctx->limit_check_duplicate = 0;
@@ -728,6 +790,7 @@ ngx_http_vhost_traffic_status_create_main_conf(ngx_conf_t *cf)
      *     ctx->dump_event = { NULL, ... };
      */
 
+    ctx->filter_max_node = NGX_CONF_UNSET_UINT;
     ctx->enable = NGX_CONF_UNSET;
     ctx->filter_check_duplicate = NGX_CONF_UNSET;
     ctx->limit_check_duplicate = NGX_CONF_UNSET;
@@ -777,6 +840,7 @@ ngx_http_vhost_traffic_status_init_main_conf(ngx_conf_t *cf, void *conf)
         }
     }
 
+    ngx_conf_init_uint_value(ctx->filter_max_node, 0);
     ngx_conf_init_value(ctx->enable, 0);
     ngx_conf_init_value(ctx->filter_check_duplicate, vtscf->filter_check_duplicate);
     ngx_conf_init_value(ctx->limit_check_duplicate, vtscf->limit_check_duplicate);

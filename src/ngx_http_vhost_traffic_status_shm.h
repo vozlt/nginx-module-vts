@@ -13,6 +13,9 @@ typedef struct {
     ngx_uint_t   max_size;
     ngx_uint_t   used_size;
     ngx_uint_t   used_node;
+
+    ngx_uint_t   filter_used_size;
+    ngx_uint_t   filter_used_node;
 } ngx_http_vhost_traffic_status_shm_info_t;
 
 

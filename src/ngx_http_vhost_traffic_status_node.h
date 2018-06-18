@@ -132,6 +132,8 @@ ngx_int_t ngx_http_vhost_traffic_status_node_time_queue_push(
 ngx_int_t ngx_http_vhost_traffic_status_node_time_queue_pop(
     ngx_http_vhost_traffic_status_node_time_queue_t *q,
     ngx_http_vhost_traffic_status_node_time_t *x);
+ngx_int_t ngx_http_vhost_traffic_status_node_time_queue_rear(
+    ngx_http_vhost_traffic_status_node_time_queue_t *q);
 
 ngx_msec_t ngx_http_vhost_traffic_status_node_time_queue_average(
     ngx_http_vhost_traffic_status_node_time_queue_t *q,
@@ -159,8 +161,15 @@ void ngx_http_vhost_traffic_status_find_name(ngx_http_request_t *r,
 ngx_rbtree_node_t *ngx_http_vhost_traffic_status_find_node(ngx_http_request_t *r,
     ngx_str_t *key, unsigned type, uint32_t key_hash);
 
+ngx_rbtree_node_t *ngx_http_vhost_traffic_status_find_lru(ngx_http_request_t *r);
+ngx_rbtree_node_t *ngx_http_vhost_traffic_status_find_lru_node(ngx_http_request_t *r,
+    ngx_rbtree_node_t *a, ngx_rbtree_node_t *b);
+ngx_rbtree_node_t *ngx_http_vhost_traffic_status_find_lru_node_cmp(ngx_http_request_t *r,
+    ngx_rbtree_node_t *a, ngx_rbtree_node_t *b);
+
 ngx_int_t ngx_http_vhost_traffic_status_node_member_cmp(ngx_str_t *member, const char *name);
-ngx_atomic_uint_t ngx_http_vhost_traffic_status_node_member(ngx_http_vhost_traffic_status_node_t *vtsn,
+ngx_atomic_uint_t ngx_http_vhost_traffic_status_node_member(
+    ngx_http_vhost_traffic_status_node_t *vtsn,
     ngx_str_t *member);
 
 

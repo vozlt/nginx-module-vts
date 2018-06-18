@@ -5,6 +5,8 @@
 
 
 #include "ngx_http_vhost_traffic_status_module.h"
+#include "ngx_http_vhost_traffic_status_filter.h"
+#include "ngx_http_vhost_traffic_status_shm.h"
 #include "ngx_http_vhost_traffic_status_node.h"
 
 
@@ -123,6 +125,103 @@ ngx_http_vhost_traffic_status_find_node(ngx_http_request_t *r,
 found:
 
     return node;
+}
+
+
+ngx_rbtree_node_t *
+ngx_http_vhost_traffic_status_find_lru(ngx_http_request_t *r)
+{
+    ngx_rbtree_node_t                         *node;
+    ngx_http_vhost_traffic_status_ctx_t       *ctx;
+    ngx_http_vhost_traffic_status_shm_info_t  *shm_info;
+
+    ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
+    node = NULL;
+
+    /* disabled */
+    if (ctx->filter_max_node == 0) {
+        return NULL;
+    }
+
+    shm_info = ngx_pcalloc(r->pool, sizeof(ngx_http_vhost_traffic_status_shm_info_t));
+
+    if (shm_info == NULL) { 
+        return NULL;
+    }
+
+    ngx_http_vhost_traffic_status_shm_info(r, shm_info);
+
+    /* find */
+    if (shm_info->filter_used_node >= ctx->filter_max_node) {
+        node = ngx_http_vhost_traffic_status_find_lru_node(r, NULL, ctx->rbtree->root);
+    }
+
+    return node;
+}
+
+
+ngx_rbtree_node_t *
+ngx_http_vhost_traffic_status_find_lru_node(ngx_http_request_t *r,
+    ngx_rbtree_node_t *a, ngx_rbtree_node_t *b)
+{
+    ngx_str_t                              filter;
+    ngx_http_vhost_traffic_status_ctx_t   *ctx;
+    ngx_http_vhost_traffic_status_node_t  *vtsn;
+
+    ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
+
+    if (b != ctx->rbtree->sentinel) {
+        vtsn = (ngx_http_vhost_traffic_status_node_t *) &b->color;
+
+        if (vtsn->stat_upstream.type == NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG) {
+            filter.data = vtsn->data;
+            filter.len = vtsn->len;
+
+            (void) ngx_http_vhost_traffic_status_node_position_key(&filter, 1);
+
+            if (ngx_http_vhost_traffic_status_filter_max_node_match(r, &filter) == NGX_OK) {
+                a = ngx_http_vhost_traffic_status_find_lru_node_cmp(r, a, b);
+            }
+        }
+
+        a = ngx_http_vhost_traffic_status_find_lru_node(r, a, b->left);
+        a = ngx_http_vhost_traffic_status_find_lru_node(r, a, b->right);
+    }
+
+    return a;
+}
+
+
+ngx_rbtree_node_t *
+ngx_http_vhost_traffic_status_find_lru_node_cmp(ngx_http_request_t *r,
+    ngx_rbtree_node_t *a, ngx_rbtree_node_t *b)
+{
+    ngx_int_t                                         ai, bi;
+    ngx_http_vhost_traffic_status_node_t             *avtsn, *bvtsn;
+    ngx_http_vhost_traffic_status_node_time_queue_t  *aq, *bq;
+
+    if (a == NULL) {
+        return b;
+    }
+
+    avtsn = (ngx_http_vhost_traffic_status_node_t *) &a->color;
+    bvtsn = (ngx_http_vhost_traffic_status_node_t *) &b->color;
+
+    aq = &avtsn->stat_request_times;
+    bq = &bvtsn->stat_request_times;
+
+    if (aq->front == aq->rear) {
+        return a;
+    }
+
+    if (bq->front == bq->rear) {
+        return b;
+    }
+
+    ai = ngx_http_vhost_traffic_status_node_time_queue_rear(aq);
+    bi = ngx_http_vhost_traffic_status_node_time_queue_rear(bq);
+
+    return (aq->times[ai].time < bq->times[bi].time) ? a : b;
 }
 
 
@@ -347,6 +446,14 @@ ngx_http_vhost_traffic_status_node_time_queue_pop(
     q->front = (q->front + 1) % q->len;
 
     return NGX_OK;
+}
+
+
+ngx_int_t
+ngx_http_vhost_traffic_status_node_time_queue_rear(
+    ngx_http_vhost_traffic_status_node_time_queue_t *q)
+{
+    return (q->rear > 0) ? (q->rear - 1) : (NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_QUEUE_LEN - 1);
 }
 
 

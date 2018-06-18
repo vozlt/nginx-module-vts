@@ -28,6 +28,7 @@ ngx_http_vhost_traffic_status_shm_info_node(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_shm_info_t *shm_info,
     ngx_rbtree_node_t *node)
 {
+    ngx_str_t                              filter;
     ngx_uint_t                             size;
     ngx_http_vhost_traffic_status_ctx_t   *ctx;
     ngx_http_vhost_traffic_status_node_t  *vtsn;
@@ -43,6 +44,18 @@ ngx_http_vhost_traffic_status_shm_info_node(ngx_http_request_t *r,
 
         shm_info->used_size += size;
         shm_info->used_node++;
+
+        if (vtsn->stat_upstream.type == NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG) {
+            filter.data = vtsn->data;
+            filter.len = vtsn->len;
+
+            (void) ngx_http_vhost_traffic_status_node_position_key(&filter, 1);
+
+            if (ngx_http_vhost_traffic_status_filter_max_node_match(r, &filter) == NGX_OK) {
+                shm_info->filter_used_size += size;
+                shm_info->filter_used_node++;
+            }
+        }
 
         ngx_http_vhost_traffic_status_shm_info_node(r, shm_info, node->left);
         ngx_http_vhost_traffic_status_shm_info_node(r, shm_info, node->right);
@@ -75,7 +88,7 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
     unsigned                                   init;
     uint32_t                                   hash;
     ngx_slab_pool_t                           *shpool;
-    ngx_rbtree_node_t                         *node;
+    ngx_rbtree_node_t                         *node, *lrun;
     ngx_http_vhost_traffic_status_ctx_t       *ctx;
     ngx_http_vhost_traffic_status_node_t      *vtsn;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
@@ -101,6 +114,14 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
     /* set common */
     if (node == NULL) {
         init = NGX_HTTP_VHOST_TRAFFIC_STATUS_NODE_NONE;
+
+        /* delete lru node */
+        lrun = ngx_http_vhost_traffic_status_find_lru(r);
+        if (lrun != NULL) {
+            ngx_rbtree_delete(ctx->rbtree, lrun);
+            ngx_slab_free_locked(shpool, lrun);
+        }
+
         size = offsetof(ngx_rbtree_node_t, color)
                + offsetof(ngx_http_vhost_traffic_status_node_t, data)
                + key->len;

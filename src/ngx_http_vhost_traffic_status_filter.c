@@ -266,6 +266,34 @@ next:
 }
 
 
+ngx_int_t
+ngx_http_vhost_traffic_status_filter_max_node_match(ngx_http_request_t *r,
+    ngx_str_t *filter)
+{
+    ngx_uint_t                                     i, n;
+    ngx_http_vhost_traffic_status_ctx_t           *ctx;
+    ngx_http_vhost_traffic_status_filter_match_t  *matches;
+
+    ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
+
+    matches = ctx->filter_max_node_matches->elts;
+    n = ctx->filter_max_node_matches->nelts;
+
+    /* disabled */
+    if (n == 0) {
+        return NGX_OK;
+    }
+
+    for (i = 0; i < n; i++) {
+        if (ngx_strncmp(filter->data, matches[i].match.data, matches[i].match.len) == 0) {
+            return NGX_OK;
+        }
+    }
+
+    return NGX_ERROR;
+}
+
+
 char *
 ngx_http_vhost_traffic_status_filter_by_set_key(ngx_conf_t *cf, ngx_command_t *cmd,
     void *conf)

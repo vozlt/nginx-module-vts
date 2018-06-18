@@ -61,6 +61,7 @@ Table of Contents
   * [vhost_traffic_status_filter_by_host](#vhost_traffic_status_filter_by_host)
   * [vhost_traffic_status_filter_by_set_key](#vhost_traffic_status_filter_by_set_key)
   * [vhost_traffic_status_filter_check_duplicate](#vhost_traffic_status_filter_check_duplicate)
+  * [vhost_traffic_status_filter_max_node](#vhost_traffic_status_filter_max_node)
   * [vhost_traffic_status_limit](#vhost_traffic_status_limit)
   * [vhost_traffic_status_limit_traffic](#vhost_traffic_status_limit_traffic)
   * [vhost_traffic_status_limit_traffic_by_set_key](#vhost_traffic_status_limit_traffic_by_set_key)
@@ -1402,6 +1403,64 @@ server {
 `Description:` Enables or disables the deduplication of vhost_traffic_status_filter_by_set_key.
 It is processed only one of duplicate values(`key` + `name`) in each directives(http, server, location) if this option is enabled.
 
+### vhost_traffic_status_filter_max_node
+
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_filter_max_node** *number* [*string* ...] |
+| **Default** | 0 |
+| **Context** | http |
+
+`Description:` Enables the limit of filter size using the specified *number* and *string* values.
+If the *number* is exceeded, the existing nodes are deleted by the [LRU](https://en.wikipedia.org/wiki/Cache_replacement_policies#LRU) algorithm.
+The *number* argument is the size of the node that will be limited.
+The default value `0` does not limit filters.
+The one node is an object in `filterZones` in JSON document.
+The *string* arguments are the matching string values for the group string value set by `vhost_traffic_status_filter_by_set_key` directive. 
+Even if only the first part matches, matching is successful like the regular expression `/^string.*/`.
+By default, If you do not set *string* arguments then it applied for all filters.
+
+
+For examples:
+
+`$ vi nginx.conf`
+
+```Nginx
+http {
+
+    geoip_country /usr/share/GeoIP/GeoIP.dat;
+
+    vhost_traffic_status_zone;
+
+    # The all filters are limited to a total of 16 nodes.
+    # vhost_traffic_status_filter_max_node 16
+
+    # The `/^uris.*/` and `/^client::ports.*/` group string patterns are limited to a total of 64 nodes.
+    vhost_traffic_status_filter_max_node 16 uris client::ports
+
+    ...
+
+    server {
+
+        server_name example.org;
+
+        ...
+
+        vhost_traffic_status_filter_by_set_key $uri uris::$server_name;
+        vhost_traffic_status_filter_by_set_key $remote_port client::ports::$server_name;
+        vhost_traffic_status_filter_by_set_key $geoip_country_code country::$server_name;
+
+    }
+}
+```
+
+`$ for i in {0..1000}; do curl -H 'Host: example.org' -i "http://localhost:80/test$i"; done`
+
+![screenshot-vts-filter-max-node](https://user-images.githubusercontent.com/3648408/41475027-96c96136-70f8-11e8-8dd6-ed1825d7b216.png)
+
+In the above example, the `/^uris.*/` and `/^client::ports.*/` group string patterns are limited to a total of 16 nodes.
+The other filters like `country::.*` are not limited.
+
 ### vhost_traffic_status_limit
 
 | -   | - |
@@ -1748,7 +1807,6 @@ http {
   * [nginx-module-sysguard](https://github.com/vozlt/nginx-module-sysguard)
 
 ## TODO
-* Add support for implementing LRU(least recently used) for filter.
 
 ## Donation
 [![License](http://img.shields.io/badge/PAYPAL-DONATE-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=PWWSYKQ9VKH38&lc=KR&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)

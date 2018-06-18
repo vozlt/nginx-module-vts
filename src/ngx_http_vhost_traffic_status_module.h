@@ -230,6 +230,11 @@ typedef struct {
     /* array of ngx_http_vhost_traffic_status_limit_t */
     ngx_array_t                            *limit_filter_traffics;
 
+    /* array of ngx_http_vhost_traffic_status_filter_match_t */
+    ngx_array_t                            *filter_max_node_matches;
+
+    ngx_uint_t                              filter_max_node;
+
     ngx_flag_t                              enable;
     ngx_flag_t                              filter_check_duplicate;
     ngx_flag_t                              limit_check_duplicate;
