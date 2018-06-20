@@ -1,3 +1,21 @@
+v0.1.17 [Wed Jun 20 2018 YoungJoo.Kim <vozltx@gmail.com>]
+    * Feature: added vhost_traffic_status_filter_max_node directive
+      to limit the size of filters.
+
+    * Feature: added vhost_traffic_status_histogram_buckets directive
+      to set the histogram type of request processing time in
+      format/(json|prometheus).
+
+    * Feature: added support for implementing format/prometheus.
+      Thanks to hnlq715, pavel987, superq, discordianfish, towolf.
+
+    * Feature: added request_time_counter, response_time_counter section to
+      support accumulated request processing time for pull/67, issues/73.
+
+    * Feature: added TiB unit in format/html for the issues/11
+
+    * Compatibility: added "#if (NGX_HTTP_CACHE)" for the issues/122.
+
 v0.1.16 [Mon May 21 2018 YoungJoo.Kim <vozltx@gmail.com>]
     * Compatibility: fixed ngx_current_msec that changed in nginx-1.13.10 for
       the issues/121.
