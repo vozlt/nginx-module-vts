@@ -481,7 +481,11 @@
                     return (b / (kb * kb)).toFixed(1) + ' MiB';
                 }
 
-                return (b / (kb * kb * kb)).toFixed(2) + ' GiB';
+                if (b < (kb * kb * kb * kb)) {
+                    return (b / (kb * kb * kb)).toFixed(2) + ' GiB';
+                }
+
+                return (b / (kb * kb * kb * kb)).toFixed(6) + ' TiB';
             }
 
             function sTh(b,d) {
