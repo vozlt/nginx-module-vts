@@ -276,6 +276,10 @@ ngx_http_vhost_traffic_status_filter_max_node_match(ngx_http_request_t *r,
 
     ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
 
+    if (ctx->filter_max_node_matches == NULL) {
+        return NGX_OK;
+    }
+
     matches = ctx->filter_max_node_matches->elts;
     n = ctx->filter_max_node_matches->nelts;
 
