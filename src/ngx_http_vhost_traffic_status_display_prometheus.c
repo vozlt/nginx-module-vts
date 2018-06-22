@@ -37,7 +37,7 @@ ngx_http_vhost_traffic_status_display_prometheus_set_main(ngx_http_request_t *r,
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_MAIN, &ngx_cycle->hostname,
                       NGINX_VERSION,
                       (double) vtscf->start_msec / 1000,
-                      ac, rd, wr, wa, ap, hn, rq,
+                      ap, ac, hn, rd, rq, wa, wr,
                       shm_info->name, shm_info->max_size,
                       shm_info->used_size, shm_info->used_node);
 
