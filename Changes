@@ -1,3 +1,8 @@
+v0.1.18 [Fri Jun 22 2018 YoungJoo.Kim <vozltx@gmail.com>]
+    * Bugfix: fixed issues/130 that nginx_vts_main_connections metrics mixed.
+
+    * Bugfix: fixed issues/129 that worker process 4589 exited on signal 11.
+
 v0.1.17 [Wed Jun 20 2018 YoungJoo.Kim <vozltx@gmail.com>]
     * Feature: added vhost_traffic_status_filter_max_node directive
       to limit the size of filters.
