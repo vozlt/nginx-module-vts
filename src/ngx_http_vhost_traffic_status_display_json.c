@@ -496,7 +496,7 @@ ngx_http_vhost_traffic_status_display_set_upstream_group(ngx_http_request_t *r,
     unsigned                               type, zone;
     ngx_int_t                              rc;
     ngx_str_t                              key, dst;
-    ngx_uint_t                             i, j;
+    ngx_uint_t                             i, j, k;
     ngx_rbtree_node_t                     *node;
     ngx_http_upstream_server_t            *us, usn;
 #if (NGX_HTTP_UPSTREAM_ZONE)
@@ -613,45 +613,44 @@ not_supported:
                     continue;
                 }
 
-                if (us[j].addrs == NULL) {
-                    continue;
-                }
+                /* for all A records */
+                for (k = 0; k < usn.naddrs; k++) {
+                    p = ngx_cpymem(p, uscf->host.data, uscf->host.len);
+                    *p++ = NGX_HTTP_VHOST_TRAFFIC_STATUS_KEY_SEPARATOR;
+                    p = ngx_cpymem(p, usn.addrs[k].name.data, usn.addrs[k].name.len);
 
-                p = ngx_cpymem(p, uscf->host.data, uscf->host.len);
-                *p++ = NGX_HTTP_VHOST_TRAFFIC_STATUS_KEY_SEPARATOR;
-                p = ngx_cpymem(p, us[j].addrs->name.data, us[j].addrs->name.len);
+                    dst.len = uscf->host.len + sizeof("@") - 1 + usn.addrs[k].name.len;
 
-                dst.len = uscf->host.len + sizeof("@") - 1 + us[j].addrs->name.len;
+                    rc = ngx_http_vhost_traffic_status_node_generate_key(r->pool, &key, &dst, type);
+                    if (rc != NGX_OK) {
+                        return buf;
+                    }
 
-                rc = ngx_http_vhost_traffic_status_node_generate_key(r->pool, &key, &dst, type);
-                if (rc != NGX_OK) {
-                    return buf;
-                }
-
-                hash = ngx_crc32_short(key.data, key.len);
-                node = ngx_http_vhost_traffic_status_node_lookup(ctx->rbtree, &key, hash);
+                    hash = ngx_crc32_short(key.data, key.len);
+                    node = ngx_http_vhost_traffic_status_node_lookup(ctx->rbtree, &key, hash);
 
 #if nginx_version > 1007001
-                usn.name = us[j].addrs->name;
+                    usn.name = usn.addrs[k].name;
 #endif
 
-                if (node != NULL) {
-                    vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
+                    if (node != NULL) {
+                        vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
 #if nginx_version > 1007001
-                    buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, vtsn);
+                        buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, vtsn);
 #else
-                    buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, vtsn, &us[j].addrs->name);
+                        buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, vtsn, &usn.addrs[k].name);
 #endif
 
-                } else {
+                    } else {
 #if nginx_version > 1007001
-                    buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, NULL);
+                        buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, NULL);
 #else
-                    buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, NULL, &us[j].addrs->name);
+                        buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, NULL, &usn.addrs[k].name);
 #endif
-                }
+                    }
 
-                p = dst.data;
+                    p = dst.data;
+                }
             }
 
             if (s == buf) {
