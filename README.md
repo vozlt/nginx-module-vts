@@ -1697,7 +1697,7 @@ For examples:
 `Description:` Sets the method which is a formula that calculate the average of response processing times.
 The *period* is an effective time of the values used for the average calculation.(Default: 60s)
 If *period* set to 0, effective time is ignored.
-In this case, the last average value is displayed even if there is no reqeusts and after the elapse of time.
+In this case, the last average value is displayed even if there is no requests and after the elapse of time.
 The corresponding values are `requestMsec` and `responseMsec` in JSON.
 
 * **AMM**

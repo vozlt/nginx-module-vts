@@ -452,7 +452,8 @@ ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
 ngx_int_t
 ngx_http_vhost_traffic_status_display_get_upstream_nelts(ngx_http_request_t *r)
 {
-    ngx_uint_t                      i, j;
+    ngx_uint_t                      i, j, n;
+    ngx_http_upstream_server_t     *us;
 #if (NGX_HTTP_UPSTREAM_ZONE)
     ngx_http_upstream_rr_peer_t    *peer;
     ngx_http_upstream_rr_peers_t   *peers;
@@ -463,12 +464,13 @@ ngx_http_vhost_traffic_status_display_get_upstream_nelts(ngx_http_request_t *r)
     umcf = ngx_http_get_module_main_conf(r, ngx_http_upstream_module);
     uscfp = umcf->upstreams.elts;
 
-    for (i = 0, j = 0; i < umcf->upstreams.nelts; i++) {
+    for (i = 0, j = 0, n = 0; i < umcf->upstreams.nelts; i++) {
 
         uscf = uscfp[i];
 
         /* groups */
         if (uscf->servers && !uscf->port) {
+            us = uscf->servers->elts;
 
 #if (NGX_HTTP_UPSTREAM_ZONE)
             if (uscf->shm_zone == NULL) {
@@ -480,7 +482,7 @@ ngx_http_vhost_traffic_status_display_get_upstream_nelts(ngx_http_request_t *r)
             ngx_http_upstream_rr_peers_rlock(peers);
 
             for (peer = peers->peer; peer; peer = peer->next) {
-                j++;
+                n++;
             }
 
             ngx_http_upstream_rr_peers_unlock(peers);
@@ -489,11 +491,13 @@ not_supported:
 
 #endif
 
-            j += uscf->servers->nelts;
+            for (j = 0; j < uscf->servers->nelts; j++) {
+                n += us[j].naddrs;
+            }
         }
     }
 
-    return j;
+    return n;
 }
 
 
