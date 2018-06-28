@@ -300,6 +300,7 @@ ngx_http_vhost_traffic_status_display_prometheus_set_upstream_node(
 {
     ngx_str_t                                               target, upstream, upstream_server;
     ngx_uint_t                                              i, n, len;
+    ngx_atomic_t                                            time_counter;
     ngx_http_vhost_traffic_status_loc_conf_t               *vtscf;
     ngx_http_vhost_traffic_status_node_histogram_bucket_t  *b;
 
@@ -342,10 +343,12 @@ ngx_http_vhost_traffic_status_display_prometheus_set_upstream_node(
     while (len--) {
         if (len > 0) {
             b = &vtsn->stat_request_buckets;
+            time_counter = vtsn->stat_request_time_counter;
             ngx_str_set(&target, "request");
 
         } else {
             b = &vtsn->stat_upstream.response_buckets;
+            time_counter = vtsn->stat_upstream.response_time_counter;
             ngx_str_set(&target, "response");
         }
 
@@ -367,7 +370,7 @@ ngx_http_vhost_traffic_status_display_prometheus_set_upstream_node(
             /* histogram:sum */
             buf = ngx_sprintf(buf,
                     NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM_HISTOGRAM_SUM,
-                    &target, &upstream, &upstream_server, (double) vtsn->stat_request_time_counter / 1000);
+                    &target, &upstream, &upstream_server, (double) time_counter / 1000);
 
             /* histogram:count */
             buf = ngx_sprintf(buf,
