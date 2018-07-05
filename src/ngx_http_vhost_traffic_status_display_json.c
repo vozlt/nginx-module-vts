@@ -268,7 +268,7 @@ u_char *
 ngx_http_vhost_traffic_status_display_set_filter(ngx_http_request_t *r,
     u_char *buf, ngx_rbtree_node_t *node)
 {
-    ngx_str_t                                     key;
+    ngx_str_t                                     key, filter;
     ngx_uint_t                                    i, j, n, rc;
     ngx_array_t                                  *filter_keys, *filter_nodes;
     ngx_http_vhost_traffic_status_filter_key_t   *keys;
@@ -303,8 +303,14 @@ ngx_http_vhost_traffic_status_display_set_filter(ngx_http_request_t *r,
             rc = ngx_http_vhost_traffic_status_filter_get_nodes(r, &filter_nodes, &key, node);
 
             if (filter_nodes != NULL && rc == NGX_OK) {
+                rc = ngx_http_vhost_traffic_status_escape_json_pool(r->pool, &filter, &keys[i].key);
+                if (rc != NGX_OK) {
+                    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                                  "display_set_filter::escape_json_pool() failed");
+                }
+
                 buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_OBJECT_S,
-                                  &keys[i].key);
+                                  &filter);
 
                 nodes = filter_nodes->elts;
                 for (j = 0; j < filter_nodes->nelts; j++) {
