@@ -1180,6 +1180,8 @@ Please see the [vhost_traffic_status_dump](#vhost_traffic_status_dump) directive
 
 ## Directives
 
+![draw_io_vts_diagram](https://user-images.githubusercontent.com/3648408/42613122-279cdb70-85da-11e8-940e-e348bd8ea861.png "The order of nginx-module-vts module directives")
+
 ### vhost_traffic_status
 
 | -   | - |
