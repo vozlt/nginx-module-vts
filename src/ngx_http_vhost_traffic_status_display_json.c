@@ -9,8 +9,8 @@
 #include "ngx_http_vhost_traffic_status_filter.h"
 #include "ngx_http_vhost_traffic_status_display_json.h"
 #include "ngx_http_vhost_traffic_status_display.h"
-#if (NGX_STREAM_UPSTREAM_CHECK)
-#include "ngx_stream_upstream_check_module.h"
+#if (NGX_HTTP_UPSTREAM_CHECK)
+#include "ngx_http_upstream_check_module.h"
 #endif
 
 u_char *
@@ -583,8 +583,8 @@ ngx_http_vhost_traffic_status_display_set_upstream_group(ngx_http_request_t *r,
                 usn.max_fails = peer->max_fails;
                 usn.fail_timeout = peer->fail_timeout;
                 usn.backup = 0;
-#if (NGX_STREAM_UPSTREAM_CHECK)
-                if (ngx_stream_upstream_check_peer_down(peer->check_index)) {
+#if (NGX_HTTP_UPSTREAM_CHECK)
+                if (ngx_http_upstream_check_peer_down(peer->check_index)) {
                     usn.down = 1;
                 } else {
                     usn.down = 0;
