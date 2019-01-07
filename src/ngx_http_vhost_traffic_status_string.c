@@ -164,4 +164,66 @@ ngx_http_vhost_traffic_status_replace_strc(ngx_str_t *buf,
     return NGX_OK;
 }
 
+
+ngx_int_t
+ngx_hex_escape_invalid_utf8_char(ngx_pool_t *pool, ngx_str_t *buf, u_char *p, size_t n)
+{
+    u_char  c, *pb, *last, *prev;
+    size_t  len, size;
+    u_char   HEX_MAP[] = "0123456789ABCDEF";
+    uint32_t return_value;
+
+    last = p + n;
+    buf->data = ngx_pcalloc(pool, n * 5);
+
+    size = 0;
+    pb = buf->data;
+
+    for (len = 0; p < last; len++) {
+
+        if (*p < 0x80) {
+            if (*p == '"') {
+                *pb++ = '\\';
+                *pb++ = *p++;
+                size = size + 2;
+            } else {
+                *pb++ = *p++;
+                size++;
+            }
+
+            continue;
+        }
+
+        prev = p;
+        if (ngx_utf8_decode(&p, n) > 0x10ffff) {
+            /* invalid UTF-8 */
+
+            if (prev < p) {
+                c = *prev++;
+                /* two slashes are required to be valid encoding for prometheus*/
+                *pb++ = '\\';
+                *pb++ = '\\';
+                *pb++ = 'x';
+                *pb++ = HEX_MAP[c >> 4];
+                *pb++ = HEX_MAP[c & 0x0f];
+                size = size + 5;
+                p = prev;
+            }
+
+            continue;
+
+        } else {
+            while (prev < p) {
+                *pb++ = *prev++;
+                size++;
+            }
+
+            continue;
+        }
+    }
+
+    buf->len = size;
+    return NGX_OK;
+}
+
 /* vi:set ft=c ts=4 sw=4 et fdm=marker: */
