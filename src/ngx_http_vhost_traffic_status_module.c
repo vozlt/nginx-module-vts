@@ -13,6 +13,7 @@
 #include "ngx_http_vhost_traffic_status_set.h"
 #include "ngx_http_vhost_traffic_status_dump.h"
 
+static const char *NGX_HTTP_VHOST_TRAFFIC_STATUS_VERSION __attribute__((used)) = "ngx_http_vhost_traffic_status_version=0.1.18";
 
 static ngx_int_t ngx_http_vhost_traffic_status_handler(ngx_http_request_t *r);
 
