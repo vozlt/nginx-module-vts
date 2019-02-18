@@ -53,7 +53,6 @@
     "nginx_vts_server_requests_total{host=\"%V\",code=\"3xx\"} %uA\n"          \
     "nginx_vts_server_requests_total{host=\"%V\",code=\"4xx\"} %uA\n"          \
     "nginx_vts_server_requests_total{host=\"%V\",code=\"5xx\"} %uA\n"          \
-    "nginx_vts_server_requests_total{host=\"%V\",code=\"total\"} %uA\n"        \
     "nginx_vts_server_request_seconds_total{host=\"%V\"} %.3f\n"               \
     "nginx_vts_server_request_seconds{host=\"%V\"} %.3f\n"
 
@@ -117,8 +116,6 @@
     "direction=\"4xx\"} %uA\n"                                                 \
     "nginx_vts_filter_requests_total{filter=\"%V\",filter_name=\"%V\","        \
     "direction=\"5xx\"} %uA\n"                                                 \
-    "nginx_vts_filter_requests_total{filter=\"%V\",filter_name=\"%V\","        \
-    "direction=\"total\"} %uA\n"                                               \
     "nginx_vts_filter_request_seconds_total{filter=\"%V\","                    \
     "filter_name=\"%V\"} %.3f\n"                                               \
     "nginx_vts_filter_request_seconds{filter=\"%V\",filter_name=\"%V\"} %.3f\n"
@@ -202,8 +199,6 @@
     "code=\"4xx\"} %uA\n"                                                      \
     "nginx_vts_upstream_requests_total{upstream=\"%V\",backend=\"%V\","        \
     "code=\"5xx\"} %uA\n"                                                      \
-    "nginx_vts_upstream_requests_total{upstream=\"%V\",backend=\"%V\","        \
-    "code=\"total\"} %uA\n"                                                    \
     "nginx_vts_upstream_request_seconds_total{upstream=\"%V\","                \
     "backend=\"%V\"} %.3f\n"                                                   \
     "nginx_vts_upstream_request_seconds{upstream=\"%V\","                      \
