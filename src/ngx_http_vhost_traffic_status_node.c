@@ -312,12 +312,15 @@ ngx_http_vhost_traffic_status_node_zero(ngx_http_vhost_traffic_status_node_t *vt
 
 }
 
-
+/*
+   Initialize the node and update it with the first request.
+   Set the `stat_request_time` to the time of the first request.
+*/
 void
 ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t *vtsn)
 {
-    ngx_uint_t status = r->headers_out.status;
+    ngx_msec_int_t                             ms;
 
     /* init serverZone */
     ngx_http_vhost_traffic_status_node_zero(vtsn);
@@ -333,48 +336,49 @@ ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
         &vtsn->stat_upstream.response_buckets);
 
     /* set serverZone */
-    vtsn->stat_request_counter = 1;
-    vtsn->stat_in_bytes = (ngx_atomic_uint_t) r->request_length;
-    vtsn->stat_out_bytes = (ngx_atomic_uint_t) r->connection->sent;
+    ms = ngx_http_vhost_traffic_status_request_time(r);
+    vtsn->stat_request_time = (ngx_msec_t) ms;
 
-    ngx_http_vhost_traffic_status_add_rc(status, vtsn);
-
-    vtsn->stat_request_time = (ngx_msec_t) ngx_http_vhost_traffic_status_request_time(r);
-    vtsn->stat_request_time_counter = (ngx_atomic_uint_t) vtsn->stat_request_time;
-
-    ngx_http_vhost_traffic_status_node_time_queue_insert(&vtsn->stat_request_times,
-        vtsn->stat_request_time);
-
-#if (NGX_HTTP_CACHE)
-    if (r->upstream != NULL && r->upstream->cache_status != 0) {
-        ngx_http_vhost_traffic_status_add_cc(r->upstream->cache_status, vtsn);
-    }
-#endif
-
+    ngx_http_vhost_traffic_status_node_update(r, vtsn, ms);
 }
 
-
+/*
+   Update the node from a subsequent request. Now there is more than one request,
+   calculate the average request time.
+*/
 void
 ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t *vtsn)
 {
-    ngx_uint_t                                 status;
     ngx_msec_int_t                             ms;
     ngx_http_vhost_traffic_status_node_t       ovtsn;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
 
     vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
 
-    status = r->headers_out.status;
     ovtsn = *vtsn;
+
+    ms = ngx_http_vhost_traffic_status_request_time(r);
+    ngx_http_vhost_traffic_status_node_update(r, vtsn, ms);
+
+    vtsn->stat_request_time = ngx_http_vhost_traffic_status_node_time_queue_average(
+                                  &vtsn->stat_request_times, vtscf->average_method,
+                                  vtscf->average_period);
+
+    ngx_http_vhost_traffic_status_add_oc((&ovtsn), vtsn);
+}
+
+void
+ngx_http_vhost_traffic_status_node_update(ngx_http_request_t *r,
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_msec_int_t ms)
+{
+    ngx_uint_t status = r->headers_out.status;
 
     vtsn->stat_request_counter++;
     vtsn->stat_in_bytes += (ngx_atomic_uint_t) r->request_length;
     vtsn->stat_out_bytes += (ngx_atomic_uint_t) r->connection->sent;
 
     ngx_http_vhost_traffic_status_add_rc(status, vtsn);
-
-    ms = ngx_http_vhost_traffic_status_request_time(r);
 
     vtsn->stat_request_time_counter += (ngx_atomic_uint_t) ms;
 
@@ -384,19 +388,12 @@ ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_histogram_observe(&vtsn->stat_request_buckets,
                                                          ms);
 
-    vtsn->stat_request_time = ngx_http_vhost_traffic_status_node_time_queue_average(
-                                  &vtsn->stat_request_times, vtscf->average_method,
-                                  vtscf->average_period);
-
 #if (NGX_HTTP_CACHE)
     if (r->upstream != NULL && r->upstream->cache_status != 0) {
         ngx_http_vhost_traffic_status_add_cc(r->upstream->cache_status, vtsn);
     }
 #endif
-
-    ngx_http_vhost_traffic_status_add_oc((&ovtsn), vtsn);
 }
-
 
 void
 ngx_http_vhost_traffic_status_node_time_queue_zero(
