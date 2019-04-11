@@ -19,7 +19,8 @@ ngx_int_t ngx_http_vhost_traffic_status_replace_chrc(ngx_str_t *buf,
     u_char in, u_char to);
 ngx_int_t ngx_http_vhost_traffic_status_replace_strc(ngx_str_t *buf,
     ngx_str_t *dst, u_char c);
-
+ngx_int_t ngx_http_vhost_traffic_status_escape_prometheus(ngx_pool_t *pool, ngx_str_t *buf, 
+	u_char *p, size_t n);
 
 #endif /* _NGX_HTTP_VTS_STRING_H_INCLUDED_ */
 
