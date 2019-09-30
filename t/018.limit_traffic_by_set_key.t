@@ -2,7 +2,7 @@
 
 use Test::Nginx::Socket;
 
-plan tests => repeat_each() * blocks() * 12;
+plan tests => repeat_each() * blocks() * 11 + 2;
 no_shuffle();
 run_tests();
 
@@ -184,11 +184,9 @@ __DATA__
     'GET /backend/file.txt',
     'GET /backend/file.txt',
     'GET /backend/file.txt',
-    'GET /backend/file.txt',
 ]
 --- error_code eval
 [
-    200,
     200,
     200,
     200,
@@ -197,7 +195,6 @@ __DATA__
 ]
 --- response_body_like eval
 [
-    'OK',
     'OK',
     'OK',
     'OK',
