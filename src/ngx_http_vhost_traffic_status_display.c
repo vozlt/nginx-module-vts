@@ -38,10 +38,10 @@ ngx_http_vhost_traffic_status_display_handler(ngx_http_request_t *r)
 
     len = 0;
 
-    p = (u_char *) ngx_strchr(r->uri.data, '/');
+    p = (u_char *) ngx_strlchr(r->uri.data, r->uri.data + r->uri.len, '/');
 
     if (p) {
-        p = (u_char *) ngx_strchr(p + 1, '/');
+        p = (u_char *) ngx_strlchr(p + 1, r->uri.data + r->uri.len, '/');
         len = r->uri.len - (p - r->uri.data);
     }
 
