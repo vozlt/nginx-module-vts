@@ -354,7 +354,8 @@ ngx_http_vhost_traffic_status_shm_add_filter_node(ngx_http_request_t *r,
 
 
 ngx_int_t
-ngx_http_vhost_traffic_status_shm_add_server(ngx_http_request_t *r)
+ngx_http_vhost_traffic_status_shm_add_server(ngx_http_request_t *r,
+	const ngx_str_t *no_cache_server_zone)
 {
     unsigned                                   type;
     ngx_int_t                                  rc;
@@ -366,17 +367,25 @@ ngx_http_vhost_traffic_status_shm_add_server(ngx_http_request_t *r)
 
     cscf = ngx_http_get_module_srv_conf(r, ngx_http_core_module);
 
-    if (vtscf->filter && vtscf->filter_host && r->headers_in.server.len) {
-        /* set the key by host header */
-        dst = r->headers_in.server;
-
+    if (no_cache_server_zone != NULL &&
+	ngx_strlen(no_cache_server_zone->data) > 0) {
+	if (r->upstream == NULL || r->upstream->cache_status != 0) {
+	    return NGX_OK;
+	}
+	dst.len = no_cache_server_zone->len;
+	dst.data = no_cache_server_zone->data;
     } else {
-        /* set the key by server_name variable */
-        dst = cscf->server_name;
-        if (dst.len == 0) {
-            dst.len = 1;
-            dst.data = (u_char *) "_";
-        }
+	if (vtscf->filter && vtscf->filter_host && r->headers_in.server.len) {
+	    /* set the key by host header */
+	    dst = r->headers_in.server;
+	} else {
+	    /* set the key by server_name variable */
+	    dst = cscf->server_name;
+	    if (dst.len == 0) {
+		dst.len = 1;
+		dst.data = (u_char *) "_";
+	    }
+	}
     }
 
     type = NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_NO;
