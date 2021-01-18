@@ -312,6 +312,7 @@ ngx_http_vhost_traffic_status_node_zero(ngx_http_vhost_traffic_status_node_t *vt
 
 }
 
+
 /*
    Initialize the node and update it with the first request.
    Set the `stat_request_time` to the time of the first request.
@@ -320,7 +321,7 @@ void
 ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t *vtsn)
 {
-    ngx_msec_int_t                             ms;
+    ngx_msec_int_t  ms;
 
     /* init serverZone */
     ngx_http_vhost_traffic_status_node_zero(vtsn);
@@ -341,6 +342,7 @@ ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
 
     ngx_http_vhost_traffic_status_node_update(r, vtsn, ms);
 }
+
 
 /*
    Update the node from a subsequent request. Now there is more than one request,
@@ -368,6 +370,7 @@ ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_add_oc((&ovtsn), vtsn);
 }
 
+
 void
 ngx_http_vhost_traffic_status_node_update(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t *vtsn, ngx_msec_int_t ms)
@@ -394,6 +397,7 @@ ngx_http_vhost_traffic_status_node_update(ngx_http_request_t *r,
     }
 #endif
 }
+
 
 void
 ngx_http_vhost_traffic_status_node_time_queue_zero(
