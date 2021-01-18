@@ -108,17 +108,17 @@
     "nginx_vts_filter_bytes_total{filter=\"%V\",filter_name=\"%V\","           \
     "direction=\"out\"} %uA\n"                                                 \
     "nginx_vts_filter_requests_total{filter=\"%V\",filter_name=\"%V\","        \
-    "code=\"1xx\"} %uA\n"                                                 \
+    "code=\"1xx\"} %uA\n"                                                      \
     "nginx_vts_filter_requests_total{filter=\"%V\",filter_name=\"%V\","        \
-    "code=\"2xx\"} %uA\n"                                                 \
+    "code=\"2xx\"} %uA\n"                                                      \
     "nginx_vts_filter_requests_total{filter=\"%V\",filter_name=\"%V\","        \
-    "code=\"3xx\"} %uA\n"                                                 \
+    "code=\"3xx\"} %uA\n"                                                      \
     "nginx_vts_filter_requests_total{filter=\"%V\",filter_name=\"%V\","        \
-    "code=\"4xx\"} %uA\n"                                                 \
+    "code=\"4xx\"} %uA\n"                                                      \
     "nginx_vts_filter_requests_total{filter=\"%V\",filter_name=\"%V\","        \
-    "code=\"5xx\"} %uA\n"                                                 \
+    "code=\"5xx\"} %uA\n"                                                      \
     "nginx_vts_filter_requests_total{filter=\"%V\",filter_name=\"%V\","        \
-    "code=\"total\"} %uA\n"                                               \
+    "code=\"total\"} %uA\n"                                                    \
     "nginx_vts_filter_request_seconds_total{filter=\"%V\","                    \
     "filter_name=\"%V\"} %.3f\n"                                               \
     "nginx_vts_filter_request_seconds{filter=\"%V\",filter_name=\"%V\"} %.3f\n"
