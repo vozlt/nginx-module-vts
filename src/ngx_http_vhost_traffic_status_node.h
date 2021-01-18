@@ -118,6 +118,8 @@ void ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t *vtsn);
 void ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t *vtsn);
+void ngx_http_vhost_traffic_status_node_update(ngx_http_request_t *r,
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_msec_int_t ms);
 
 void ngx_http_vhost_traffic_status_node_time_queue_zero(
     ngx_http_vhost_traffic_status_node_time_queue_t *q);
