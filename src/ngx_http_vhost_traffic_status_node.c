@@ -495,19 +495,18 @@ ngx_http_vhost_traffic_status_node_time_queue_amm(
     ngx_http_vhost_traffic_status_node_time_queue_t *q,
     ngx_msec_t period)
 {
-    ngx_int_t   i, j, k;
+    ngx_int_t   c, i, j, k;
     ngx_msec_t  x, current_msec;
-
-    ngx_int_t   count = 0;
 
     current_msec = ngx_http_vhost_traffic_status_current_msec();
 
+    c = 0;
     x = period ? (current_msec - period) : 0;
 
     for (i = q->front, j = 1, k = 0; i != q->rear; i = (i + 1) % q->len, j++) {
         if (x < q->times[i].time) {
             k += (ngx_int_t) q->times[i].msec;
-            count++;
+            c++;
         }
     }
 
@@ -515,10 +514,7 @@ ngx_http_vhost_traffic_status_node_time_queue_amm(
         ngx_http_vhost_traffic_status_node_time_queue_init(q);
     }
 
-    if (count == 0)
-        return (ngx_msec_t)0;
-    else
-        return (ngx_msec_t)(k / count);
+    return (c == 0) ? (ngx_msec_t) 0 : (ngx_msec_t) (k / c);
 }
 
 
@@ -527,19 +523,17 @@ ngx_http_vhost_traffic_status_node_time_queue_wma(
     ngx_http_vhost_traffic_status_node_time_queue_t *q,
     ngx_msec_t period)
 {
-    ngx_int_t   i, j, k;
+    ngx_int_t   c, i, j, k;
     ngx_msec_t  x, current_msec;
-
-    ngx_int_t   count = 0;
 
     current_msec = ngx_http_vhost_traffic_status_current_msec();
 
+    c = 0;
     x = period ? (current_msec - period) : 0;
 
     for (i = q->front, j = 1, k = 0; i != q->rear; i = (i + 1) % q->len, j++) {
         if (x < q->times[i].time) {
-            count++;
-            k += (ngx_int_t) q->times[i].msec * count;
+            k += (ngx_int_t) q->times[i].msec * ++c;
         }
     }
 
@@ -547,11 +541,8 @@ ngx_http_vhost_traffic_status_node_time_queue_wma(
         ngx_http_vhost_traffic_status_node_time_queue_init(q);
     }
 
-    if (count == 0)
-        return (ngx_msec_t)0;
-    else
-        return (ngx_msec_t)
-               (k / (ngx_int_t) ngx_http_vhost_traffic_status_triangle(count));
+    return (c == 0) ? (ngx_msec_t) 0 : (ngx_msec_t)
+           (k / (ngx_int_t) ngx_http_vhost_traffic_status_triangle(c));
 }
 
 
