@@ -1438,7 +1438,7 @@ http {
     # vhost_traffic_status_filter_max_node 16
 
     # The `/^uris.*/` and `/^client::ports.*/` group string patterns are limited to a total of 64 nodes.
-    vhost_traffic_status_filter_max_node 16 uris client::ports
+    vhost_traffic_status_filter_max_node 16 uris client::ports;
 
     ...
 
