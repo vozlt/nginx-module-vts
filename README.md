@@ -1438,7 +1438,7 @@ http {
     # vhost_traffic_status_filter_max_node 16
 
     # The `/^uris.*/` and `/^client::ports.*/` group string patterns are limited to a total of 64 nodes.
-    vhost_traffic_status_filter_max_node 16 uris client::ports
+    vhost_traffic_status_filter_max_node 16 uris client::ports;
 
     ...
 
@@ -1809,6 +1809,7 @@ http {
   * [nginx-module-sysguard](https://github.com/vozlt/nginx-module-sysguard)
 
 ## TODO
+* Add an implementation that periodically updates computed statistic in each worker processes to shared memory to reduce the contention due to locks when using ngx_shmtx_lock().
 
 ## Donation
 [![License](http://img.shields.io/badge/PAYPAL-DONATE-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=PWWSYKQ9VKH38&lc=KR&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)

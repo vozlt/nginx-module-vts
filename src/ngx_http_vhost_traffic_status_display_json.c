@@ -322,23 +322,19 @@ ngx_http_vhost_traffic_status_display_set_filter(ngx_http_request_t *r,
                 buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_OBJECT_E);
                 buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_NEXT);
 
-                /* destory array to prevent duplication */
-                if (filter_nodes != NULL) {
-                    filter_nodes = NULL;
-                }
+                /* destroy array to prevent duplication */
+                filter_nodes = NULL;
             }
 
         }
 
-        /* destory array */
+        /* destroy array */
         for (i = 0; i < n; i++) {
              if (keys[i].key.data != NULL) {
                  ngx_pfree(r->pool, keys[i].key.data);
              }
         }
-        if (filter_keys != NULL) {
-            filter_keys = NULL;
-        }
+        filter_keys = NULL;
     }
 
     return buf;
