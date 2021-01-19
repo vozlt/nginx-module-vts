@@ -9,6 +9,7 @@ Table of Contents
 =================
 
 * [Version](#version)
+* [Test](#test)
 * [Dependencies](#dependencies)
 * [Compatibility](#compatibility)
 * [Screenshots](#screenshots)
@@ -78,6 +79,10 @@ Table of Contents
 
 ## Version
 This document describes nginx-module-vts `v0.1.18` released on 22 Jun 2018.
+
+## Test
+Run `sudo prove -r t` after you have installed this module. The `sudo` is required because
+the test requires Nginx to listen on port 80.
 
 ## Dependencies
 * [nginx](http://nginx.org)
