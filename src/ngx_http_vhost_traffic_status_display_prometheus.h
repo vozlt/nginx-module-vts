@@ -11,7 +11,7 @@
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_MAIN                      \
     "# HELP nginx_vts_info Nginx info\n"                                       \
     "# TYPE nginx_vts_info gauge\n"                                            \
-    "nginx_vts_info{hostname=\"%V\",version=\"%s\"} 1\n"                       \
+    "nginx_vts_info{hostname=\"%V\",module_version=\"%s\",version=\"%s\"} 1\n" \
     "# HELP nginx_vts_start_time_seconds Nginx start time\n"                   \
     "# TYPE nginx_vts_start_time_seconds gauge\n"                              \
     "nginx_vts_start_time_seconds %.3f\n"                                      \

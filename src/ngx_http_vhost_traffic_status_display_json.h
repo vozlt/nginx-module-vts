@@ -18,6 +18,7 @@
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_NEXT        ","
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_MAIN "\"hostName\":\"%V\","     \
+    "\"moduleVersion\":\"%s\","                                                \
     "\"nginxVersion\":\"%s\","                                                 \
     "\"loadMsec\":%M,"                                                         \
     "\"nowMsec\":%M,"                                                          \

@@ -277,8 +277,8 @@ static ngx_int_t
 ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
 {
     size_t                                     len;
-    u_char                                    *o, *s;
-    ngx_str_t                                  uri, type;
+    u_char                                    *o, *s, *p;
+    ngx_str_t                                  uri, euri, type;
     ngx_int_t                                  size, format, rc;
     ngx_buf_t                                 *b;
     ngx_chain_t                                out;
@@ -394,6 +394,8 @@ ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
 
     b = ngx_create_temp_buf(r->pool, size);
     if (b == NULL) {
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                      "display_handler_default::ngx_create_temp_buf() failed");
         return NGX_HTTP_INTERNAL_SERVER_ERROR;
     }
 
@@ -428,7 +430,23 @@ ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
 
     }
     else {
-        b->last = ngx_sprintf(b->last, NGX_HTTP_VHOST_TRAFFIC_STATUS_HTML_DATA, &uri, &uri);
+        euri = uri;
+        len = ngx_escape_html(NULL, uri.data, uri.len);
+
+        if (len) {
+            p = ngx_pnalloc(r->pool, uri.len + len);
+            if (p == NULL) {
+                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                              "display_handler_default::ngx_pnalloc() failed");
+                return NGX_HTTP_INTERNAL_SERVER_ERROR;
+            }
+
+            (void) ngx_escape_html(p, uri.data, uri.len);
+            euri.data = p;
+            euri.len = uri.len + len;
+        }
+
+        b->last = ngx_sprintf(b->last, NGX_HTTP_VHOST_TRAFFIC_STATUS_HTML_DATA, &euri, &euri);
     }
 
     r->headers_out.status = NGX_HTTP_OK;

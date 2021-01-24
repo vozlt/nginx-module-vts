@@ -41,7 +41,8 @@ ngx_http_vhost_traffic_status_display_set_main(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_shm_info(r, shm_info);
 
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_MAIN, &ngx_cycle->hostname,
-                      NGINX_VERSION, vtscf->start_msec, ngx_http_vhost_traffic_status_current_msec(),
+                      NGX_HTTP_VTS_MODULE_VERSION, NGINX_VERSION, vtscf->start_msec,
+                      ngx_http_vhost_traffic_status_current_msec(),
                       ac, rd, wr, wa, ap, hn, rq,
                       shm_info->name, shm_info->max_size,
                       shm_info->used_size, shm_info->used_node);
