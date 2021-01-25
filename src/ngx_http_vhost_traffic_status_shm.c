@@ -247,7 +247,7 @@ ngx_http_vhost_traffic_status_shm_add_node_cache(ngx_http_request_t *r,
     }
 
     if (init == NGX_HTTP_VHOST_TRAFFIC_STATUS_NODE_NONE) {
-        vtsn->stat_cache_max_size = (ngx_atomic_uint_t) (cache->max_size * cache->bsize);
+        vtsn->stat_cache_max_size = (ngx_atomic_uint_t) cache->shm_zone->shm.size;
 
     } else {
         ngx_shmtx_lock(&cache->shpool->mutex);
