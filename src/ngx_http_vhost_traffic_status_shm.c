@@ -246,6 +246,19 @@ ngx_http_vhost_traffic_status_shm_add_node_cache(ngx_http_request_t *r,
         return NGX_OK;
     }
 
+    /*
+     * If max_size in proxy_cache_path directive is not specified,
+     * the system dependent value NGX_MAX_OFF_T_VALUE is assigned by default.
+     *
+     * proxy_cache_path ... keys_zone=name:size [max_size=size] ...
+     *
+     *     keys_zone's shared memory size:
+     *         cache->shm_zone->shm.size
+     *
+     *     max_size's size:
+     *         cache->max_size
+     */
+
     if (init == NGX_HTTP_VHOST_TRAFFIC_STATUS_NODE_NONE) {
         vtsn->stat_cache_max_size = (ngx_atomic_uint_t) (cache->max_size * cache->bsize);
 

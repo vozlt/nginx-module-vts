@@ -724,9 +724,9 @@ The following status information is provided in the JSON format:
     * Current `down` setting of the server. Basically, this is just a mark the [ngx_http_upstream_module](http://nginx.org/en/docs/http/ngx_http_upstream_module.html#server)'s server down(eg. `server backend3.example.com down`), not actual upstream server state. It will changed to actual state if you enabled the upstream zone directive.
 * cacheZones
   * maxSize
-    * The limit on the maximum size of the cache specified in the configuration.
+    * The limit on the maximum size of the cache specified in the configuration. If `max_size` in `proxy_cache_path` directive is not specified, the system dependent value `NGX_MAX_OFF_T_VALUE` is assigned by default. In other words, this value is from nginx, not what I specified.
   * usedSize
-    * The current size of the cache.
+    * The current size of the cache. This value is taken from nginx like the above `maxSize` value. 
   * inBytes
     * The total number of bytes received from the cache.
   * outBytes
