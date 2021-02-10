@@ -170,6 +170,7 @@ JSON document contains as follows:
 ```Json
 {
     "hostName": ...,
+    "moduleVersion": ...,
     "nginxVersion": ...,
     "loadMsec": ...,
     "nowMsec": ...,
@@ -465,7 +466,7 @@ This is similar to the `status/format/json` except that it can get each zones.
 * cacheZones
   * /status/control?cmd=status&group=cache&zone=*
 
-The **mainZones** values are default status values including `hostName`, `nginxVersion`, `loadMsec`, `nowMsec`, `connections`.
+The **mainZones** values are default status values including `hostName`, `moduleVersion`, `nginxVersion`, `loadMsec`, `nowMsec`, `connections`.
 
 #### To get each zones
 * single zone in serverZones
@@ -600,6 +601,8 @@ The following status information is provided in the JSON format:
 
 * hostName
   * Host name.
+* moduleVersion
+  * Version of the module in *`{version}(|.dev.{commit})`* format.
 * nginxVersion
   * Version of the provided.
 * loadMsec
