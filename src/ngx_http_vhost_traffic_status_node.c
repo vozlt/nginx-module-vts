@@ -278,6 +278,8 @@ ngx_http_vhost_traffic_status_node_zero(ngx_http_vhost_traffic_status_node_t *vt
 
     vtsn->stat_request_time_counter = 0;
     vtsn->stat_request_time = 0;
+    vtsn->stat_upstream.response_time_counter = 0;
+    vtsn->stat_upstream.response_time = 0;
 
     vtsn->stat_request_counter_oc = 0;
     vtsn->stat_in_bytes_oc = 0;
