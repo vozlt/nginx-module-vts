@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [ maater ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    name: 'build'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'checkout'
+        uses: actions/checkout@v3
+        with:
+          path: nginx-module-vts
+      - name: 'checkout nginx'
+        uses: actions/checkout@v3
+        with:
+          repository: nginx/nginx
+          path: nginx
+      - name: 'build'
+        working-directory: nginx
+        run: |
+          ./auto/configure --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts
+          make
+          sudo make install
+          /usr/local/nginx/sbin/nginx -V
