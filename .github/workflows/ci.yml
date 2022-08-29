@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [ maater ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    name: 'build'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'checkout'
+        uses: actions/checkout@v3
+        with:
+          path: nginx-module-vts
+      - name: 'checkout nginx'
+        uses: actions/checkout@v3
+        with:
+          repository: nginx/nginx
+          path: nginx
+      - name: 'install deps'
+        run: apt install -y build-essential libpcre3 libpcre3-dev zlib1g zlib1g-dev libssl-dev libgd-dev libxml2 libxml2-dev uuid-dev
+      - name: 'build'
+        working-directory: nginx
+        run: |
+          ./auto/configure --add-module=../nginx-module-vts
+          make
