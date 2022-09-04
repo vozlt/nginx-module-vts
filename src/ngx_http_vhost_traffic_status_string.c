@@ -179,7 +179,7 @@ ngx_http_vhost_traffic_status_escape_prometheus(ngx_pool_t *pool, ngx_str_t *buf
 
     /* Find the first character that needs to be escaped */
     while (pa < last) {
-        if isascii(*pa) {
+        if (isascii(*pa)) {
             if (*pa == '"' || *pa == '\\' || *pa == '\n') {
                 break;
             } else {
