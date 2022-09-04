@@ -22,7 +22,7 @@ __DATA__
     proxy_cache_path /tmp/cache_one levels=1:2 keys_zone=cache_one:2m inactive=1m max_size=4m;
     proxy_cache_path /tmp/cache_two levels=1:2 keys_zone=cache_two:2m inactive=1m max_size=4m;
     upstream backend {
-        server localhost;
+        server 127.0.0.1;
     }
     server {
         server_name _;

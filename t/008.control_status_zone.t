@@ -2,14 +2,6 @@
 
 use Test::Nginx::Socket;
 
-add_cleanup_handler(
-    sub {
-        my $CacheDir = "t/servroot/cache_*";
-        system("rm -rf $CacheDir > /dev/null") == 0 or
-        bail_out "Can't remove $CacheDir";
-    }
-);
-
 plan tests => repeat_each() * blocks() * 4 + 2;
 no_shuffle();
 run_tests();
@@ -140,8 +132,8 @@ __DATA__
 === TEST 5: /status/control?cmd=status&group=cache&zone=cache_one
 --- http_config
     vhost_traffic_status_zone;
-    proxy_cache_path cache_one levels=1:2 keys_zone=cache_one:2m inactive=1m max_size=4m;
-    proxy_cache_path cache_two levels=1:2 keys_zone=cache_two:2m inactive=1m max_size=4m;
+    proxy_cache_path /tmp/cache_one levels=1:2 keys_zone=cache_one:2m inactive=1m max_size=4m;
+    proxy_cache_path /tmp/cache_two levels=1:2 keys_zone=cache_two:2m inactive=1m max_size=4m;
     upstream backend {
         server 127.0.0.1;
     }

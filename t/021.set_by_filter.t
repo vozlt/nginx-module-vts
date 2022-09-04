@@ -84,7 +84,7 @@ __DATA__
                      '2xx:$2xx';
     access_log  logs/access.log basic;
     upstream backend {
-        server localhost:1984;
+        server 127.0.0.1:1984;
     }
 --- config
     location /status {
@@ -130,7 +130,7 @@ __DATA__
                      '2xx:$2xx';
     access_log  logs/access.log basic;
     upstream backend {
-        server localhost:1984;
+        server 127.0.0.1:1984;
     }
 --- config
     location /v {
@@ -211,7 +211,7 @@ __DATA__
                      'cacheUsedSize:$cacheUsedSize cacheHit:$cacheHit';
     access_log  logs/access.log basic;
     upstream backend {
-        server localhost:1984;
+        server 127.0.0.1:1984;
     }
 --- config
     location /v {

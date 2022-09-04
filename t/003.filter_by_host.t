@@ -12,7 +12,7 @@ __DATA__
 --- http_config
     vhost_traffic_status_zone;
     upstream backend {
-        server localhost;
+        server 127.0.0.1;
     }
     server {
         server_name _;
@@ -59,7 +59,7 @@ __DATA__
     vhost_traffic_status_zone;
     vhost_traffic_status_filter off;
     upstream backend {
-        server localhost;
+        server 127.0.0.1;
     }
     server {
         server_name _;
