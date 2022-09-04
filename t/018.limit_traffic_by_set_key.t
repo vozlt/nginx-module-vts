@@ -157,7 +157,7 @@ __DATA__
 --- http_config
     vhost_traffic_status_zone;
     upstream backend {
-        server localhost;
+        server 127.0.0.1;
     }
     server {
         server_name backend;
