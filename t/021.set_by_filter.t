@@ -84,7 +84,7 @@ __DATA__
                      '2xx:$2xx';
     access_log  logs/access.log basic;
     upstream backend {
-        server localhost:1984;
+        server 127.0.0.1:1984;
     }
 --- config
     location /status {
@@ -101,7 +101,7 @@ __DATA__
         vhost_traffic_status_set_by_filter $outBytes $group/$zone/outBytes;
         vhost_traffic_status_set_by_filter $2xx $group/$zone/2xx;
 
-        proxy_pass http://localhost:1984/return;
+        proxy_pass http://127.0.0.1:1984/return;
     }
 --- user_files eval
 [
@@ -130,7 +130,7 @@ __DATA__
                      '2xx:$2xx';
     access_log  logs/access.log basic;
     upstream backend {
-        server localhost:1984;
+        server 127.0.0.1:1984;
     }
 --- config
     location /v {
@@ -211,7 +211,7 @@ __DATA__
                      'cacheUsedSize:$cacheUsedSize cacheHit:$cacheHit';
     access_log  logs/access.log basic;
     upstream backend {
-        server localhost:1984;
+        server 127.0.0.1:1984;
     }
 --- config
     location /v {
