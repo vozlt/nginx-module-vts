@@ -1,6 +1,8 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+## [v0.2.0] - 2022-09-05
 ### Bugfix
 - fixed for PR[#238](https://github.com/vozlt/nginx-module-vts/issues/238)
 - fixed for PR[#238](https://github.com/vozlt/nginx-module-vts/issues/238)
@@ -11,6 +13,9 @@
 - added escape strings for filter names in JSON
 - fixed the sum value of histogram in upstream metrics
 -  fixed to display all A records of server without zone directive in the upstream block.
+
+### Chore
+- Use git-chglog
 
 ### Comment
 - added moduleVersion
@@ -300,7 +305,8 @@
 - added type casting(ngx_atomic_t) in the ngx_vhost_traffic_status_node_init() and ngx_vhost_traffic_status_node_set()
 
 
-[Unreleased]: https://github.com/vozlt/nginx-module-vts/compare/v0.1.18...HEAD
+[Unreleased]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.0...HEAD
+[v0.2.0]: https://github.com/vozlt/nginx-module-vts/compare/v0.1.18...v0.2.0
 [v0.1.18]: https://github.com/vozlt/nginx-module-vts/compare/v0.1.17...v0.1.18
 [v0.1.17]: https://github.com/vozlt/nginx-module-vts/compare/v0.1.16...v0.1.17
 [v0.1.16]: https://github.com/vozlt/nginx-module-vts/compare/v0.1.15...v0.1.16
