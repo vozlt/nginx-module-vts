@@ -16,7 +16,7 @@
 #include "ngx_http_vhost_traffic_status_string.h"
 #include "ngx_http_vhost_traffic_status_node.h"
 
-#define NGX_HTTP_VTS_MODULE_VERSION  "0.2.0.dev.b740132"
+#define NGX_HTTP_VTS_MODULE_VERSION  "v0.2.0"
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_NO          0
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UA          1
