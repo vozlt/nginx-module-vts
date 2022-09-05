@@ -72,13 +72,17 @@ Table of Contents
   * [vhost_traffic_status_histogram_buckets](#vhost_traffic_status_histogram_buckets)
   * [vhost_traffic_status_bypass_limit](#vhost_traffic_status_bypass_limit)
   * [vhost_traffic_status_bypass_stats](#vhost_traffic_status_bypass_stats)
+* [Releases](#releases)
 * [See Also](#see-also)
 * [TODO](#todo)
 * [Donation](#donation)
 * [Author](#author)
 
 ## Version
-This document describes nginx-module-vts `v0.1.18` released on 22 Jun 2018.
+
+![GitHub Release](https://img.shields.io/github/v/release/vozlt/nginx-module-vts?display_name=tag&sort=semver)
+
+See the [GitHub Releases](https://github.com/vozlt/nginx-module-vts/releases) for the latest tagged release.
 
 ## Test
 Run `sudo prove -r t` after you have installed this module. The `sudo` is required because
@@ -1807,6 +1811,18 @@ http {
     }
 }
 ```
+
+## Releases
+
+To cut a release, create a changelog entry PR with [git-chglog](https://github.com/git-chglog/git-chglog)
+
+    version="v0.2.0"
+    git checkout -b "cut-${version}"
+    git-chglog -o CHANGELOG.md --next-tag "${version}"
+    git add CHANGELOG.md
+    git-chglog -t .chglog/RELNOTES.tmpl --next-tag "${version}" "${version}" | git commit -F-
+    
+After the PR is merged, create the new tag and release on the [GitHub Releases](https://github.com/vozlt/nginx-module-vts/releases).
 
 ## See Also
 * Stream traffic status
