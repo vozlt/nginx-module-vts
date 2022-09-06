@@ -72,6 +72,12 @@ jobs:
         run: |
           sudo apt install -y cpanminus
           sudo cpanm install Test::Nginx::Socket
+      - name: 'prepare promtool'
+        run: |
+          sudo apt-get update && sudo apt-get install -y curl
+          curl -L $(curl -s https://api.github.com/repos/prometheus/prometheus/releases/latest | grep browser_download_url | grep linux-amd64 | cut -d '"' -f 4) -o prometheus-latest.tar.gz
+          tar xvf prometheus-latest.tar.gz
+          sudo mv prometheus-*/promtool /usr/local/bin
       - name: 'test'
         working-directory: nginx-module-vts
         run: |
