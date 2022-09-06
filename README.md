@@ -75,7 +75,6 @@ Table of Contents
 * [Releases](#releases)
 * [See Also](#see-also)
 * [TODO](#todo)
-* [Donation](#donation)
 * [Author](#author)
 
 ## Version
@@ -93,6 +92,7 @@ the test requires Nginx to listen on port 80.
 
 ## Compatibility
 * Nginx
+  * 1.22.x (last tested: 1.22.0)
   * 1.19.x (last tested: 1.19.6)
   * 1.18.x (last tested: 1.18.0)
   * 1.16.x (last tested: 1.15.1)
@@ -1839,9 +1839,6 @@ After the PR is merged, create the new tag and release on the [GitHub Releases](
 
 ## TODO
 * Add an implementation that periodically updates computed statistic in each worker processes to shared memory to reduce the contention due to locks when using ngx_shmtx_lock().
-
-## Donation
-[![License](http://img.shields.io/badge/PAYPAL-DONATE-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=PWWSYKQ9VKH38&lc=KR&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
 
 ## Author
 YoungJoo.Kim(김영주) [<vozltx@gmail.com>]

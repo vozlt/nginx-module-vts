@@ -19,7 +19,7 @@
 /*
  * This version should follow the stable releases.
  * The format should follow https://semver.org/
- * 
+ *
  * If a change has some important impact, include the commit short hash here.
  * I.E "v0.2.0+h0a1s2h"
  *
