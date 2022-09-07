@@ -61,7 +61,7 @@ jobs:
       - name: 'build nginx'
         working-directory: nginx
         run: |
-          ./auto/configure --with-ld-opt="-Wl,-rpath,/usr/local/lib" --without-pcre2 --with-cc-opt=-Wno-stringop-overread --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/ngx_devel_kit --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/lua-nginx-module --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts
+          ./auto/configure --with-ld-opt="-Wl,-rpath,/usr/local/lib" --without-pcre2 --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/ngx_devel_kit --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/lua-nginx-module --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts
           make
           sudo make install
           /usr/local/nginx/sbin/nginx -V
