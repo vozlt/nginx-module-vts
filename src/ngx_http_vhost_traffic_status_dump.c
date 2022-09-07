@@ -108,7 +108,7 @@ ngx_http_vhost_traffic_status_dump_node_write(ngx_event_t *ev, ngx_file_t *file,
     ngx_rbtree_node_t *node)
 {
     ngx_http_vhost_traffic_status_ctx_t   *ctx;
-    ngx_http_vhost_traffic_status_node_t  *vtsn;
+    ngx_http_vhost_traffic_status_node_t  *volatile vtsn;
 
     ctx = ev->data;
 
