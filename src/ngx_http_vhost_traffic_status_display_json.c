@@ -65,7 +65,7 @@ ngx_http_vhost_traffic_status_display_set_server_node(
 
     tmp = *key;
 
-    (void) ngx_http_vhost_traffic_status_node_position_key(&tmp, 1);
+    (void) ngx_http_vhost_traffic_status_node_first_key(&tmp);
 
     rc = ngx_http_vhost_traffic_status_escape_json_pool(r->pool, &dst, &tmp);
     if (rc != NGX_OK) {

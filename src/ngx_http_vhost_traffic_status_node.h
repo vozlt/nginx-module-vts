@@ -109,6 +109,7 @@ ngx_int_t ngx_http_vhost_traffic_status_node_generate_key(ngx_pool_t *pool,
     ngx_str_t *buf, ngx_str_t *dst, unsigned type);
 ngx_int_t ngx_http_vhost_traffic_status_node_position_key(ngx_str_t *buf,
     size_t pos);
+ngx_int_t ngx_http_vhost_traffic_status_node_first_key(ngx_str_t *buf);
 
 ngx_rbtree_node_t *ngx_http_vhost_traffic_status_node_lookup(
     ngx_rbtree_t *rbtree, ngx_str_t *key, uint32_t hash);

@@ -68,6 +68,35 @@ ngx_http_vhost_traffic_status_node_position_key(ngx_str_t *buf, size_t pos)
     return NGX_OK;
 }
 
+ngx_int_t
+ngx_http_vhost_traffic_status_node_first_key(ngx_str_t *buf)
+{
+    size_t   n, len;
+    u_char  *p, *s;
+
+    n = buf->len + 1;
+    len = 0;
+    p = s = buf->data;
+
+    while (--n) {
+        if (*p == NGX_HTTP_VHOST_TRAFFIC_STATUS_KEY_SEPARATOR) {
+            s = (p + 1);
+            len = n - 1;
+            break;
+        }
+        p++;
+    }
+
+    if (len == 0) {
+        return NGX_ERROR;
+    }
+
+    buf->data = s;
+    buf->len = len;
+
+    return NGX_OK;
+}
+
 
 void
 ngx_http_vhost_traffic_status_find_name(ngx_http_request_t *r,
