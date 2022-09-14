@@ -57,6 +57,7 @@ ngx_http_vhost_traffic_status_display_set_server_node(
     u_char *buf, ngx_str_t *key,
     ngx_http_vhost_traffic_status_node_t *vtsn)
 {
+    u_char                                    *p, *c;
     ngx_int_t                                  rc;
     ngx_str_t                                  tmp, dst;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
@@ -65,7 +66,24 @@ ngx_http_vhost_traffic_status_display_set_server_node(
 
     tmp = *key;
 
-    (void) ngx_http_vhost_traffic_status_node_position_key(&tmp, 1);
+    rc = ngx_http_vhost_traffic_status_node_position_key(&tmp, 1);
+    if (rc != NGX_OK) {
+        /* 
+         * If this function is called in the
+         * ngx_http_vhost_traffic_status_display_set_filter_node() function,
+         * there is no NGX_HTTP_VHOST_TRAFFIC_STATUS_KEY_SEPARATOR in key->data.
+         * It is normal.
+         */
+        p = ngx_strlchr(key->data, key->data + key->len, NGX_HTTP_VHOST_TRAFFIC_STATUS_KEY_SEPARATOR);
+        if (p != NULL) {
+            p = ngx_pnalloc(r->pool, key->len * 2 + 1);
+            c = ngx_hex_dump(p, key->data, key->len);
+            *c = '\0';
+            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                          "display_set_server_node::node_position_key() key[%s:%p:%d], tmp[:%p:%d] failed",
+                          p, key->data, key->len, tmp.data, tmp.len);
+        }
+    }
 
     rc = ngx_http_vhost_traffic_status_escape_json_pool(r->pool, &dst, &tmp);
     if (rc != NGX_OK) {
