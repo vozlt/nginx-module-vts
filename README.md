@@ -1821,7 +1821,7 @@ To cut a release, create a changelog entry PR with [git-chglog](https://github.c
     git checkout -b "cut-${version}"
     git-chglog -o CHANGELOG.md --next-tag "${version}"
     git add CHANGELOG.md
-    sed -i "s/NGX_HTTP_VTS_MODULE_VERSION \".*/NGX_HTTP_VTS_MODULE_VERSION \"${version}\"" src/ngx_http_vhost_traffic_status_module.h
+    sed -i "s/NGX_HTTP_VTS_MODULE_VERSION \".*/NGX_HTTP_VTS_MODULE_VERSION \"${version}\"/" src/ngx_http_vhost_traffic_status_module.h
     git add src/ngx_http_vhost_traffic_status_module.h
     git-chglog -t .chglog/RELNOTES.tmpl --next-tag "${version}" "${version}" | git commit -F-
     
