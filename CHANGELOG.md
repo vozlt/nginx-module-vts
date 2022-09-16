@@ -2,7 +2,30 @@
 ## [Unreleased]
 
 
-## [v0.2.0] - 2022-09-05
+## [v0.2.1] - 2022-09-16
+### Bugfix
+- use trimmed serverZones name
+- improved the accuracy of total(*) statistics by nginx-module-sts/pull/10
+
+### Chore
+- Add CI badge in README ([#245](https://github.com/vozlt/nginx-module-vts/issues/245))
+
+### Compatibility
+- fixed an issues/232 with compile errors in gcc 11.3
+
+### Debug
+- added ngx_log_error() when ngx_http_vhost_traffic_status_node_position_key() failed for issues/212
+
+### Docs
+- Fixed README
+
+### Test
+- build without -Wno-stringop-overread ([#243](https://github.com/vozlt/nginx-module-vts/issues/243))
+- Add test for prometheus syntax
+- Add test for display prometheus
+
+
+## [v0.2.0] - 2022-09-06
 ### Bugfix
 - fixed for PR[#238](https://github.com/vozlt/nginx-module-vts/issues/238)
 - fixed for PR[#238](https://github.com/vozlt/nginx-module-vts/issues/238)
@@ -15,6 +38,7 @@
 -  fixed to display all A records of server without zone directive in the upstream block.
 
 ### Chore
+- Change module version. ([#241](https://github.com/vozlt/nginx-module-vts/issues/241))
 - Use git-chglog
 
 ### Comment
@@ -305,7 +329,8 @@
 - added type casting(ngx_atomic_t) in the ngx_vhost_traffic_status_node_init() and ngx_vhost_traffic_status_node_set()
 
 
-[Unreleased]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.1...HEAD
+[v0.2.1]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.0...v0.2.1
 [v0.2.0]: https://github.com/vozlt/nginx-module-vts/compare/v0.1.18...v0.2.0
 [v0.1.18]: https://github.com/vozlt/nginx-module-vts/compare/v0.1.17...v0.1.18
 [v0.1.17]: https://github.com/vozlt/nginx-module-vts/compare/v0.1.16...v0.1.17
