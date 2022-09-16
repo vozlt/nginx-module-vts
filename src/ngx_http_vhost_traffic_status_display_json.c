@@ -141,7 +141,7 @@ ngx_http_vhost_traffic_status_display_set_server_node(
                       vtsn->stat_request_time_counter_oc);
 #else
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER,
-                      key, vtsn->stat_request_counter,
+                      &dst, vtsn->stat_request_counter,
                       vtsn->stat_in_bytes,
                       vtsn->stat_out_bytes,
                       vtsn->stat_1xx_counter,
