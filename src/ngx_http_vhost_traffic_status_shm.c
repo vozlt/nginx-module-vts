@@ -130,6 +130,7 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
         if (node == NULL) {
             shm_info = ngx_pcalloc(r->pool, sizeof(ngx_http_vhost_traffic_status_shm_info_t));
             if (shm_info == NULL) {
+                ngx_shmtx_unlock(&shpool->mutex);
                 return NGX_ERROR;
             }
 
