@@ -524,14 +524,24 @@ ngx_http_vhost_traffic_status_display_get_size(ngx_http_request_t *r,
     ngx_int_t format)
 {
     ngx_uint_t                                 size, un;
+    ngx_slab_pool_t                           *shpool;
+    ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
     ngx_http_vhost_traffic_status_shm_info_t  *shm_info;
+
+    vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
+    shpool = (ngx_slab_pool_t *) vtscf->shm_zone->shm.addr;
 
     shm_info = ngx_pcalloc(r->pool, sizeof(ngx_http_vhost_traffic_status_shm_info_t));
     if (shm_info == NULL) {
         return NGX_ERROR;
     }
 
+    /* Caveat: Do not use duplicate ngx_shmtx_lock() before this function. */
+    ngx_shmtx_lock(&shpool->mutex);
+
     ngx_http_vhost_traffic_status_shm_info(r, shm_info);
+
+    ngx_shmtx_unlock(&shpool->mutex);
 
     /* allocate memory for the upstream groups even if upstream node not exists */
     un = shm_info->used_node
