@@ -71,7 +71,7 @@ jobs:
       - name: 'prepare cpanm'
         run: |
           sudo apt install -y cpanminus
-          sudo cpanm install Test::Nginx::Socket
+          sudo cpanm --notest Test::Nginx::Socket > build.log 2>&1 || (cat build.log && exit 1)
       - name: 'prepare promtool'
         run: |
           sudo apt-get update && sudo apt-get install -y curl
