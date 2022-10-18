@@ -481,14 +481,14 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r)
 
 found:
 
-    state = r->upstream_states->elts;
-    if (state[0].peer == NULL) {
+    state = u->state;
+    if (state->peer == NULL) {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                       "shm_add_upstream::peer failed");
         return NGX_ERROR;
     }
 
-    dst.len = (uscf->port ? 0 : uscf->host.len + sizeof("@") - 1) + state[0].peer->len;
+    dst.len = (uscf->port ? 0 : uscf->host.len + sizeof("@") - 1) + state->peer->len;
     dst.data = ngx_pnalloc(r->pool, dst.len);
     if (dst.data == NULL) {
         return NGX_ERROR;
@@ -496,13 +496,13 @@ found:
 
     p = dst.data;
     if (uscf->port) {
-        p = ngx_cpymem(p, state[0].peer->data, state[0].peer->len);
+        p = ngx_cpymem(p, state->peer->data, state->peer->len);
         type = NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UA;
 
     } else {
         p = ngx_cpymem(p, uscf->host.data, uscf->host.len);
         *p++ = NGX_HTTP_VHOST_TRAFFIC_STATUS_KEY_SEPARATOR;
-        p = ngx_cpymem(p, state[0].peer->data, state[0].peer->len);
+        p = ngx_cpymem(p, state->peer->data, state->peer->len);
         type = NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UG;
     }
 
