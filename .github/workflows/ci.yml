@@ -97,7 +97,4 @@ jobs:
         working-directory: nginx-module-vts
         run: |
           echo "/usr/local/nginx/sbin/" >> $GITHUB_PATH
-          sudo PATH=/usr/local/nginx/sbin:$PATH prove t/024.upstream_check.t
-        env:
-          TEST_UPSTREAM_CHECK: 1
-          TEST_NGINX_SLEEP: 1
+          sudo TEST_UPSTREAM_CHECK=1 TEST_NGINX_SLEEP=1 PATH=/usr/local/nginx/sbin:$PATH prove t/024.upstream_check.t
