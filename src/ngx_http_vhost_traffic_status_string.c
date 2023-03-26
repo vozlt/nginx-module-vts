@@ -187,7 +187,7 @@ ngx_http_vhost_traffic_status_escape_prometheus(ngx_pool_t *pool, ngx_str_t *buf
             }
         } else {
             char_end = pa;
-            if (ngx_utf8_decode(&char_end, last - pa) > 0x10ffff) {
+            if (*pa >= 0xf8 || ngx_utf8_decode(&char_end, last - pa) > 0x10ffff) {
                 break;
             } else {
                 pa = char_end;
@@ -237,7 +237,7 @@ ngx_http_vhost_traffic_status_escape_prometheus(ngx_pool_t *pool, ngx_str_t *buf
             }
         } else {
             char_end = pa;
-            if (ngx_utf8_decode(&char_end, last - pa) > 0x10ffff) {
+            if (*pa >= 0xf8 || ngx_utf8_decode(&char_end, last - pa) > 0x10ffff) {
                 /* invalid UTF-8 - escape single char to allow resynchronization */
                 c = *pa++;
                 /* two slashes are required to be valid encoding for prometheus*/
