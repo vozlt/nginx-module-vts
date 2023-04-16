@@ -393,7 +393,7 @@ ngx_http_vhost_traffic_status_dump_restore(ngx_event_t *ev)
         /* read: data */
         offset += n;
         n = ngx_read_file(&file, buf, vtsn.len, offset);
-        if (n != vtsn.len) {
+        if (n >= 0 && vtsn.len <= SSIZE_MAX && n != (ssize_t) vtsn.len) {
             ngx_log_debug2(NGX_LOG_DEBUG_HTTP, ev->log, 0,
                           "dump_restore::ngx_read_file() read:%z, data:%z failed",
                           n, vtsn.len);

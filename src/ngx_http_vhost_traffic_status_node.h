@@ -100,7 +100,7 @@ typedef struct {
 #endif
 
     ngx_http_vhost_traffic_status_node_upstream_t          stat_upstream;
-    u_short                                                len;
+    size_t                                                 len;
     u_char                                                 data[1];
 } ngx_http_vhost_traffic_status_node_t;
 
