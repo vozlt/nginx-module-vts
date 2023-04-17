@@ -148,7 +148,7 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
         vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
 
         node->key = hash;
-        vtsn->len = (u_short) key->len;
+        vtsn->len = key->len;
         ngx_http_vhost_traffic_status_node_init(r, vtsn);
         vtsn->stat_upstream.type = type;
         ngx_memcpy(vtsn->data, key->data, key->len);
