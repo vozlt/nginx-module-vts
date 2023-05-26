@@ -2,7 +2,23 @@
 ## [Unreleased]
 
 
-## [v0.2.1] - 2022-09-16
+## [v0.2.2] - 2023-04-17
+### Bugfix
+- fixed issues/228 Change the reffered source of upstream_states in shm_add_upstream()
+- fixed issues/248 Shared memory (lock|unlock) is set when using the ngx_http_vhost_traffic_status_display_get_size() function
+
+### Bugfix
+- Add shmtx unlock
+
+### Chore
+- add cpanm --notest in CI
+
+### Test
+- Fix upstream check test properly
+- Add upstream check test
+
+
+## [v0.2.1] - 2022-09-17
 ### Bugfix
 - use trimmed serverZones name
 - improved the accuracy of total(*) statistics by nginx-module-sts/pull/10
@@ -33,9 +49,6 @@
 - rollback to 549cc4d
 - fixed issues/137, issues/98 that maxSize in cacheZones is displayed incorrectly
 - fixed issues/174 that XSS vulnerability in the html page Feature: added moduleVersion field in format/json
-- added escape strings for filter names in JSON
-- fixed the sum value of histogram in upstream metrics
--  fixed to display all A records of server without zone directive in the upstream block.
 
 ### Chore
 - Change module version. ([#241](https://github.com/vozlt/nginx-module-vts/issues/241))
@@ -45,10 +58,6 @@
 - added moduleVersion
 - added additional information about cacheZones
 - added tested versions
-- added a diagram for the order of module directives
-
-### Compatibility
-- fixed ngx_http_vhost_traffic_status_display_get_upstream_nelts() to calculate all A records of server.
 
 ### Docs
 - Fix README
@@ -71,6 +80,19 @@
 
 ### Test
 - describe how to test and fix failed test case
+
+
+## [v0.1.18seravo] - 2022-03-23
+### Bugfix
+- added escape strings for filter names in JSON
+- fixed the sum value of histogram in upstream metrics
+-  fixed to display all A records of server without zone directive in the upstream block.
+
+### Comment
+- added a diagram for the order of module directives
+
+### Compatibility
+- fixed ngx_http_vhost_traffic_status_display_get_upstream_nelts() to calculate all A records of server.
 
 
 ## [v0.1.18] - 2018-06-22
@@ -329,9 +351,11 @@
 - added type casting(ngx_atomic_t) in the ngx_vhost_traffic_status_node_init() and ngx_vhost_traffic_status_node_set()
 
 
-[Unreleased]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.2...HEAD
+[v0.2.2]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.1...v0.2.2
 [v0.2.1]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.0...v0.2.1
-[v0.2.0]: https://github.com/vozlt/nginx-module-vts/compare/v0.1.18...v0.2.0
+[v0.2.0]: https://github.com/vozlt/nginx-module-vts/compare/v0.1.18seravo...v0.2.0
+[v0.1.18seravo]: https://github.com/vozlt/nginx-module-vts/compare/v0.1.18...v0.1.18seravo
 [v0.1.18]: https://github.com/vozlt/nginx-module-vts/compare/v0.1.17...v0.1.18
 [v0.1.17]: https://github.com/vozlt/nginx-module-vts/compare/v0.1.16...v0.1.17
 [v0.1.16]: https://github.com/vozlt/nginx-module-vts/compare/v0.1.15...v0.1.16
