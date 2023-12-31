@@ -175,3 +175,87 @@ __DATA__
     'OK',
     '{"cache_one"'
 ]
+
+=== TEST 6: /status/control?cmd=status&group=filter&zone=storage%3A%3Alocalhost%40vol0
+--- http_config
+    vhost_traffic_status_zone;
+--- config
+    location /status {
+        vhost_traffic_status_display;
+        vhost_traffic_status_display_format json;
+        access_log off;
+    }
+    location ~ ^/storage/(.+)/.*$ {
+        set $volume $1;
+        vhost_traffic_status_filter_by_set_key $volume storage::$server_name;
+    }
+--- user_files eval
+[
+    ['storage/vol0/file.txt' => 'filter:OK']
+]
+--- request eval
+[
+    'GET /storage/vol0/file.txt',
+    'GET /status/control?cmd=status&group=filter&zone=storage%3A%3Alocalhost%40vol0',
+]
+--- response_body_like eval
+[
+    'OK',
+    '{"vol0"'
+]
+
+=== TEST 7: /status/control?cmd=status&group=upstream%40alone&zone=127.0.0.1%3A1981
+--- http_config
+    vhost_traffic_status_zone;
+--- config
+    location /status {
+        vhost_traffic_status_display;
+        vhost_traffic_status_display_format json;
+        access_log off;
+    }
+    location /backend {
+        proxy_set_header Host backend;
+        proxy_pass http://127.0.0.1:1981;
+    }
+--- tcp_listen: 1981
+--- tcp_reply eval
+"HTTP/1.1 200 OK\r\n\r\nupstream\@alone:OK"
+--- request eval
+[
+    'GET /backend/file.txt',
+    'GET /status/control?cmd=status&group=upstream%40alone&zone=127.0.0.1%3A1981',
+]
+--- response_body_like eval
+[
+    'OK',
+    '{"server":"127.0.0.1:1981"'
+]
+
+=== TEST 8: /status/control?cmd=status&group=filter&zone=storage%3a%3alocalhost%40vol0
+--- http_config
+    vhost_traffic_status_zone;
+--- config
+    location /status {
+        vhost_traffic_status_display;
+        vhost_traffic_status_display_format json;
+        access_log off;
+    }
+    location ~ ^/storage/(.+)/.*$ {
+        set $volume $1;
+        vhost_traffic_status_filter_by_set_key $volume storage::$server_name;
+    }
+--- user_files eval
+[
+    ['storage/vol0/file.txt' => 'filter:OK']
+]
+--- request eval
+[
+    'GET /storage/vol0/file.txt',
+    'GET /status/control?cmd=status&group=filter&zone=storage%3A%3Alocalhost%40vol0',
+]
+--- response_body_like eval
+[
+    'OK',
+    '{"vol0"'
+]
+

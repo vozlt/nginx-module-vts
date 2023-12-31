@@ -161,6 +161,7 @@ ngx_http_vhost_traffic_status_replace_strc(ngx_str_t *buf,
     if (n > 0) {
         buf->len = buf->len - (n * dst->len) + n;
     }
+    *(buf->data + buf->len) = '\0';
 
     return NGX_OK;
 }
