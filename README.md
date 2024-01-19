@@ -1739,7 +1739,7 @@ change the `NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_BUCKET_LEN` in the `src/ngx_ht
 
 For examples:
 * **vhost_traffic_status_histogram_buckets** `0.005` `0.01` `0.05` `0.1` `0.5` `1` `5` `10`
-  * The observe buckets are [5ms 10ms 50ms 1s 5s 10s].
+  * The observe buckets are [5ms 10ms 50ms 100ms 500ms 1s 5s 10s].
 * **vhost_traffic_status_histogram_buckets** `0.005` `0.01` `0.05` `0.1`
   * The observe buckets are [5ms 10ms 50ms 100ms].
 
