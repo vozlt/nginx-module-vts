@@ -130,6 +130,38 @@ Earlier versions is not tested.
 
 4. Install the nginx binary.
 
+### Installtion with Profile-Guided Optimization
+
+It can be built with Profile-Guided Optimization (PGO) using gcc `fprofile` options. The detail of the PGO mechanisms has refer to the section 7.4 of [this paper](https://people.freebsd.org/~lstewart/articles/cpumemory.pdf).
+Here is an example of the process to make a PGO supported binary. Please use at your own risk.
+
+1. Compile with fprofile-generate.
+
+  ```
+  shell> pwd
+  /somewhere/nginx
+  shell> CC=gcc ./auto/configure --with-cc-opt='-fprofile-generate -fprofile-dir=./objs' --with-ld-opt='-lgcov' --add-module=/somewhere/nginx-module-vts
+  shell> make
+  ```
+
+2. Execute this module tests.
+
+  ```
+  shell> pwd
+  /somewhere/nginx-module-vts
+  shell> sudo PATH=/somewhere/nginx/objs:$PATH prove -r t/000.display_html.t
+  ...(during runtime it records coverage data into .gcda files)
+  ```
+
+3. Recompile with fprofile-use
+
+  ```
+  shell> pwd
+  /somewhere/nginx
+  shell> CC=gcc ./auto/configure --with-cc-opt='-fprofile-use -fprofile-dir=/somewhere/nginx-module-vts/objs' --with-ld-opt='-lgcov' --add-module=/somewhere/nginx-module-vts
+  shell> make
+  ```
+
 ## Synopsis
 
 ```Nginx
