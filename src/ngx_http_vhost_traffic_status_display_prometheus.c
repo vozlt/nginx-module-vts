@@ -527,16 +527,18 @@ ngx_http_vhost_traffic_status_display_prometheus_set(ngx_http_request_t *r,
     }
 
     /* upstreamZones */
-    o = buf;
+    if (!vtscf->bypass_upstream_stats) {
+        o = buf;
 
-    buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM_S);
+        buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM_S);
 
-    s = buf;
+        s = buf;
 
-    buf = ngx_http_vhost_traffic_status_display_prometheus_set_upstream(r, buf, node);
+        buf = ngx_http_vhost_traffic_status_display_prometheus_set_upstream(r, buf, node);
 
-    if (s == buf) {
-        buf = o;
+        if (s == buf) {
+            buf = o;
+        }
     }
 
 #if (NGX_HTTP_CACHE)
