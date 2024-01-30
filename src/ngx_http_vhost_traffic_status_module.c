@@ -210,6 +210,13 @@ static ngx_command_t ngx_http_vhost_traffic_status_commands[] = {
       offsetof(ngx_http_vhost_traffic_status_loc_conf_t, bypass_stats),
       NULL },
 
+    { ngx_string("vhost_traffic_status_filter_upstream_no_cache"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      ngx_conf_set_str_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, no_cache_server_zone),
+      NULL },
+
     ngx_null_command
 };
 
@@ -265,10 +272,19 @@ ngx_http_vhost_traffic_status_handler(ngx_http_request_t *r)
         return NGX_DECLINED;
     }
 
-    rc = ngx_http_vhost_traffic_status_shm_add_server(r);
+    rc = ngx_http_vhost_traffic_status_shm_add_server(r, NULL);
     if (rc != NGX_OK) {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                       "handler::shm_add_server() failed");
+    }
+
+    if (ngx_strlen(vtscf->no_cache_server_zone.data) > 0) {
+	rc = ngx_http_vhost_traffic_status_shm_add_server(
+	    r, &vtscf->no_cache_server_zone);
+	if (rc != NGX_OK) {
+	    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+			  "handler::shm_add_server(NO_CACHE) failed");
+	}
     }
 
     rc = ngx_http_vhost_traffic_status_shm_add_upstream(r);
@@ -889,6 +905,8 @@ ngx_http_vhost_traffic_status_create_loc_conf(ngx_conf_t *cf)
      *     conf->histogram_buckets = { NULL, ... };
      *     conf->bypass_limit = 0;
      *     conf->bypass_stats = 0;
+     *
+     *     conf->no_cache_server_zone = { 0, NULL };
      */
 
     conf->shm_zone = NGX_CONF_UNSET_PTR;
@@ -1018,6 +1036,9 @@ ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf, void *parent, void 
 
     ngx_conf_merge_value(conf->bypass_limit, prev->bypass_limit, 0);
     ngx_conf_merge_value(conf->bypass_stats, prev->bypass_stats, 0);
+
+    ngx_conf_merge_str_value(conf->no_cache_server_zone,
+			     prev->no_cache_server_zone, "");
 
     name = ctx->shm_name;
 

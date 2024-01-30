@@ -297,6 +297,9 @@ typedef struct {
     ngx_flag_t                              bypass_limit;
     ngx_flag_t                              bypass_stats;
 
+    /* Controls name of "no cache" server zone */
+    ngx_str_t                              no_cache_server_zone;
+
     ngx_rbtree_node_t                     **node_caches;
 } ngx_http_vhost_traffic_status_loc_conf_t;
 
