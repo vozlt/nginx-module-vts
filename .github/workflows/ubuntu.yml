@@ -1,0 +1,90 @@
+name: Ubuntu
+
+on:
+  push:
+    branches:
+      - fork/*
+      - master
+  pull_request:
+    branches:
+      - fork/*
+      - master
+  release:
+    types: [created]
+
+env:
+  CTEST_OUTPUT_ON_FAILURE: 1
+
+jobs:
+  build:
+    if: "!contains(github.event.head_commit.message, 'skip ci') && !contains(github.event.head_commit.message, 'ci osx') && !contains(github.event.head_commit.message, 'ci win')"
+    
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nginx: [ '1.21.0', '1.21.1' ]
+    steps:
+
+      - name: Checkout module
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+          lfs: true
+          fetch-depth: 0
+
+      - name: Set env
+        run: |
+          echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+          echo "GIT_TAG_NAME=$(git describe --tag --always --long)" >> $GITHUB_ENV
+          echo "GIT_TAG=$(git describe --tag --always --long)" >> $GITHUB_ENV
+          echo "GIT_RELEASE_NOTES="$(git log $(git describe --tags --abbrev=0 --always)..HEAD --pretty=format:"%h - %s (%an)<br>")"" >> $GITHUB_ENV
+
+      - name: Create release ${{ env.GIT_TAG }}
+        if: github.ref == 'refs/heads/master' && strategy.job-index == 0
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.GIT_TAG }}
+          release_name: ${{ format('{0}{1}{2}', '', env.GIT_TAG, '') }}
+          body: ${{ env.GIT_RELEASE_NOTES }}
+          draft: false
+          prerelease: false
+
+      - name: Checkout source
+        uses: actions/checkout@v2
+        with:
+          repository: 'nginx/nginx'   #release-1.21.1
+          path: 'nginx'
+          ref: 'release-${{ matrix.nginx }}'
+          submodules: true
+          lfs: true
+          fetch-depth: 0
+
+      - name: Compile Module
+        run: |
+          cp ./configure ./nginx/configure
+          cd nginx
+          chmod +x ./configure
+          ./configure --with-compat --add-dynamic-module=..
+          make modules
+
+
+      - name: Get release
+        id: get_release
+        uses: thebritican/fetch-latest-release@v2.0.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload release asset - nginx/objs/ngx_http_vhost_traffic_status_module-nginx-${{ matrix.nginx }}.so
+        if: github.ref == 'refs/heads/master'
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: ${{ '/home/runner/work/nginx-module-vts/nginx-module-vts/nginx/objs/ngx_http_vhost_traffic_status_module.so' }}
+          asset_name: ${{ format('{0}{1}{2}', 'ngx_http_vhost_traffic_status_module-nginx-', matrix.nginx, '.so') }}
+          asset_content_type: application/octet-stream
+
