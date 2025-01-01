@@ -201,3 +201,96 @@ __DATA__
     'OK',
     '{"cacheZones.*cache_(one|two)'
 ]
+
+=== TEST 7: /status/control?cmd=status&group=upstream%40group&zone=%2A
+--- http_config
+    vhost_traffic_status_zone;
+    upstream backend {
+        server localhost;
+    }
+    server {
+        server_name backend;
+    }
+--- config
+    location /status {
+        vhost_traffic_status_display;
+        vhost_traffic_status_display_format json;
+        access_log off;
+    }
+    location /backend {
+        proxy_set_header Host backend;
+        proxy_pass http://backend;
+    }
+--- user_files eval
+[
+    ['backend/file.txt' => 'upstream@group:OK']
+]
+--- request eval
+[
+    'GET /backend/file.txt',
+    'GET /status/control?cmd=status&group=upstream%40group&zone=%2A',
+]
+--- response_body_like eval
+[
+    'OK',
+    '{"upstreamZones.*backend'
+]
+
+=== TEST 8: /status/control?cmd=status&group=upstream%40group&zone=%2a
+--- http_config
+    vhost_traffic_status_zone;
+    upstream backend {
+        server localhost;
+    }
+    server {
+        server_name backend;
+    }
+--- config
+    location /status {
+        vhost_traffic_status_display;
+        vhost_traffic_status_display_format json;
+        access_log off;
+    }
+    location /backend {
+        proxy_set_header Host backend;
+        proxy_pass http://backend;
+    }
+--- user_files eval
+[
+    ['backend/file.txt' => 'upstream@group:OK']
+]
+--- request eval
+[
+    'GET /backend/file.txt',
+    'GET /status/control?cmd=status&group=upstream%40group&zone=%2a',
+]
+--- response_body_like eval
+[
+    'OK',
+    '{"upstreamZones.*backend'
+]
+
+=== TEST 9: /status/control?cmd=status&group=server&zone=%3A%3Amain
+--- http_config
+    vhost_traffic_status_zone;
+--- config
+    location /status {
+        vhost_traffic_status_display;
+        vhost_traffic_status_display_format json;
+        access_log off;
+    }
+--- user_files eval
+[
+    ['storage/control/file.txt' => 'server:OK']
+]
+--- request eval
+[
+    'GET /storage/control/file.txt',
+    'GET /status/control?cmd=status&group=server&zone=%3A%3Amain',
+]
+--- response_body_like eval
+[
+    'OK',
+    'hostName'
+]
+
