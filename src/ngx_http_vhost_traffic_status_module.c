@@ -210,11 +210,11 @@ static ngx_command_t ngx_http_vhost_traffic_status_commands[] = {
       offsetof(ngx_http_vhost_traffic_status_loc_conf_t, bypass_stats),
       NULL },
 
-    { ngx_string("vhost_traffic_status_bypass_upstream_stats"),
+    { ngx_string("vhost_traffic_status_stats_by_upstream"),
       NGX_HTTP_MAIN_CONF|NGX_CONF_FLAG,
       ngx_conf_set_flag_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
-      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, bypass_upstream_stats),
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, stats_by_upstream),
       NULL },
 
     ngx_null_command
@@ -278,7 +278,7 @@ ngx_http_vhost_traffic_status_handler(ngx_http_request_t *r)
                       "handler::shm_add_server() failed");
     }
 
-    if (!vtscf->bypass_upstream_stats) {
+    if (vtscf->stats_by_upstream) {
         rc = ngx_http_vhost_traffic_status_shm_add_upstream(r);
         if (rc != NGX_OK) {
             ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
@@ -898,7 +898,7 @@ ngx_http_vhost_traffic_status_create_loc_conf(ngx_conf_t *cf)
      *     conf->histogram_buckets = { NULL, ... };
      *     conf->bypass_limit = 0;
      *     conf->bypass_stats = 0;
-     *     conf->bypass_upstream_stats = 0;
+     *     conf->stats_by_upstream = 0;
      */
 
     conf->shm_zone = NGX_CONF_UNSET_PTR;
@@ -918,7 +918,7 @@ ngx_http_vhost_traffic_status_create_loc_conf(ngx_conf_t *cf)
     conf->histogram_buckets = NGX_CONF_UNSET_PTR;
     conf->bypass_limit = NGX_CONF_UNSET;
     conf->bypass_stats = NGX_CONF_UNSET;
-    conf->bypass_upstream_stats = NGX_CONF_UNSET;
+    conf->stats_by_upstream = NGX_CONF_UNSET;
 
     conf->node_caches = ngx_pcalloc(cf->pool, sizeof(ngx_rbtree_node_t *)
                                     * (NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG + 1));
@@ -1030,7 +1030,7 @@ ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf, void *parent, void 
     ngx_conf_merge_value(conf->bypass_limit, prev->bypass_limit, 0);
     ngx_conf_merge_value(conf->bypass_stats, prev->bypass_stats, 0);
 
-    ngx_conf_merge_value(conf->bypass_upstream_stats, prev->bypass_upstream_stats, 0);
+    ngx_conf_merge_value(conf->stats_by_upstream, prev->stats_by_upstream, 1);
 
     name = ctx->shm_name;
 

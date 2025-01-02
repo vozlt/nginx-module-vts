@@ -73,7 +73,7 @@ Table of Contents
   * [vhost_traffic_status_histogram_buckets](#vhost_traffic_status_histogram_buckets)
   * [vhost_traffic_status_bypass_limit](#vhost_traffic_status_bypass_limit)
   * [vhost_traffic_status_bypass_stats](#vhost_traffic_status_bypass_stats)
-  * [vhost_traffic_status_bypass_upstream_stats](#vhost_traffic_status_bypass_upstream_stats)
+  * [vhost_traffic_status_stats_by__upstream](#vhost_traffic_status_stats__by_upstream)
 * [Releases](#releases)
 * [See Also](#see-also)
 * [TODO](#todo)
@@ -1814,23 +1814,23 @@ http {
 }
 ```
 
-### vhost_traffic_status_bypass_upstream_stats
+### vhost_traffic_status_stats_by_upstream
 
 | -   | - |
 | --- | --- |
-| **Syntax**  | **vhost_traffic_status_bypass_upstream_stats** \<on\|off\> |
-| **Default** | off |
+| **Syntax**  | **vhost_traffic_status_stats_by_upstream** \<on\|off\> |
+| **Default** | on  |
 | **Context** | http|
 
-`Description:` Enables or disables to bypass `upstreamZone`.
-The `upstreamZone` in the traffic status stats features is bypassed if this option is enabled.
+`Description:` Enables or disables to stats `upstreamZone`.
+The `upstreamZone` in the traffic status stats features is bypassed if this option is disabled.
 In other words, it is excluded from the traffic status stats.
 This is mostly useful if you want to be disable statistics collection for upstream servers to reduce CPU load.
 
 ```Nginx
 http {
     vhost_traffic_status_zone;
-    vhost_traffic_status_bypass_upstream_stats on;
+    vhost_traffic_status_stats_by_upstream off;
 
     proxy_cache_path /var/cache/nginx keys_zone=zone1:1m max_size=1g inactive=24h;
     upstream backend {

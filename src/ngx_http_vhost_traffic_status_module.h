@@ -297,7 +297,7 @@ typedef struct {
     ngx_flag_t                              bypass_limit;
     ngx_flag_t                              bypass_stats;
 
-    ngx_flag_t                              bypass_upstream_stats;
+    ngx_flag_t                              stats_by_upstream;
 
     ngx_rbtree_node_t                     **node_caches;
 } ngx_http_vhost_traffic_status_loc_conf_t;

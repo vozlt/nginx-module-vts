@@ -837,7 +837,7 @@ ngx_http_vhost_traffic_status_display_set(ngx_http_request_t *r,
 
     buf--;
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_E);
-    if (!vtscf->bypass_upstream_stats) {
+    if (vtscf->stats_by_upstream) {
         buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_NEXT);
     }
 
@@ -856,13 +856,13 @@ ngx_http_vhost_traffic_status_display_set(ngx_http_request_t *r,
     } else {
         buf--;
         buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_E);
-        if (!vtscf->bypass_upstream_stats) {
+        if (vtscf->stats_by_upstream) {
             buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_NEXT);
         }
     }
 
     /* upstreamZones */
-    if (!vtscf->bypass_upstream_stats) {
+    if (vtscf->stats_by_upstream) {
         o = buf;
 
         buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_UPSTREAM_S);

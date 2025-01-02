@@ -527,7 +527,7 @@ ngx_http_vhost_traffic_status_display_prometheus_set(ngx_http_request_t *r,
     }
 
     /* upstreamZones */
-    if (!vtscf->bypass_upstream_stats) {
+    if (vtscf->stats_by_upstream) {
         o = buf;
 
         buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM_S);
