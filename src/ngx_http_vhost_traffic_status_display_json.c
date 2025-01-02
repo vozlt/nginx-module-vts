@@ -837,7 +837,9 @@ ngx_http_vhost_traffic_status_display_set(ngx_http_request_t *r,
 
     buf--;
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_E);
-    buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_NEXT);
+    if (vtscf->stats_by_upstream) {
+        buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_NEXT);
+    }
 
     /* filterZones */
     o = buf;
@@ -854,25 +856,29 @@ ngx_http_vhost_traffic_status_display_set(ngx_http_request_t *r,
     } else {
         buf--;
         buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_E);
-        buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_NEXT);
+        if (vtscf->stats_by_upstream) {
+            buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_NEXT);
+        }
     }
 
     /* upstreamZones */
-    o = buf;
+    if (vtscf->stats_by_upstream) {
+        o = buf;
 
-    buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_UPSTREAM_S);
+        buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_UPSTREAM_S);
 
-    s = buf;
+        s = buf;
 
-    buf = ngx_http_vhost_traffic_status_display_set_upstream_group(r, buf);
+        buf = ngx_http_vhost_traffic_status_display_set_upstream_group(r, buf);
 
-    if (s == buf) {
-        buf = o;
-        buf--;
+        if (s == buf) {
+            buf = o;
+            buf--;
 
-    } else {
-        buf--;
-        buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_E);
+        } else {
+            buf--;
+            buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_E);
+        }
     }
 
 #if (NGX_HTTP_CACHE)
