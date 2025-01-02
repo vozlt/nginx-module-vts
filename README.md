@@ -73,7 +73,7 @@ Table of Contents
   * [vhost_traffic_status_histogram_buckets](#vhost_traffic_status_histogram_buckets)
   * [vhost_traffic_status_bypass_limit](#vhost_traffic_status_bypass_limit)
   * [vhost_traffic_status_bypass_stats](#vhost_traffic_status_bypass_stats)
-  * [vhost_traffic_status_stats_by__upstream](#vhost_traffic_status_stats__by_upstream)
+  * [vhost_traffic_status_stats_by_upstream](#vhost_traffic_status_stats_by_upstream)
 * [Releases](#releases)
 * [See Also](#see-also)
 * [TODO](#todo)
