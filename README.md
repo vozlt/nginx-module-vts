@@ -64,6 +64,7 @@ Table of Contents
   * [vhost_traffic_status_filter_by_set_key](#vhost_traffic_status_filter_by_set_key)
   * [vhost_traffic_status_filter_check_duplicate](#vhost_traffic_status_filter_check_duplicate)
   * [vhost_traffic_status_filter_max_node](#vhost_traffic_status_filter_max_node)
+  * [vhost_traffic_status_filter_upstream_no_cache](#vhost_traffic_status_filter_upstream_no_cache)
   * [vhost_traffic_status_limit](#vhost_traffic_status_limit)
   * [vhost_traffic_status_limit_traffic](#vhost_traffic_status_limit_traffic)
   * [vhost_traffic_status_limit_traffic_by_set_key](#vhost_traffic_status_limit_traffic_by_set_key)
@@ -1510,6 +1511,32 @@ http {
 
 In the above example, the `/^uris.*/` and `/^client::ports.*/` group string patterns are limited to a total of 16 nodes.
 The other filters like `country::.*` are not limited.
+
+### vhost_traffic_status_filter_upstream_no_cache
+
+| -   | - |
+| --- | --- |
+| **Syntax**  | **vhost_traffic_status_filter_upstream_no_cache** *name* |
+| **Default** | - |
+| **Context** | http, server, location |
+
+`Description:` Create a group name that counts requests that have an upstream
+but should not be cached. The group is visible under serverZones.
+Note: This is event is not "cache miss" or "bypass cache". Example:
+`$ edit nginx.conf`
+
+```Nginx
+http {
+    ...
+    vhost_traffic_status_zone;
+    ...
+    server {
+        server_name example.org;
+        ...
+        vhost_traffic_status_filter_upstream_no_cache NO_CACHE;
+    }
+}
+```
 
 ### vhost_traffic_status_limit
 

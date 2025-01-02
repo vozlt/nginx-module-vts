@@ -19,7 +19,8 @@ typedef struct {
 } ngx_http_vhost_traffic_status_shm_info_t;
 
 
-ngx_int_t ngx_http_vhost_traffic_status_shm_add_server(ngx_http_request_t *r);
+ngx_int_t ngx_http_vhost_traffic_status_shm_add_server(
+    ngx_http_request_t *r, const ngx_str_t *no_cache_server_zone);
 ngx_int_t ngx_http_vhost_traffic_status_shm_add_filter(ngx_http_request_t *r);
 ngx_int_t ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r);
 
