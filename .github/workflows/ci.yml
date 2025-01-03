@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     name: 'build'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: 'checkout'
         uses: actions/checkout@v3
@@ -77,19 +77,10 @@ jobs:
         working-directory: freenginx
         run: |
           patch -p1 < /home/runner/work/nginx-module-vts/nginx-module-vts/nginx_upstream_check/check_1.20.1+.patch
-      - name: 'checkout pcre2'
-        uses: actions/checkout@v3
-        with:
-          repository: PCRE2Project/pcre2
-          path: pcre2
-      - name: 'autogen pcre2'
-        working-directory: pcre2
-        run: |
-          ./autogen.sh
       - name: 'build nginx'
         working-directory: nginx
         run: |
-          ./auto/configure --with-ld-opt="-Wl,-rpath,/usr/local/lib" --with-pcre=/home/runner/work/nginx-module-vts/nginx-module-vts/pcre2 --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/ngx_devel_kit --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/lua-nginx-module --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx_upstream_check
+          ./auto/configure --with-ld-opt="-Wl,-rpath,/usr/local/lib" --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/ngx_devel_kit --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/lua-nginx-module --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx_upstream_check
           make
           sudo make install
           /usr/local/nginx/sbin/nginx -V
@@ -99,7 +90,7 @@ jobs:
       - name: 'build freenginx'
         working-directory: freenginx
         run: |
-          ./auto/configure --prefix=/usr/local/freenginx --with-ld-opt="-Wl,-rpath,/usr/local/lib" --with-pcre=/home/runner/work/nginx-module-vts/nginx-module-vts/pcre2 --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/ngx_devel_kit --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/lua-nginx-module --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx_upstream_check
+          ./auto/configure --prefix=/usr/local/freenginx --with-ld-opt="-Wl,-rpath,/usr/local/lib" --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/ngx_devel_kit --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/lua-nginx-module --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx_upstream_check
           make
           sudo make install
           /usr/local/freenginx/sbin/nginx -V
