@@ -1,0 +1,38 @@
+name: Submit Question
+description: Ask a general question about this module
+title: ""
+labels: [question]
+
+body:
+  - type: markdown
+    attributes:
+      value: ---
+  - type: textarea
+    id: question
+    attributes:
+      label: Question about this module
+  - type: textarea
+    id: version
+    attributes:
+      label: Installed Versions
+      placeholder: >
+        % sudo /usr/local/nginx/sbin/nginx -V
+        nginx version: nginx/1.27.0
+        built by gcc 11.4.0 (Ubuntu 11.4.0-1ubuntu1~22.04) 
+        configure arguments: --add-module=../nginx-module-vts
+      description: >	
+        Please paste the output of ``nginx -V``
+      value: >
+        <details>
+
+
+        Replace this line with the output of nginx -V
+
+
+        </details>
+  - type: textarea
+    id: conf
+    attributes:
+      label: Reproducible Example nginx.conf
+      description: >	
+        Please paste the reproducible nginx.conf
