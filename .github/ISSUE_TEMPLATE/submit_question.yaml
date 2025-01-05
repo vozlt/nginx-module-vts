@@ -1,12 +1,9 @@
 name: Submit Question
 description: Ask a general question about this module
-title: ""
+title: "QST: "
 labels: [question]
 
 body:
-  - type: markdown
-    attributes:
-      value: ---
   - type: textarea
     id: question
     attributes:
