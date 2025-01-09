@@ -94,6 +94,7 @@ the test requires Nginx to listen on port 80.
 
 ## Compatibility
 * Nginx
+  * 1.27.x (last tested: 1.27.3)
   * 1.22.x (last tested: 1.22.0)
   * 1.19.x (last tested: 1.19.6)
   * 1.18.x (last tested: 1.18.0)
