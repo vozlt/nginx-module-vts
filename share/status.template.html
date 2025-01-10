@@ -818,17 +818,10 @@
                 return out;
             }
 
-            function vtsGetData() {
+            async function vtsGetData() {
                 var monitor = document.getElementById('monitor');
-                var request = new XMLHttpRequest;
-                request.onload = function() {
-                    if (this.status != 200) {
-                        return;
-                    }
-                    monitor.innerHTML = template(JSON.parse(this.responseText));
-                }
-                request.open('GET', vtsStatusURI);
-                request.send();
+                var response = await fetch(vtsStatusURI);
+                monitor.innerHTML = template(JSON.parse(await response.text()));
             };
 
             function vtsSetInterval(msec) {
