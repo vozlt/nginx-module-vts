@@ -631,7 +631,7 @@
                            ? '<img class="flag flag-{}" />'.format(name.toLowerCase())
                            : '';
 
-                    s = '{}{}'.format(aHe('th', encodeURI('{}{}'.format(flag, name))),
+                    s = '{}{}'.format(aHe('th', '{}{}'.format(flag, name)),
                                       aHe('td', [(zone.requestCounter + zone.overCounts['maxIntegerSize'] * zone.overCounts['requestCounter']),
                                                  aPs.getValue('{}.{}'.format(uniq, 'requestCounter'), zone.requestCounter), mTh(zone.requestMsec)
                                                 ]));
@@ -681,7 +681,7 @@
 
                     clas = (n++ % 2) ? 'odd' : '';
 
-                    s = '{}{}'.format(aHe('th', encodeURI(peer.server)),
+                    s = '{}{}'.format(aHe('th', peer.server),
                                       aHe('td', [sTh(peer.backup, peer.down), mTh(peer.responseMsec),
                                                  peer.weight, peer.maxFails, peer.failTimeout,
                                                  (peer.requestCounter + peer.overCounts['maxIntegerSize'] * peer.overCounts['requestCounter']),
@@ -722,7 +722,7 @@
 
                     clas = (n++ % 2) ? 'odd' : '';
 
-                    s = '{}{}'.format(aHe('th', encodeURI(name)),
+                    s = '{}{}'.format(aHe('th', name),
                                       aHe('td', [bTh(zone.maxSize),
                                                  bTh(zone.usedSize),
                                                  bTh(zone.outBytes + zone.overCounts['maxIntegerSize'] * zone.overCounts['outBytes']),
