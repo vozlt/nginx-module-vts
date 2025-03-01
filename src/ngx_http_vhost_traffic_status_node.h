@@ -11,7 +11,6 @@
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_QUEUE_LEN    64
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_BUCKET_LEN   32
 
-
 typedef struct {
     ngx_msec_t                                             time;
     ngx_msec_int_t                                         msec;
@@ -102,6 +101,7 @@ typedef struct {
     ngx_http_vhost_traffic_status_node_upstream_t          stat_upstream;
     size_t                                                 len;
     u_char                                                 data[1];
+    ngx_uint_t                                             ignore_status;
 } ngx_http_vhost_traffic_status_node_t;
 
 

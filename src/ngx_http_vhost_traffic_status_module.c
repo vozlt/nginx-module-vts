@@ -59,6 +59,15 @@ static ngx_conf_enum_t  ngx_http_vhost_traffic_status_average_method_post[] = {
     { ngx_null_string, 0 }
 };
 
+static ngx_conf_bitmask_t ngx_http_vhost_traffic_status_ignore_status_masks[] = {
+    { ngx_string("1xx"), NGX_HTTP_VHOST_TRAFFIC_STATUS_IGNORE_STATUS_1XX },
+    { ngx_string("2xx"), NGX_HTTP_VHOST_TRAFFIC_STATUS_IGNORE_STATUS_2XX },
+    { ngx_string("3xx"), NGX_HTTP_VHOST_TRAFFIC_STATUS_IGNORE_STATUS_3XX },
+    { ngx_string("4xx"), NGX_HTTP_VHOST_TRAFFIC_STATUS_IGNORE_STATUS_4XX },
+    { ngx_string("5xx"), NGX_HTTP_VHOST_TRAFFIC_STATUS_IGNORE_STATUS_5XX },
+    { ngx_string("off"), NGX_HTTP_VHOST_TRAFFIC_STATUS_IGNORE_STATUS_OFF },
+    { ngx_null_string, 0 }
+};
 
 static ngx_command_t ngx_http_vhost_traffic_status_commands[] = {
 
@@ -216,6 +225,13 @@ static ngx_command_t ngx_http_vhost_traffic_status_commands[] = {
       NGX_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_vhost_traffic_status_loc_conf_t, stats_by_upstream),
       NULL },
+
+    { ngx_string("vhost_traffic_status_ignore_status"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_1MORE,
+      ngx_conf_set_bitmask_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, ignore_status),
+      &ngx_http_vhost_traffic_status_ignore_status_masks },
 
     ngx_null_command
 };
@@ -1031,6 +1047,8 @@ ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf, void *parent, void 
     ngx_conf_merge_value(conf->bypass_stats, prev->bypass_stats, 0);
 
     ngx_conf_merge_value(conf->stats_by_upstream, prev->stats_by_upstream, 1);
+    ngx_conf_merge_bitmask_value(conf->ignore_status, prev->ignore_status,
+(NGX_CONF_BITMASK_SET|NGX_HTTP_VHOST_TRAFFIC_STATUS_IGNORE_STATUS_OFF));
 
     name = ctx->shm_name;
 
