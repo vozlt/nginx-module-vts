@@ -100,8 +100,8 @@ typedef struct {
 
     ngx_http_vhost_traffic_status_node_upstream_t          stat_upstream;
     size_t                                                 len;
-    u_char                                                 data[1];
     ngx_uint_t                                             ignore_status;
+    u_char                                                 data[1];
 } ngx_http_vhost_traffic_status_node_t;
 
 
