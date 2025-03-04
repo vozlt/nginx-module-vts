@@ -485,7 +485,7 @@ ngx_http_vhost_traffic_status_init_zone(ngx_shm_zone_t *shm_zone, void *data)
 
 
 static char *
-ngx_http_vhost_traffic_status_measure_status_codes(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) 
+ngx_http_vhost_traffic_status_measure_status_codes(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
     ngx_http_vhost_traffic_status_ctx_t  *ctx;
     ngx_str_t                            *value;

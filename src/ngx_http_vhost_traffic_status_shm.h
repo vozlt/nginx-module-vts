@@ -22,6 +22,7 @@ typedef struct {
 ngx_int_t ngx_http_vhost_traffic_status_shm_add_server(ngx_http_request_t *r);
 ngx_int_t ngx_http_vhost_traffic_status_shm_add_filter(ngx_http_request_t *r);
 ngx_int_t ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r);
+ngx_int_t ngx_http_vhost_traffic_status_find_status_code_slot(ngx_uint_t status, ngx_array_t *status_codes);
 
 #if (NGX_HTTP_CACHE)
 ngx_int_t ngx_http_vhost_traffic_status_shm_add_cache(ngx_http_request_t *r);
