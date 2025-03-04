@@ -61,7 +61,9 @@ ngx_http_vhost_traffic_status_display_set_server_node(
     ngx_int_t                                  rc;
     ngx_str_t                                  tmp, dst;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
+    ngx_http_vhost_traffic_status_ctx_t       *ctx;
 
+    ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
     vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
 
     tmp = *key;
@@ -91,12 +93,40 @@ ngx_http_vhost_traffic_status_display_set_server_node(
                       "display_set_server_node::escape_json_pool() failed");
     }
 
+    u_char *status_codes_buf =(u_char *)"";
+
+    if (ctx->measure_status_codes != NULL && vtsn->stat_status_code_counter != NULL) {
+        ngx_uint_t *status_code = NULL;
+        ngx_buf_t *b = ngx_create_temp_buf(r->pool, 10240);
+        if (b == NULL) {
+            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            "display_set_server_node::ngx_create_temp_buf() failed");
+        }
+
+        ngx_memzero(b->start, 10240);
+
+        u_char *wbuf = b->last;
+        status_codes_buf = b->last;
+        ngx_uint_t *status_codes = (ngx_uint_t *) ctx->measure_status_codes->elts;
+        for (ngx_uint_t i = 0; i < ctx->measure_status_codes->nelts; i++) {
+            if (vtsn->stat_status_code_counter[i] == 0) {
+                continue;
+            }
+            status_code = &status_codes[i];
+
+            wbuf = ngx_sprintf(wbuf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_STATUS_CODE,
+                *status_code, vtsn->stat_status_code_counter[i]);
+        }
+    }
+
+
 #if (NGX_HTTP_CACHE)
     ngx_http_vhost_traffic_status_display_encode_uri(r, &dst);
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER,
                       &dst, vtsn->stat_request_counter,
                       vtsn->stat_in_bytes,
                       vtsn->stat_out_bytes,
+                      status_codes_buf,
                       vtsn->stat_1xx_counter,
                       vtsn->stat_2xx_counter,
                       vtsn->stat_3xx_counter,
@@ -146,6 +176,7 @@ ngx_http_vhost_traffic_status_display_set_server_node(
                       &dst, vtsn->stat_request_counter,
                       vtsn->stat_in_bytes,
                       vtsn->stat_out_bytes,
+                      status_codes_buf,
                       vtsn->stat_1xx_counter,
                       vtsn->stat_2xx_counter,
                       vtsn->stat_3xx_counter,

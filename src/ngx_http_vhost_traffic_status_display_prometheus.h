@@ -56,6 +56,9 @@
     "nginx_vts_server_request_seconds_total{host=\"%V\"} %.3f\n"               \
     "nginx_vts_server_request_seconds{host=\"%V\"} %.3f\n"
 
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_STATUS_CODE        \
+    "nginx_vts_server_requests_total{host=\"%V\",code=\"%d\"} %uA\n"
+
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_HISTOGRAM_BUCKET   \
     "nginx_vts_server_request_duration_seconds_bucket{host=\"%V\","            \
     "le=\"%.3f\"} %uA\n"

@@ -46,6 +46,7 @@
     "\"inBytes\":%uA,"                                                         \
     "\"outBytes\":%uA,"                                                        \
     "\"responses\":{"                                                          \
+    "%s"                                                                       \
     "\"1xx\":%uA,"                                                             \
     "\"2xx\":%uA,"                                                             \
     "\"3xx\":%uA,"                                                             \
@@ -97,6 +98,7 @@
     "\"inBytes\":%uA,"                                                         \
     "\"outBytes\":%uA,"                                                        \
     "\"responses\":{"                                                          \
+    "%s"                                                                       \
     "\"1xx\":%uA,"                                                             \
     "\"2xx\":%uA,"                                                             \
     "\"3xx\":%uA,"                                                             \
@@ -127,6 +129,8 @@
     "}"                                                                        \
     "},"
 #endif
+
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_STATUS_CODE "\"%uA\":%uA,"
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_FILTER_S "\"filterZones\":{"
 
