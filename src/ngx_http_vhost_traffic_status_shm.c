@@ -106,7 +106,7 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
     shpool = (ngx_slab_pool_t *) vtscf->shm_zone->shm.addr;
 
 
-    status_code_slot = -1;
+    status_code_slot = NGX_HTTP_VHOST_TRAFFIC_STATUS_STATUS_CODE_SLOT_UNDEFINED;
     if (ctx->measure_all_status_codes) {
         if (r->headers_out.status >= 100 && r->headers_out.status < 600) {
             status_code_slot = r->headers_out.status - 100;
@@ -557,10 +557,9 @@ ngx_http_vhost_traffic_status_find_status_code_slot(ngx_uint_t status, ngx_array
         ngx_http_vhost_traffic_status_find_status_code_slot_cmp);
 
     if (found == NULL) {
-        // Use Nginx error logging instead of printf
         ngx_log_error(NGX_LOG_DEBUG, ngx_cycle->log, 0,
             "Status code %ui not found in status_codes array", status);
-        return -1;
+        return NGX_HTTP_VHOST_TRAFFIC_STATUS_STATUS_CODE_SLOT_UNDEFINED;
     }
 
     ngx_int_t index = (ngx_int_t)(found - (ngx_uint_t *)status_codes->elts);

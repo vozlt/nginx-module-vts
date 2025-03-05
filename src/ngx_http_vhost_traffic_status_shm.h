@@ -18,6 +18,7 @@ typedef struct {
     ngx_uint_t   filter_used_node;
 } ngx_http_vhost_traffic_status_shm_info_t;
 
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_STATUS_CODE_SLOT_UNDEFINED -1
 
 ngx_int_t ngx_http_vhost_traffic_status_shm_add_server(ngx_http_request_t *r);
 ngx_int_t ngx_http_vhost_traffic_status_shm_add_filter(ngx_http_request_t *r);
