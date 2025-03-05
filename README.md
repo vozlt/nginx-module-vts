@@ -1887,6 +1887,41 @@ http {
 }
 ```
 
+### vhost_traffic_status_measure_status_codes
+
+Allows tracking of specific HTTP status codes or all status codes in the Vhost Traffic Status module.
+
+
+| -   | - |
+| --- | --- |
+| **Syntax**  | vhost_traffic_status_measure_status_codes [all] [status_code1] [status_code2] ... |
+| **Default** | off |
+| **Context** | http |
+
+
+
+#### Parameters
+- `status_code1, status_code2, ...`: Specific HTTP status codes to track (100-599)
+- `all`: Track all HTTP status codes
+
+#### Examples
+
+Track specific status codes:
+```nginx
+vhost_traffic_status_measure_status_codes 200 404 500;
+```
+
+Track all status codes:
+```nginx
+vhost_traffic_status_measure_status_codes all;
+```
+
+#### Description
+- By default, no specific status code tracking is enabled
+- Status codes must be in ascending order
+- Only valid HTTP status codes between 100 and 599 are accepted
+- When using `all`, every status code will be tracked
+
 ## Releases
 
 To cut a release, create a changelog entry PR with [git-chglog](https://github.com/git-chglog/git-chglog)
