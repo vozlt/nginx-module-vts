@@ -35,6 +35,8 @@
     "# TYPE nginx_vts_server_bytes_total counter\n"                            \
     "# HELP nginx_vts_server_requests_total The requests counter\n"            \
     "# TYPE nginx_vts_server_requests_total counter\n"                         \
+    "# HELP nginx_vts_status_code_requests_total The requests counter by status code \n" \
+    "# TYPE nginx_vts_status_code_requests_total counter\n"                    \
     "# HELP nginx_vts_server_request_seconds_total The request processing "    \
     "time in seconds\n"                                                        \
     "# TYPE nginx_vts_server_request_seconds_total counter\n"                  \
@@ -57,7 +59,7 @@
     "nginx_vts_server_request_seconds{host=\"%V\"} %.3f\n"
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_STATUS_CODE        \
-    "nginx_vts_server_requests_total{host=\"%V\",code=\"%d\"} %uA\n"
+    "nginx_vts_status_code_requests_total{host=\"%V\",code=\"%d\"} %uA\n"
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_HISTOGRAM_BUCKET   \
     "nginx_vts_server_request_duration_seconds_bucket{host=\"%V\","            \
