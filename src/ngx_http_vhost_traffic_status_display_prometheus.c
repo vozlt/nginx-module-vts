@@ -174,6 +174,11 @@ ngx_http_vhost_traffic_status_display_prometheus_set_server(ngx_http_request_t *
                 &vtscf->stats.stat_request_times,
                 &vtsn->stat_request_times, vtscf->average_period);
 
+            if (ctx->measure_status_codes != NULL && vtsn->stat_status_code_counter != NULL) {
+                ngx_http_vhost_traffic_status_status_code_merge(vtscf->stats.stat_status_code_counter,
+                    vtsn->stat_status_code_counter, ctx->measure_status_codes->nelts);
+            }
+
 #if (NGX_HTTP_CACHE)
             vtscf->stats.stat_cache_miss_counter +=
                                        vtsn->stat_cache_miss_counter;
@@ -513,6 +518,10 @@ ngx_http_vhost_traffic_status_display_prometheus_set(ngx_http_request_t *r,
     /* init stats */
     ngx_memzero(&vtscf->stats, sizeof(vtscf->stats));
     ngx_http_vhost_traffic_status_node_time_queue_init(&vtscf->stats.stat_request_times);
+
+    if (ctx->measure_status_codes != NULL) {
+        vtscf->stats.stat_status_code_counter = ngx_pcalloc(r->pool, sizeof(ngx_atomic_t) * ctx->measure_status_codes->nelts);
+    }
 
     /* main & connections */
     buf = ngx_http_vhost_traffic_status_display_prometheus_set_main(r, buf);

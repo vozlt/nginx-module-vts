@@ -151,6 +151,7 @@ void ngx_http_vhost_traffic_status_node_time_queue_merge(
     ngx_http_vhost_traffic_status_node_time_queue_t *a,
     ngx_http_vhost_traffic_status_node_time_queue_t *b,
     ngx_msec_t period);
+void ngx_http_vhost_traffic_status_status_code_merge(ngx_atomic_t *dst, ngx_atomic_t *src, ngx_uint_t n);
 
 void ngx_http_vhost_traffic_status_node_histogram_bucket_init(
     ngx_http_request_t *r,

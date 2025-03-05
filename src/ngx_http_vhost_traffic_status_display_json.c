@@ -237,6 +237,12 @@ ngx_http_vhost_traffic_status_display_set_server(ngx_http_request_t *r,
                 &vtscf->stats.stat_request_times,
                 &vtsn->stat_request_times, vtscf->average_period);
 
+            if (ctx->measure_status_codes != NULL && vtsn->stat_status_code_counter != NULL) {
+                ngx_http_vhost_traffic_status_status_code_merge(
+                    vtscf->stats.stat_status_code_counter,
+                    vtsn->stat_status_code_counter, ctx->measure_status_codes->nelts);
+            }
+
             vtscf->stats.stat_request_counter_oc += vtsn->stat_request_counter_oc;
             vtscf->stats.stat_in_bytes_oc += vtsn->stat_in_bytes_oc;
             vtscf->stats.stat_out_bytes_oc += vtsn->stat_out_bytes_oc;
@@ -874,6 +880,10 @@ ngx_http_vhost_traffic_status_display_set(ngx_http_request_t *r,
     /* init stats */
     ngx_memzero(&vtscf->stats, sizeof(vtscf->stats));
     ngx_http_vhost_traffic_status_node_time_queue_init(&vtscf->stats.stat_request_times);
+
+    if (ctx->measure_status_codes != NULL) {
+        vtscf->stats.stat_status_code_counter = ngx_pcalloc(r->pool, sizeof(ngx_atomic_t) * ctx->measure_status_codes->nelts);
+    }
 
     /* main & connections */
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_S);

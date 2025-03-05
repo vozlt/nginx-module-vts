@@ -596,6 +596,14 @@ ngx_http_vhost_traffic_status_node_time_queue_merge(
     (void) ngx_cpymem(a, &q, sizeof(q));
 }
 
+void ngx_http_vhost_traffic_status_status_code_merge(ngx_atomic_t *dst, ngx_atomic_t *src, ngx_uint_t n)
+{
+    ngx_uint_t i;
+
+    for (i = 0; i < n; i++) {
+        dst[i] += src[i];
+    }
+}
 
 void
 ngx_http_vhost_traffic_status_node_histogram_bucket_init(ngx_http_request_t *r,
