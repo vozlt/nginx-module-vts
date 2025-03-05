@@ -93,45 +93,44 @@ ngx_http_vhost_traffic_status_display_set_server_node(
                       "display_set_server_node::escape_json_pool() failed");
     }
 
-    u_char *status_codes_buf =(u_char *)"";
+    ngx_http_vhost_traffic_status_display_encode_uri(r, &dst);
+
+    buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_START,
+        &dst, vtsn->stat_request_counter,
+        vtsn->stat_in_bytes,
+        vtsn->stat_out_bytes);
 
     if (ctx->measure_status_codes != NULL && vtsn->stat_status_code_counter != NULL) {
         ngx_uint_t *status_code = NULL;
-        ngx_buf_t *b = ngx_create_temp_buf(r->pool, 10240);
-        if (b == NULL) {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-            "display_set_server_node::ngx_create_temp_buf() failed");
-        }
 
-        ngx_memzero(b->start, 10240);
+        buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_STATUS_CODE_START);
 
-        u_char *wbuf = b->last;
-        status_codes_buf = b->last;
         ngx_uint_t *status_codes = (ngx_uint_t *) ctx->measure_status_codes->elts;
         for (ngx_uint_t i = 0; i < ctx->measure_status_codes->nelts; i++) {
             if (vtsn->stat_status_code_counter[i] == 0) {
                 continue;
             }
             status_code = &status_codes[i];
-
-            wbuf = ngx_sprintf(wbuf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_STATUS_CODE,
+            if (i > 0) {
+                buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_STATUS_SEPARATOR);
+            }
+            buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_STATUS_CODE,
                 *status_code, vtsn->stat_status_code_counter[i]);
         }
+
+        buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_STATUS_CODE_END);
     }
+
+    buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_MIDDLE,
+        vtsn->stat_1xx_counter,
+        vtsn->stat_2xx_counter,
+        vtsn->stat_3xx_counter,
+        vtsn->stat_4xx_counter,
+        vtsn->stat_5xx_counter);
 
 
 #if (NGX_HTTP_CACHE)
-    ngx_http_vhost_traffic_status_display_encode_uri(r, &dst);
-    buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER,
-                      &dst, vtsn->stat_request_counter,
-                      vtsn->stat_in_bytes,
-                      vtsn->stat_out_bytes,
-                      status_codes_buf,
-                      vtsn->stat_1xx_counter,
-                      vtsn->stat_2xx_counter,
-                      vtsn->stat_3xx_counter,
-                      vtsn->stat_4xx_counter,
-                      vtsn->stat_5xx_counter,
+    buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_END,
                       vtsn->stat_cache_miss_counter,
                       vtsn->stat_cache_bypass_counter,
                       vtsn->stat_cache_expired_counter,
@@ -171,17 +170,7 @@ ngx_http_vhost_traffic_status_display_set_server_node(
                       vtsn->stat_cache_scarce_counter_oc,
                       vtsn->stat_request_time_counter_oc);
 #else
-    ngx_http_vhost_traffic_status_display_encode_uri(r, &dst);
-    buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER,
-                      &dst, vtsn->stat_request_counter,
-                      vtsn->stat_in_bytes,
-                      vtsn->stat_out_bytes,
-                      status_codes_buf,
-                      vtsn->stat_1xx_counter,
-                      vtsn->stat_2xx_counter,
-                      vtsn->stat_3xx_counter,
-                      vtsn->stat_4xx_counter,
-                      vtsn->stat_5xx_counter,
+    buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_END,
                       vtsn->stat_request_time_counter,
                       ngx_http_vhost_traffic_status_node_time_queue_average(
                           &vtsn->stat_request_times, vtscf->average_method,
