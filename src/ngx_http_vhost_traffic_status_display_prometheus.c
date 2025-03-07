@@ -521,6 +521,7 @@ ngx_http_vhost_traffic_status_display_prometheus_set(ngx_http_request_t *r,
 
     if (ctx->measure_status_codes != NULL) {
         vtscf->stats.stat_status_code_counter = ngx_pcalloc(r->pool, sizeof(ngx_atomic_t) * ctx->measure_status_codes->nelts);
+        vtscf->stats.stat_status_code_length = ctx->measure_status_codes->nelts;
     }
 
     /* main & connections */

@@ -57,6 +57,7 @@ typedef struct {
     ngx_atomic_t                                           stat_3xx_counter;
     ngx_atomic_t                                           stat_4xx_counter;
     ngx_atomic_t                                           stat_5xx_counter;
+    uint                                                   stat_status_code_length;
     ngx_atomic_t                                           *stat_status_code_counter;
 
     ngx_atomic_t                                           stat_request_time_counter;

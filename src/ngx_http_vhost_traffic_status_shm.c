@@ -170,6 +170,7 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
                 ngx_shmtx_unlock(&shpool->mutex);
                 return NGX_ERROR;
             }
+            vtsn->stat_status_code_length = ctx->measure_status_codes->nelts;
         }
 
         ngx_http_vhost_traffic_status_node_init(r, vtsn, status_code_slot);
