@@ -106,7 +106,7 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
     shpool = (ngx_slab_pool_t *) vtscf->shm_zone->shm.addr;
 
 
-    status_code_slot = NGX_HTTP_VHOST_TRAFFIC_STATUS_STATUS_CODE_SLOT_UNDEFINED;
+    status_code_slot = 0;
     if (ctx->measure_all_status_codes) {
         if (r->headers_out.status >= 100 && r->headers_out.status < 600) {
             status_code_slot = r->headers_out.status - 100;
@@ -164,7 +164,7 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
         vtsn->ignore_status = vtscf->ignore_status;
 
         if (ctx->measure_status_codes != NULL) {
-            vtsn->stat_status_code_counter = ngx_slab_alloc_locked(shpool, sizeof(ngx_atomic_t) * ctx->measure_status_codes->nelts);
+            vtsn->stat_status_code_counter = ngx_slab_alloc_locked(shpool, sizeof(ngx_atomic_t) * (ctx->measure_status_codes->nelts + 1));
             if (vtsn->stat_status_code_counter == NULL) {
                 shm_info = ngx_pcalloc(r->pool, sizeof(ngx_http_vhost_traffic_status_shm_info_t));
                 if (shm_info == NULL) {
@@ -574,11 +574,11 @@ ngx_http_vhost_traffic_status_find_status_code_slot(ngx_uint_t status, ngx_array
     if (found == NULL) {
         ngx_log_error(NGX_LOG_DEBUG, ngx_cycle->log, 0,
             "Status code %ui not found in status_codes array", status);
-        return NGX_HTTP_VHOST_TRAFFIC_STATUS_STATUS_CODE_SLOT_UNDEFINED;
+        return 0;
     }
 
     ngx_int_t index = (ngx_int_t)(found - (ngx_uint_t *)status_codes->elts);
-    return index;
+    return index + 1;
 }
 
 #if (NGX_HTTP_CACHE)
