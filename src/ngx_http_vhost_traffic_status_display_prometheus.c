@@ -79,16 +79,14 @@ ngx_http_vhost_traffic_status_display_prometheus_set_server_node(
 
 
     if (ctx->measure_status_codes != NULL && vtsn->stat_status_code_counter != NULL) {
-        ngx_uint_t *status_code = NULL;
         ngx_uint_t *status_codes = (ngx_uint_t *) ctx->measure_status_codes->elts;
         for (ngx_uint_t i = 0; i < ctx->measure_status_codes->nelts; i++) {
             if (vtsn->stat_status_code_counter[i] == 0 && ctx->measure_all_status_codes) {
                 continue;
             }
-            status_code = &status_codes[i];
 
             buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_STATUS_CODE,
-                &server, *status_code, vtsn->stat_status_code_counter[i]);
+                &server, status_codes[i], vtsn->stat_status_code_counter[i]);
         }
     }
 
