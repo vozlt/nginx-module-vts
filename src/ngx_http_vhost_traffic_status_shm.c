@@ -109,7 +109,8 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
     status_code_slot = 0;
     if (ctx->measure_all_status_codes) {
         if (r->headers_out.status >= 100 && r->headers_out.status < 600) {
-            status_code_slot = r->headers_out.status - 100;
+            // slot 0 is reserved to other status codes <100 and >600
+            status_code_slot = r->headers_out.status - 99;
         }
     } else if (ctx->measure_status_codes != NULL) {
         status_code_slot = ngx_http_vhost_traffic_status_find_status_code_slot(r->headers_out.status,
