@@ -80,13 +80,17 @@ ngx_http_vhost_traffic_status_display_prometheus_set_server_node(
 
     if (ctx->measure_status_codes != NULL && vtsn->stat_status_code_counter != NULL) {
         ngx_uint_t *status_codes = (ngx_uint_t *) ctx->measure_status_codes->elts;
+
+        buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_OTHER_STATUS_CODE,
+            &server, vtsn->stat_status_code_counter[0]);
+
         for (ngx_uint_t i = 0; i < ctx->measure_status_codes->nelts; i++) {
-            if (vtsn->stat_status_code_counter[i] == 0 && ctx->measure_all_status_codes) {
+            if (vtsn->stat_status_code_counter[i+1] == 0 && ctx->measure_all_status_codes) {
                 continue;
             }
 
             buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_STATUS_CODE,
-                &server, status_codes[i], vtsn->stat_status_code_counter[i]);
+                &server, status_codes[i], vtsn->stat_status_code_counter[i+1]);
         }
     }
 
@@ -174,7 +178,7 @@ ngx_http_vhost_traffic_status_display_prometheus_set_server(ngx_http_request_t *
 
             if (ctx->measure_status_codes != NULL && vtsn->stat_status_code_counter != NULL) {
                 ngx_http_vhost_traffic_status_status_code_merge(vtscf->stats.stat_status_code_counter,
-                    vtsn->stat_status_code_counter, ctx->measure_status_codes->nelts);
+                    vtsn->stat_status_code_counter, ctx->measure_status_codes->nelts+1);
             }
 
 #if (NGX_HTTP_CACHE)
@@ -518,7 +522,7 @@ ngx_http_vhost_traffic_status_display_prometheus_set(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_time_queue_init(&vtscf->stats.stat_request_times);
 
     if (ctx->measure_status_codes != NULL) {
-        vtscf->stats.stat_status_code_counter = ngx_pcalloc(r->pool, sizeof(ngx_atomic_t) * ctx->measure_status_codes->nelts);
+        vtscf->stats.stat_status_code_counter = ngx_pcalloc(r->pool, sizeof(ngx_atomic_t) * (ctx->measure_status_codes->nelts+1));
         vtscf->stats.stat_status_code_length = ctx->measure_status_codes->nelts;
     }
 
