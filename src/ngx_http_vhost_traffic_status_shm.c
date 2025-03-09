@@ -166,6 +166,20 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
         if (ctx->measure_status_codes != NULL) {
             vtsn->stat_status_code_counter = ngx_slab_alloc_locked(shpool, sizeof(ngx_atomic_t) * ctx->measure_status_codes->nelts);
             if (vtsn->stat_status_code_counter == NULL) {
+                shm_info = ngx_pcalloc(r->pool, sizeof(ngx_http_vhost_traffic_status_shm_info_t));
+                if (shm_info == NULL) {
+                    ngx_slab_free_locked(shpool, node);
+                    ngx_shmtx_unlock(&shpool->mutex);
+                    return NGX_ERROR;
+                }
+
+                ngx_http_vhost_traffic_status_shm_info(r, shm_info);
+
+                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                              "shm_add_node::ngx_slab_alloc_locked() failed: "
+                              "used_size[%ui], used_node[%ui]",
+                              shm_info->used_size, shm_info->used_node);
+
                 ngx_slab_free_locked(shpool, node);
                 ngx_shmtx_unlock(&shpool->mutex);
                 return NGX_ERROR;

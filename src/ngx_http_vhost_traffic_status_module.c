@@ -493,64 +493,57 @@ ngx_http_vhost_traffic_status_measure_status_codes(ngx_conf_t *cf, ngx_command_t
     ngx_int_t                            previous_n;
     ngx_uint_t                           i;
     ngx_int_t                            *status_code;
-    ngx_array_t                          *status_codes;
-    ngx_flag_t                          all;
 
     ctx = ngx_http_conf_get_module_main_conf(cf, ngx_http_vhost_traffic_status_module);
     if (ctx == NULL) {
         return NGX_CONF_ERROR;
     }
 
-    status_codes = ngx_array_create(cf->pool, 1, sizeof(ngx_int_t));
+    ctx->measure_status_codes = ngx_array_create(cf->pool, 1, sizeof(ngx_int_t));
     previous_n = 0;
-    all = 0;
     value = cf->args->elts;
 
     /* arguments process */
-    for (i = 1; i < cf->args->nelts; i++) {
-        if (i == 1 && ngx_strncmp(value[i].data, "all", 3) == 0) {
-            for (n = 100; n < 600; n++) {
-                status_code = ngx_array_push(status_codes);
-                if (status_code == NULL) {
-                    goto invalid;
-                }
-                *status_code = n;
+    if (ngx_strncmp(value[1].data, "all", 3) == 0) {
+        for (n = 100; n < 600; n++) {
+            status_code = ngx_array_push(ctx->measure_status_codes);
+            if (status_code == NULL) {
+                return NGX_CONF_ERROR;
             }
-            all = 1;
-            break;
+            *status_code = n;
         }
+        ctx->measure_all_status_codes = 1;
+        return NGX_OK;
+    }
+    for (i = 1; i < cf->args->nelts; i++) {
         n = ngx_atoi(value[i].data, value[i].len);
         if (n == NGX_ERROR || n == 0) {
             ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "invalid parameter \"%V\"", &value[i]);
-            goto invalid;
+            return NGX_CONF_ERROR;
         }
 
         if (n < previous_n) {
             ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "status codes must be ordered");
-            goto invalid;
+            return NGX_CONF_ERROR;
         }
 
-        if (n <100 || n > 599) {
+        if (n < 100 || n > 599) {
             ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "invalid status_code \"%V\"", &value[i]);
-            goto invalid;
+            return NGX_CONF_ERROR;
         }
 
-        status_code = ngx_array_push(status_codes);
+        status_code = ngx_array_push(ctx->measure_status_codes);        
         if (status_code == NULL) {
-            goto invalid;
+            return NGX_CONF_ERROR;
         }
 
         *status_code = n;
         previous_n = n;
     }
 
-    ctx->measure_all_status_codes = all;
-    ctx->measure_status_codes = status_codes;
+    ctx->measure_all_status_codes = 0;
 
     return NGX_CONF_OK;
-
-invalid:
-    return NGX_CONF_ERROR;
 }
 
 
