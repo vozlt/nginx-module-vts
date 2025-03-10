@@ -40,18 +40,20 @@
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_S "\"serverZones\":{"
 
-#if (NGX_HTTP_CACHE)
-#define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER "\"%V\":{"               \
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_START "\"%V\":{"               \
     "\"requestCounter\":%uA,"                                                  \
     "\"inBytes\":%uA,"                                                         \
-    "\"outBytes\":%uA,"                                                        \
-    "\"responses\":{"                                                          \
+    "\"outBytes\":%uA,"
+
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_MIDDLE "\"responses\":{" \
     "\"1xx\":%uA,"                                                             \
     "\"2xx\":%uA,"                                                             \
     "\"3xx\":%uA,"                                                             \
     "\"4xx\":%uA,"                                                             \
-    "\"5xx\":%uA,"                                                             \
-    "\"miss\":%uA,"                                                            \
+    "\"5xx\":%uA"
+
+#if (NGX_HTTP_CACHE)
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_END ",\"miss\":%uA,"     \
     "\"bypass\":%uA,"                                                          \
     "\"expired\":%uA,"                                                         \
     "\"stale\":%uA,"                                                           \
@@ -92,17 +94,7 @@
     "}"                                                                        \
     "},"
 #else
-#define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER "\"%V\":{"               \
-    "\"requestCounter\":%uA,"                                                  \
-    "\"inBytes\":%uA,"                                                         \
-    "\"outBytes\":%uA,"                                                        \
-    "\"responses\":{"                                                          \
-    "\"1xx\":%uA,"                                                             \
-    "\"2xx\":%uA,"                                                             \
-    "\"3xx\":%uA,"                                                             \
-    "\"4xx\":%uA,"                                                             \
-    "\"5xx\":%uA"                                                              \
-    "},"                                                                       \
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_END "},"                 \
     "\"requestMsecCounter\":%uA,"                                              \
     "\"requestMsec\":%M,"                                                      \
     "\"requestMsecs\":{"                                                       \
@@ -127,6 +119,11 @@
     "}"                                                                        \
     "},"
 #endif
+
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_STATUS_CODE_START "\"statusCodes\":{"
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_STATUS_CODE ",\"%uA\":%uA"
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_OTHER_STATUS_CODE "\"other\":%uA"
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_STATUS_CODE_END "}, "
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_FILTER_S "\"filterZones\":{"
 
