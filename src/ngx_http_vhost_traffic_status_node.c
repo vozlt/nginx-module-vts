@@ -267,6 +267,8 @@ ngx_http_vhost_traffic_status_node_lookup(ngx_rbtree_t *rbtree, ngx_str_t *key,
 void
 ngx_http_vhost_traffic_status_node_zero(ngx_http_vhost_traffic_status_node_t *vtsn)
 {
+    ngx_uint_t  i;
+
     vtsn->stat_request_counter = 0;
     vtsn->stat_in_bytes = 0;
     vtsn->stat_out_bytes = 0;
