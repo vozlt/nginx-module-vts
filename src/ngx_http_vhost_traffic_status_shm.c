@@ -560,7 +560,8 @@ found:
     return NGX_OK;
 }
 
-static int ngx_http_vhost_traffic_status_find_status_code_slot_cmp(const void *one, const void *two)
+static int
+ngx_http_vhost_traffic_status_find_status_code_slot_cmp(const void *one, const void *two)
 {
     return (*(ngx_uint_t *) one - *(ngx_uint_t *) two);
 }

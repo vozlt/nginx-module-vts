@@ -58,9 +58,10 @@ ngx_http_vhost_traffic_status_display_set_server_node(
     ngx_http_vhost_traffic_status_node_t *vtsn)
 {
     u_char                                    *p, *c;
-    ngx_int_t                                  rc, i;
+    ngx_int_t                                  rc;
+    ngx_uint_t                                 i;
     ngx_str_t                                  tmp, dst;
-    ngx_uint_t                                *status_codes
+    ngx_uint_t                                *status_codes;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
     ngx_http_vhost_traffic_status_ctx_t       *ctx;
 
@@ -107,7 +108,7 @@ ngx_http_vhost_traffic_status_display_set_server_node(
         buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_OTHER_STATUS_CODE,
             vtsn->stat_status_code_counter[0]);
 
-        *status_codes = (ngx_uint_t *) ctx->measure_status_codes->elts;
+        status_codes = (ngx_uint_t *) ctx->measure_status_codes->elts;
 
         for (i = 0; i < ctx->measure_status_codes->nelts; i++) {
             if (vtsn->stat_status_code_counter[i+1] == 0 && ctx->measure_all_status_codes) {
