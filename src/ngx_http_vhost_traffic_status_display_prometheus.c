@@ -84,7 +84,7 @@ ngx_http_vhost_traffic_status_display_prometheus_set_server_node(
         buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_OTHER_STATUS_CODE,
             &server, vtsn->stat_status_code_counter[0]);
 
-        for (ngx_uint_t i = 0; i < ctx->measure_status_codes->nelts; i++) {
+        for (i = 0; i < ctx->measure_status_codes->nelts; i++) {
             if (vtsn->stat_status_code_counter[i+1] == 0 && ctx->measure_all_status_codes) {
                 continue;
             }
