@@ -565,7 +565,7 @@ static int ngx_http_vhost_traffic_status_find_status_code_slot_cmp(const void *o
     return (*(ngx_uint_t *) one - *(ngx_uint_t *) two);
 }
 
-ngx_int_t
+ngx_uint_t
 ngx_http_vhost_traffic_status_find_status_code_slot(ngx_uint_t status, ngx_array_t *status_codes)
 {
     ngx_uint_t *found = (ngx_uint_t *) bsearch(&status, status_codes->elts, status_codes->nelts,
@@ -578,8 +578,7 @@ ngx_http_vhost_traffic_status_find_status_code_slot(ngx_uint_t status, ngx_array
         return 0;
     }
 
-    ngx_int_t index = (ngx_int_t)(found - (ngx_uint_t *)status_codes->elts);
-    return index + 1;
+    return found - (ngx_uint_t *)status_codes->elts + 1;
 }
 
 #if (NGX_HTTP_CACHE)
