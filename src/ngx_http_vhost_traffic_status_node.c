@@ -362,6 +362,7 @@ ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
 
     ovtsn = *vtsn;
 
+    vtsn->ignore_status = vtscf->ignore_status;
     ms = ngx_http_vhost_traffic_status_request_time(r);
     ngx_http_vhost_traffic_status_node_update(r, vtsn, ms);
 
@@ -378,6 +379,10 @@ ngx_http_vhost_traffic_status_node_update(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t *vtsn, ngx_msec_int_t ms)
 {
     ngx_uint_t status = r->headers_out.status;
+
+    if (ngx_http_vhost_traffic_status_ignore_status(vtsn->ignore_status, status)) {
+        return;
+    }
 
     vtsn->stat_request_counter++;
     vtsn->stat_in_bytes += (ngx_atomic_uint_t) r->request_length;

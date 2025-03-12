@@ -55,6 +55,13 @@
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_AVG_PERIOD   60
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_DUMP_PERIOD  60
 
+#define  NGX_HTTP_VHOST_TRAFFIC_STATUS_IGNORE_STATUS_OFF     0x0002
+#define  NGX_HTTP_VHOST_TRAFFIC_STATUS_IGNORE_STATUS_1XX     0x0004
+#define  NGX_HTTP_VHOST_TRAFFIC_STATUS_IGNORE_STATUS_2XX     0x0008
+#define  NGX_HTTP_VHOST_TRAFFIC_STATUS_IGNORE_STATUS_3XX     0x0010
+#define  NGX_HTTP_VHOST_TRAFFIC_STATUS_IGNORE_STATUS_4XX     0x0020
+#define  NGX_HTTP_VHOST_TRAFFIC_STATUS_IGNORE_STATUS_5XX     0x0040
+
 #define ngx_http_vhost_traffic_status_add_rc(s, n) {                           \
     if(s < 200) {n->stat_1xx_counter++;}                                       \
     else if(s < 300) {n->stat_2xx_counter++;}                                  \
@@ -62,6 +69,8 @@
     else if(s < 500) {n->stat_4xx_counter++;}                                  \
     else {n->stat_5xx_counter++;}                                              \
 }
+
+#define ngx_http_vhost_traffic_status_ignore_status(i, s) (                    (((i & (1<<2)) && 100 <= s && s < 200)                                       || ((i & (1<<3)) && 200 <= s && s < 300)                                   || ((i & (1<<4)) && 300 <= s && s < 400)                                   || ((i & (1<<5)) && 400 <= s && s < 500)                                   || ((i & (1<<6)) && 500 <= s && s < 600)) ? 1 : 0)
 
 #if (NGX_HTTP_CACHE)
 
@@ -298,6 +307,7 @@ typedef struct {
     ngx_flag_t                              bypass_stats;
 
     ngx_flag_t                              stats_by_upstream;
+    ngx_uint_t                              ignore_status;
 
     ngx_rbtree_node_t                     **node_caches;
 } ngx_http_vhost_traffic_status_loc_conf_t;
