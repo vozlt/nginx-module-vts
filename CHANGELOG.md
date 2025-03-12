@@ -2,10 +2,12 @@
 ## [Unreleased]
 
 
-## [v0.2.3] - 2024-12-31
-### Bugfix
-- fixed encodeURI into template
+## [v0.2.4] - 2025-03-12
+### Fix
+- escape uri in module side
 
+
+## [v0.2.3] - 2025-01-01
 ### Ci
 - support freenginx
 
@@ -356,7 +358,8 @@
 - added type casting(ngx_atomic_t) in the ngx_vhost_traffic_status_node_init() and ngx_vhost_traffic_status_node_set()
 
 
-[Unreleased]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.3...HEAD
+[Unreleased]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.4...HEAD
+[v0.2.4]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.3...v0.2.4
 [v0.2.3]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.2...v0.2.3
 [v0.2.2]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.1...v0.2.2
 [v0.2.1]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.0...v0.2.1
