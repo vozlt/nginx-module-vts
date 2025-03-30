@@ -14,6 +14,16 @@
 #include "ngx_http_upstream_check_module.h"
 #endif
 
+#if (nginx_version > 1027003) && defined(NGX_HTTP_UPSTREAM_MODIFY) && !defined(NGX_HTTP_UPSTREAM_CHECK)
+static u_char *
+ngx_http_vhost_traffic_status_display_ug_host(
+    ngx_http_request_t *r,
+    ngx_str_t host,
+    ngx_rbtree_node_t *node,
+    ngx_rbtree_node_t *sentinel,
+    ngx_http_upstream_rr_peers_t *peers,
+    u_char            *buf);
+#endif
 
 u_char *
 ngx_http_vhost_traffic_status_display_set_main(ngx_http_request_t *r,
@@ -633,51 +643,46 @@ ngx_http_vhost_traffic_status_display_set_upstream_group(ngx_http_request_t *r,
 
             zone = 1;
 
-#if nginx_version > 1027003
-            for (peers = uscf->peer.data; peers; peers = peers->next) {
-                ngx_http_upstream_rr_peers_rlock(peers);
-                for (peer = peers->peer; peer; peer = peer->next) {
-                    p = ngx_cpymem(p, uscf->host.data, uscf->host.len);
-                    *p++ = NGX_HTTP_VHOST_TRAFFIC_STATUS_KEY_SEPARATOR;
-                    p = ngx_cpymem(p, peer->name.data, peer->name.len);
-
-                    dst.len = uscf->host.len + sizeof("@") - 1 + peer->name.len;
-
-                    rc = ngx_http_vhost_traffic_status_node_generate_key(r->pool, &key, &dst, type);
-                    if (rc != NGX_OK) {
-                        ngx_http_upstream_rr_peers_unlock(peers);
-                        return buf;
+#if (nginx_version > 1027003) && defined(NGX_HTTP_UPSTREAM_MODIFY) && !defined(NGX_HTTP_UPSTREAM_CHECK)
+            if (uscf->flags & NGX_HTTP_UPSTREAM_MODIFY) { 
+                peers = uscf->peer.data;
+                buf = ngx_http_vhost_traffic_status_display_ug_host(r, uscf->host, ctx->rbtree->root, ctx->rbtree->sentinel, peers, buf);
+            } else {
+                for (peers = uscf->peer.data; peers; peers = peers->next) {
+                    ngx_http_upstream_rr_peers_rlock(peers);
+                    for (peer = peers->peer; peer; peer = peer->next) {
+                        p = ngx_cpymem(p, uscf->host.data, uscf->host.len);
+                        *p++ = NGX_HTTP_VHOST_TRAFFIC_STATUS_KEY_SEPARATOR;
+                        p = ngx_cpymem(p, peer->name.data, peer->name.len);
+    
+                        dst.len = uscf->host.len + sizeof("@") - 1 + peer->name.len;
+    
+                        rc = ngx_http_vhost_traffic_status_node_generate_key(r->pool, &key, &dst, type);
+                        if (rc != NGX_OK) {
+                            ngx_http_upstream_rr_peers_unlock(peers);
+                            return buf;
+                        }
+    
+                        hash = ngx_crc32_short(key.data, key.len);
+                        node = ngx_http_vhost_traffic_status_node_lookup(ctx->rbtree, &key, hash);
+    
+                        usn.weight = peer->weight;
+                        usn.max_fails = peer->max_fails;
+                        usn.fail_timeout = peer->fail_timeout;
+                        usn.backup = 0;
+                        usn.down = (peer->fails >= peer->max_fails || peer->down);
+                        usn.name = peer->name;
+    
+                        if (node != NULL) {
+                            vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
+                            buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, vtsn);
+                        } else {
+                            buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, NULL);
+                        }
+                        p = dst.data;
                     }
-
-                    hash = ngx_crc32_short(key.data, key.len);
-                    node = ngx_http_vhost_traffic_status_node_lookup(ctx->rbtree, &key, hash);
-
-                    usn.weight = peer->weight;
-                    usn.max_fails = peer->max_fails;
-                    usn.fail_timeout = peer->fail_timeout;
-                    usn.backup = 0;
-#if (NGX_HTTP_UPSTREAM_CHECK)
-                    if (ngx_http_upstream_check_peer_down(peer->check_index)) {
-                        usn.down = 1;
-
-                    } else {
-                        usn.down = 0;
-                    }
-#else
-                    usn.down = (peer->fails >= peer->max_fails || peer->down);
-#endif
-
-                    usn.name = peer->name;
-
-                    if (node != NULL) {
-                        vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
-                        buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, vtsn);
-                    } else {
-                        buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, NULL);
-                    }
-                    p = dst.data;
+                    ngx_http_upstream_rr_peers_unlock(peers);
                 }
-                ngx_http_upstream_rr_peers_unlock(peers);
             }
             goto last;
 #endif
@@ -793,7 +798,9 @@ not_supported:
                 }
             }
 
+#if (nginx_version > 1027003) && defined(NGX_HTTP_UPSTREAM_MODIFY) && !defined(NGX_HTTP_UPSTREAM_CHECK)
 last:
+#endif
             if (s == buf) {
                 buf = o;
 
@@ -1020,4 +1027,57 @@ ngx_http_vhost_traffic_status_display_set(ngx_http_request_t *r,
     return buf;
 }
 
+#if (nginx_version > 1027003) && defined(NGX_HTTP_UPSTREAM_MODIFY) && !defined(NGX_HTTP_UPSTREAM_CHECK)
+static u_char *
+ngx_http_vhost_traffic_status_display_ug_host(
+    ngx_http_request_t *r,
+    ngx_str_t host,
+    ngx_rbtree_node_t *node,
+    ngx_rbtree_node_t *sentinel,
+    ngx_http_upstream_rr_peers_t *peers,
+    u_char            *buf)
+{
+    ngx_int_t                             rc;
+    ngx_http_upstream_server_t            usn;
+    ngx_http_upstream_rr_peer_t           *peer;
+    ngx_http_upstream_rr_peers_t          *base_peers;
+    ngx_http_vhost_traffic_status_node_t  *vtsn;
+    
+    base_peers = peers;
+    if (node != sentinel) {
+        vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
+        if (vtsn->stat_upstream.type == NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UG) {
+            rc = ngx_memn2cmp(host.data, vtsn->data+3, host.len, (size_t) host.len);
+            if (rc == 0) {
+                usn.name.data = vtsn->data + 3 + host.len + 1;
+                usn.name.len = vtsn->len - host.len - 4;
+                usn.weight = 0;
+                usn.max_fails = 0;
+                usn.fail_timeout = 0;
+                usn.backup = 0;
+                usn.down = 0;
+                while (peers != NULL) {
+                    ngx_http_upstream_rr_peers_rlock(peers);
+                    for (peer = peers->peer; peer; peer = peer->next) {
+                        rc = ngx_memn2cmp(peer->name.data, usn.name.data, peer->name.len, (size_t) usn.name.len);
+                        if (rc == 0) {
+                            usn.weight = peer->weight;
+                            usn.max_fails = peer->max_fails;
+                            usn.fail_timeout = peer->fail_timeout;
+                            usn.backup = 0;
+                            usn.down = (peer->fails >= peer->max_fails || peer->down);
+                        }
+                    }
+                    ngx_http_upstream_rr_peers_unlock(peers);
+                    peers = peers->next;
+                }
+                buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, vtsn);
+            }
+        }
+        buf = ngx_http_vhost_traffic_status_display_ug_host(r, host, node->left, sentinel, base_peers, buf);
+        buf = ngx_http_vhost_traffic_status_display_ug_host(r, host, node->right, sentinel, base_peers, buf);
+    }
+    return buf;
+}
+#endif
 /* vi:set ft=c ts=4 sw=4 et fdm=marker: */
