@@ -267,6 +267,8 @@ ngx_http_vhost_traffic_status_node_lookup(ngx_rbtree_t *rbtree, ngx_str_t *key,
 void
 ngx_http_vhost_traffic_status_node_zero(ngx_http_vhost_traffic_status_node_t *vtsn)
 {
+    ngx_uint_t  i;
+
     vtsn->stat_request_counter = 0;
     vtsn->stat_in_bytes = 0;
     vtsn->stat_out_bytes = 0;
@@ -291,6 +293,10 @@ ngx_http_vhost_traffic_status_node_zero(ngx_http_vhost_traffic_status_node_t *vt
     vtsn->stat_5xx_counter_oc = 0;
     vtsn->stat_request_time_counter_oc = 0;
     vtsn->stat_response_time_counter_oc = 0;
+
+    for (i = 0; i < vtsn->stat_status_code_length; i++) {
+        vtsn->stat_status_code_counter[i] = 0;
+    }
 
 #if (NGX_HTTP_CACHE)
     vtsn->stat_cache_miss_counter = 0;
@@ -321,7 +327,7 @@ ngx_http_vhost_traffic_status_node_zero(ngx_http_vhost_traffic_status_node_t *vt
 */
 void
 ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn)
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t status_code_slot)
 {
     ngx_msec_int_t  ms;
 
@@ -342,7 +348,7 @@ ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
     ms = ngx_http_vhost_traffic_status_request_time(r);
     vtsn->stat_request_time = (ngx_msec_t) ms;
 
-    ngx_http_vhost_traffic_status_node_update(r, vtsn, ms);
+    ngx_http_vhost_traffic_status_node_update(r, vtsn, ms, status_code_slot);
 }
 
 
@@ -352,7 +358,7 @@ ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
 */
 void
 ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn)
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t status_code_slot)
 {
     ngx_msec_int_t                             ms;
     ngx_http_vhost_traffic_status_node_t       ovtsn;
@@ -364,7 +370,7 @@ ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
 
     vtsn->ignore_status = vtscf->ignore_status;
     ms = ngx_http_vhost_traffic_status_request_time(r);
-    ngx_http_vhost_traffic_status_node_update(r, vtsn, ms);
+    ngx_http_vhost_traffic_status_node_update(r, vtsn, ms, status_code_slot);
 
     vtsn->stat_request_time = ngx_http_vhost_traffic_status_node_time_queue_average(
                                   &vtsn->stat_request_times, vtscf->average_method,
@@ -376,7 +382,7 @@ ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
 
 void
 ngx_http_vhost_traffic_status_node_update(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_msec_int_t ms)
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_msec_int_t ms, ngx_int_t status_code_slot)
 {
     ngx_uint_t status = r->headers_out.status;
 
@@ -389,6 +395,10 @@ ngx_http_vhost_traffic_status_node_update(ngx_http_request_t *r,
     vtsn->stat_out_bytes += (ngx_atomic_uint_t) r->connection->sent;
 
     ngx_http_vhost_traffic_status_add_rc(status, vtsn);
+
+    if (status_code_slot != -1 && vtsn->stat_status_code_counter != NULL ) {
+        vtsn->stat_status_code_counter[status_code_slot]++;
+    }
 
     vtsn->stat_request_time_counter += (ngx_atomic_uint_t) ms;
 
@@ -592,6 +602,14 @@ ngx_http_vhost_traffic_status_node_time_queue_merge(
     (void) ngx_cpymem(a, &q, sizeof(q));
 }
 
+void ngx_http_vhost_traffic_status_status_code_merge(ngx_atomic_t *dst, ngx_atomic_t *src, ngx_uint_t n)
+{
+    ngx_uint_t i;
+
+    for (i = 0; i < n; i++) {
+        dst[i] += src[i];
+    }
+}
 
 void
 ngx_http_vhost_traffic_status_node_histogram_bucket_init(ngx_http_request_t *r,

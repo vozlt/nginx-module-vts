@@ -57,6 +57,8 @@ typedef struct {
     ngx_atomic_t                                           stat_3xx_counter;
     ngx_atomic_t                                           stat_4xx_counter;
     ngx_atomic_t                                           stat_5xx_counter;
+    uint                                                   stat_status_code_length;
+    ngx_atomic_t                                           *stat_status_code_counter;
 
     ngx_atomic_t                                           stat_request_time_counter;
     ngx_msec_t                                             stat_request_time;
@@ -115,11 +117,11 @@ ngx_rbtree_node_t *ngx_http_vhost_traffic_status_node_lookup(
 void ngx_http_vhost_traffic_status_node_zero(
     ngx_http_vhost_traffic_status_node_t *vtsn);
 void ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn);
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t status_code_slot);
 void ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn);
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t status_code_slot);
 void ngx_http_vhost_traffic_status_node_update(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_msec_int_t ms);
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_msec_int_t ms, ngx_int_t status_code_slot);
 
 void ngx_http_vhost_traffic_status_node_time_queue_zero(
     ngx_http_vhost_traffic_status_node_time_queue_t *q);
@@ -150,6 +152,7 @@ void ngx_http_vhost_traffic_status_node_time_queue_merge(
     ngx_http_vhost_traffic_status_node_time_queue_t *a,
     ngx_http_vhost_traffic_status_node_time_queue_t *b,
     ngx_msec_t period);
+void ngx_http_vhost_traffic_status_status_code_merge(ngx_atomic_t *dst, ngx_atomic_t *src, ngx_uint_t n);
 
 void ngx_http_vhost_traffic_status_node_histogram_bucket_init(
     ngx_http_request_t *r,

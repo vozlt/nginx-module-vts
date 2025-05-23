@@ -87,6 +87,7 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
     size_t                                     size;
     unsigned                                   init;
     uint32_t                                   hash;
+    ngx_int_t                                  status_code_slot;
     ngx_slab_pool_t                           *shpool;
     ngx_rbtree_node_t                         *node, *lrun;
     ngx_http_vhost_traffic_status_ctx_t       *ctx;
@@ -103,6 +104,18 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
     }
 
     shpool = (ngx_slab_pool_t *) vtscf->shm_zone->shm.addr;
+
+
+    status_code_slot = 0;
+    if (ctx->measure_all_status_codes) {
+        if (r->headers_out.status >= 100 && r->headers_out.status < 600) {
+            // slot 0 is reserved to other status codes <100 and >600
+            status_code_slot = r->headers_out.status - 99;
+        }
+    } else if (ctx->measure_status_codes != NULL) {
+        status_code_slot = ngx_http_vhost_traffic_status_find_status_code_slot(r->headers_out.status,
+                                                                              ctx->measure_status_codes);
+    }
 
     ngx_shmtx_lock(&shpool->mutex);
 
@@ -150,7 +163,33 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
         node->key = hash;
         vtsn->len = key->len;
         vtsn->ignore_status = vtscf->ignore_status;
-        ngx_http_vhost_traffic_status_node_init(r, vtsn);
+
+        if (ctx->measure_status_codes != NULL) {
+            vtsn->stat_status_code_counter = ngx_slab_alloc_locked(shpool, sizeof(ngx_atomic_t) * (ctx->measure_status_codes->nelts + 1));
+            if (vtsn->stat_status_code_counter == NULL) {
+                shm_info = ngx_pcalloc(r->pool, sizeof(ngx_http_vhost_traffic_status_shm_info_t));
+                if (shm_info == NULL) {
+                    ngx_slab_free_locked(shpool, node);
+                    ngx_shmtx_unlock(&shpool->mutex);
+                    return NGX_ERROR;
+                }
+
+                ngx_http_vhost_traffic_status_shm_info(r, shm_info);
+
+                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                              "shm_add_node::ngx_slab_alloc_locked() failed: "
+                              "used_size[%ui], used_node[%ui]",
+                              shm_info->used_size, shm_info->used_node);
+
+                ngx_slab_free_locked(shpool, node);
+                ngx_shmtx_unlock(&shpool->mutex);
+                return NGX_ERROR;
+            }
+            vtsn->stat_status_code_length = ctx->measure_status_codes->nelts;
+        }
+
+        ngx_http_vhost_traffic_status_node_init(r, vtsn, status_code_slot);
+
         vtsn->stat_upstream.type = type;
         ngx_memcpy(vtsn->data, key->data, key->len);
 
@@ -159,7 +198,7 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
     } else {
         init = NGX_HTTP_VHOST_TRAFFIC_STATUS_NODE_FIND;
         vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
-        ngx_http_vhost_traffic_status_node_set(r, vtsn);
+        ngx_http_vhost_traffic_status_node_set(r, vtsn, status_code_slot);
     }
 
     /* set addition */
@@ -521,6 +560,27 @@ found:
     return NGX_OK;
 }
 
+static int
+ngx_http_vhost_traffic_status_find_status_code_slot_cmp(const void *one, const void *two)
+{
+    return (*(ngx_uint_t *) one - *(ngx_uint_t *) two);
+}
+
+ngx_uint_t
+ngx_http_vhost_traffic_status_find_status_code_slot(ngx_uint_t status, ngx_array_t *status_codes)
+{
+    ngx_uint_t *found = (ngx_uint_t *) bsearch(&status, status_codes->elts, status_codes->nelts,
+        sizeof(ngx_uint_t),
+        ngx_http_vhost_traffic_status_find_status_code_slot_cmp);
+
+    if (found == NULL) {
+        ngx_log_error(NGX_LOG_DEBUG, ngx_cycle->log, 0,
+            "Status code %ui not found in status_codes array", status);
+        return 0;
+    }
+
+    return found - (ngx_uint_t *)status_codes->elts + 1;
+}
 
 #if (NGX_HTTP_CACHE)
 
