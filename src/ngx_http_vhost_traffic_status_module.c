@@ -353,8 +353,12 @@ ngx_http_vhost_traffic_status_request_time(ngx_http_request_t *r)
 
     tp = ngx_timeofday();
 
+#ifdef FREENGINX_VERSION
+    ms = (ngx_msec_int_t)(tp->sec * 1000 + tp->msec - r->start_time);
+#else
     ms = (ngx_msec_int_t)
              ((tp->sec - r->start_sec) * 1000 + (tp->msec - r->start_msec));
+#endif
     return ngx_max(ms, 0);
 }
 
