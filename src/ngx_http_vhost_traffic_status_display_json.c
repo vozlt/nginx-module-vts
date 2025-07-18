@@ -14,6 +14,7 @@
 #include "ngx_http_upstream_check_module.h"
 #endif
 
+
 #if (nginx_version > 1027003) && defined(NGX_HTTP_UPSTREAM_MODIFY) && !defined(NGX_HTTP_UPSTREAM_CHECK)
 static u_char *
 ngx_http_vhost_traffic_status_display_ug_host(
@@ -1047,31 +1048,33 @@ ngx_http_vhost_traffic_status_display_ug_host(
     if (node != sentinel) {
         vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
         if (vtsn->stat_upstream.type == NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UG) {
-            rc = ngx_memn2cmp(host.data, vtsn->data+3, host.len, (size_t) host.len);
-            if (rc == 0) {
-                usn.name.data = vtsn->data + 3 + host.len + 1;
-                usn.name.len = vtsn->len - host.len - 4;
-                usn.weight = 0;
-                usn.max_fails = 0;
-                usn.fail_timeout = 0;
-                usn.backup = 0;
-                usn.down = 0;
-                while (peers != NULL) {
-                    ngx_http_upstream_rr_peers_rlock(peers);
-                    for (peer = peers->peer; peer; peer = peer->next) {
-                        rc = ngx_memn2cmp(peer->name.data, usn.name.data, peer->name.len, (size_t) usn.name.len);
-                        if (rc == 0) {
-                            usn.weight = peer->weight;
-                            usn.max_fails = peer->max_fails;
-                            usn.fail_timeout = peer->fail_timeout;
-                            usn.backup = 0;
-                            usn.down = (peer->fails >= peer->max_fails || peer->down);
+            if (vtsn->len >= NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_KEY_LEN + host.len) {
+                rc = ngx_memn2cmp(host.data, vtsn->data + NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_PREFIX_LEN, host.len, (size_t) host.len);
+                if (rc == 0) {
+                    usn.name.data = vtsn->data + NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_PREFIX_LEN + host.len + 1;
+                    usn.name.len = vtsn->len - host.len - NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_KEY_LEN;
+                    usn.weight = 0;
+                    usn.max_fails = 0;
+                    usn.fail_timeout = 0;
+                    usn.backup = 0;
+                    usn.down = 0;
+                    while (peers != NULL) {
+                        ngx_http_upstream_rr_peers_rlock(peers);
+                        for (peer = peers->peer; peer; peer = peer->next) {
+                            rc = ngx_memn2cmp(peer->name.data, usn.name.data, peer->name.len, (size_t) usn.name.len);
+                            if (rc == 0) {
+                                usn.weight = peer->weight;
+                                usn.max_fails = peer->max_fails;
+                                usn.fail_timeout = peer->fail_timeout;
+                                usn.backup = 0;
+                                usn.down = (peer->fails >= peer->max_fails || peer->down);
+                            }
                         }
+                        ngx_http_upstream_rr_peers_unlock(peers);
+                        peers = peers->next;
                     }
-                    ngx_http_upstream_rr_peers_unlock(peers);
-                    peers = peers->next;
+                    buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, vtsn);
                 }
-                buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, vtsn);
             }
         }
         buf = ngx_http_vhost_traffic_status_display_ug_host(r, host, node->left, sentinel, base_peers, buf);

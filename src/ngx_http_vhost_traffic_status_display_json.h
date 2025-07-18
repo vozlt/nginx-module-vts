@@ -180,6 +180,9 @@
     "},"
 
 #if (NGX_HTTP_CACHE)
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_PREFIX_LEN 3
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_KEY_LEN 4
+
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_CACHE_S "\"cacheZones\":{"
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_CACHE "\"%V\":{"                \
     "\"maxSize\":%uA,"                                                         \
