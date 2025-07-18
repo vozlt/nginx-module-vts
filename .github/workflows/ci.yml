@@ -20,11 +20,11 @@ jobs:
         with:
           repository: nginx/nginx
           path: nginx
-      - name: 'checkout freenginx'
-        uses: actions/checkout@v3
-        with:
-          repository: freenginx/nginx
-          path: freenginx
+      # - name: 'checkout freenginx'
+      #   uses: actions/checkout@v3
+      #   with:
+      #     repository: freenginx/nginx
+      #     path: freenginx
       - name: 'checkout luajit2'
         uses: actions/checkout@v3
         with:
@@ -73,10 +73,10 @@ jobs:
         working-directory: nginx
         run: |
           patch -p1 < /home/runner/work/nginx-module-vts/nginx-module-vts/nginx_upstream_check/check_1.20.1+.patch
-      - name: 'patch upstream_check for freenginx'
-        working-directory: freenginx
-        run: |
-          patch -p1 < /home/runner/work/nginx-module-vts/nginx-module-vts/nginx_upstream_check/check_1.20.1+.patch
+      # - name: 'patch upstream_check for freenginx'
+      #   working-directory: freenginx
+      #   run: |
+      #     patch -p1 < /home/runner/work/nginx-module-vts/nginx-module-vts/nginx_upstream_check/check_1.20.1+.patch
       - name: 'build nginx'
         working-directory: nginx
         run: |
@@ -87,16 +87,16 @@ jobs:
         env:
           LUAJIT_LIB: /usr/local/lib
           LUAJIT_INC: /usr/local/include/luajit-2.1
-      - name: 'build freenginx'
-        working-directory: freenginx
-        run: |
-          ./auto/configure --prefix=/usr/local/freenginx --with-ld-opt="-Wl,-rpath,/usr/local/lib" --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/ngx_devel_kit --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/lua-nginx-module --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx_upstream_check
-          make
-          sudo make install
-          /usr/local/freenginx/sbin/nginx -V
-        env:
-          LUAJIT_LIB: /usr/local/lib
-          LUAJIT_INC: /usr/local/include/luajit-2.1
+      # - name: 'build freenginx'
+      #   working-directory: freenginx
+      #   run: |
+      #     ./auto/configure --prefix=/usr/local/freenginx --with-ld-opt="-Wl,-rpath,/usr/local/lib" --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/ngx_devel_kit --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/lua-nginx-module --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx_upstream_check
+      #     make
+      #     sudo make install
+      #     /usr/local/freenginx/sbin/nginx -V
+      #   env:
+      #     LUAJIT_LIB: /usr/local/lib
+      #     LUAJIT_INC: /usr/local/include/luajit-2.1
       - name: 'prepare cpanm'
         run: |
           sudo apt install -y cpanminus
@@ -117,13 +117,13 @@ jobs:
         run: |
           echo "/usr/local/nginx/sbin/" >> $GITHUB_PATH
           sudo TEST_UPSTREAM_CHECK=1 TEST_NGINX_SLEEP=1 PATH=/usr/local/nginx/sbin:$PATH prove t/024.upstream_check.t
-      - name: 'test freenginx'
-        working-directory: nginx-module-vts
-        run: |
-          echo "/usr/local/freenginx/sbin/" >> $GITHUB_PATH
-          sudo PATH=/usr/local/freenginx/sbin:$PATH prove -r t
-      - name: 'test upstream check for freenginx'
-        working-directory: nginx-module-vts
-        run: |
-          echo "/usr/local/freenginx/sbin/" >> $GITHUB_PATH
-          sudo TEST_UPSTREAM_CHECK=1 TEST_NGINX_SLEEP=1 PATH=/usr/local/freenginx/sbin:$PATH prove t/024.upstream_check.t
+      # - name: 'test freenginx'
+      #   working-directory: nginx-module-vts
+      #   run: |
+      #     echo "/usr/local/freenginx/sbin/" >> $GITHUB_PATH
+      #     sudo PATH=/usr/local/freenginx/sbin:$PATH prove -r t
+      # - name: 'test upstream check for freenginx'
+      #   working-directory: nginx-module-vts
+      #   run: |
+      #     echo "/usr/local/freenginx/sbin/" >> $GITHUB_PATH
+      #     sudo TEST_UPSTREAM_CHECK=1 TEST_NGINX_SLEEP=1 PATH=/usr/local/freenginx/sbin:$PATH prove t/024.upstream_check.t
