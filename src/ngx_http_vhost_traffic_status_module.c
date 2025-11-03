@@ -354,7 +354,11 @@ ngx_http_vhost_traffic_status_request_time(ngx_http_request_t *r)
     tp = ngx_timeofday();
 
     ms = (ngx_msec_int_t)
+#if (defined freenginx && nginx_version >= 1029000)
+             (tp->sec * 1000 + tp->msec - r->start_time);
+#else
              ((tp->sec - r->start_sec) * 1000 + (tp->msec - r->start_msec));
+#endif
     return ngx_max(ms, 0);
 }
 
