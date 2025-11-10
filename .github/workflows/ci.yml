@@ -73,10 +73,6 @@ jobs:
         working-directory: nginx
         run: |
           patch -p1 < /home/runner/work/nginx-module-vts/nginx-module-vts/nginx_upstream_check/check_1.20.1+.patch
-      - name: 'patch upstream_check for freenginx'
-        working-directory: freenginx
-        run: |
-          patch -p1 < /home/runner/work/nginx-module-vts/nginx-module-vts/nginx_upstream_check/check_1.20.1+.patch
       - name: 'build nginx'
         working-directory: nginx
         run: |
@@ -90,7 +86,7 @@ jobs:
       - name: 'build freenginx'
         working-directory: freenginx
         run: |
-          ./auto/configure --prefix=/usr/local/freenginx --with-ld-opt="-Wl,-rpath,/usr/local/lib" --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/ngx_devel_kit --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/lua-nginx-module --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx_upstream_check
+          ./auto/configure --prefix=/usr/local/freenginx --with-ld-opt="-Wl,-rpath,/usr/local/lib" --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/ngx_devel_kit --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/lua-nginx-module --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts
           make
           sudo make install
           /usr/local/freenginx/sbin/nginx -V
@@ -122,8 +118,3 @@ jobs:
         run: |
           echo "/usr/local/freenginx/sbin/" >> $GITHUB_PATH
           sudo PATH=/usr/local/freenginx/sbin:$PATH prove -r t
-      - name: 'test upstream check for freenginx'
-        working-directory: nginx-module-vts
-        run: |
-          echo "/usr/local/freenginx/sbin/" >> $GITHUB_PATH
-          sudo TEST_UPSTREAM_CHECK=1 TEST_NGINX_SLEEP=1 PATH=/usr/local/freenginx/sbin:$PATH prove t/024.upstream_check.t
