@@ -322,7 +322,7 @@ static ngx_int_t
 ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
 {
     size_t                                     len;
-    u_char                                    *o, *s, *p;
+    u_char                                    *o, *s, *p, *last_symbol;
     ngx_str_t                                  uri, euri, type;
     ngx_int_t                                  size, format, rc;
     ngx_buf_t                                 *b;
@@ -386,7 +386,9 @@ ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
             }
         }
 
-        if ((s = (u_char *) ngx_strchr(++s, '/')) == NULL) {
+        last_symbol = r->uri.data + r->uri.len;
+
+        if ((s = (u_char *) ngx_strlchr(++s, last_symbol, '/')) == NULL) {
             break;
         }
 
