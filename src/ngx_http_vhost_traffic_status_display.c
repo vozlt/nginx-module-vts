@@ -493,7 +493,13 @@ ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
             euri.len = uri.len + len;
         }
 
-        b->last = ngx_sprintf(b->last, NGX_HTTP_VHOST_TRAFFIC_STATUS_HTML_DATA, &euri, &euri);
+        if ((size_t)(b->end - b->last) >= sizeof(NGX_HTTP_VHOST_TRAFFIC_STATUS_HTML_DATA) + euri.len * 2) {
+            b->last = ngx_sprintf(b->last, NGX_HTTP_VHOST_TRAFFIC_STATUS_HTML_DATA, &euri, &euri);
+        } else {
+            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                          "display_handler_default: not enough buffer for HTML data");
+            return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        }
     }
 
     r->headers_out.status = NGX_HTTP_OK;
