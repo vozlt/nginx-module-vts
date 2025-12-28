@@ -2,6 +2,28 @@
 ## [Unreleased]
 
 
+## [v0.2.5] - 2025-12-28
+### Ci
+- temporarily disable FreeNginx CI due to lua-nginx-module compatibility
+
+### Docs
+- add documentation for vhost_traffic_status_measure_status_codes feature
+
+### Feat
+- add support for 'other' status code in traffic status display
+- add support for merging HTTP status code counters in JSON and Prometheus displays
+
+### Fix
+- add freenginx compatibility for request timing calculation
+- adjust status code slot calculation to reserve slot for other status codes
+- correct status code separator logic in JSON display
+- include measure_all_status_codes check in status code filtering
+
+### Refactor
+- update variable types and function signatures for consistency
+- define undefined status code slot constant for clarity
+
+
 ## [v0.2.4] - 2025-03-12
 ### Fix
 - escape uri in module side
@@ -358,7 +380,8 @@
 - added type casting(ngx_atomic_t) in the ngx_vhost_traffic_status_node_init() and ngx_vhost_traffic_status_node_set()
 
 
-[Unreleased]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.4...HEAD
+[Unreleased]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.5...HEAD
+[v0.2.5]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.4...v0.2.5
 [v0.2.4]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.3...v0.2.4
 [v0.2.3]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.2...v0.2.3
 [v0.2.2]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.1...v0.2.2
