@@ -119,6 +119,31 @@ Earlier versions is not tested.
 
 ## Installation
 
+### Pre-built Packages (Ubuntu / Debian)
+
+Pre-built packages for this module are freely available from the GetPageSpeed repository.
+
+```bash
+# Install the repository keyring
+sudo install -d -m 0755 /etc/apt/keyrings
+curl -fsSL https://extras.getpagespeed.com/deb-archive-keyring.gpg \
+  | sudo tee /etc/apt/keyrings/getpagespeed.gpg >/dev/null
+
+# Add the repository (Ubuntu example - replace 'ubuntu' and 'jammy' for your distro)
+echo "deb [signed-by=/etc/apt/keyrings/getpagespeed.gpg] https://extras.getpagespeed.com/ubuntu jammy main" \
+  | sudo tee /etc/apt/sources.list.d/getpagespeed-extras.list
+
+# Install nginx and the module
+sudo apt-get update
+sudo apt-get install nginx nginx-module-vts
+```
+
+The module is automatically enabled after installation. Supported distributions include Debian 12/13 and Ubuntu 20.04/22.04/24.04 (both amd64 and arm64).
+
+See [the complete setup instructions](https://apt-nginx-extras.getpagespeed.com/apt-setup/).
+
+### Building from Source
+
 1. Clone the git repository.
 
   ```
@@ -198,7 +223,7 @@ and then if the directive `vhost_traffic_status_display` is set, can be access t
 * /status/format/html
   * If you request `/status/format/html`, will respond with the built-in live dashboard in HTML that requests internally to `/status/format/json`.
 * /status/format/jsonp
-  * If you request `/status/format/jsonp`, will respond with a JSONP callback function containing the current activity data for using in live dashboards and third-party monitoring tools. 
+  * If you request `/status/format/jsonp`, will respond with a JSONP callback function containing the current activity data for using in live dashboards and third-party monitoring tools.
 * /status/format/prometheus
   * If you request `/status/format/prometheus`, will respond with a [prometheus](https://prometheus.io) document containing the current activity data.
 * /status/control
@@ -463,7 +488,7 @@ The available request arguments are as follows:
   * reset
     * It reset traffic zones without deleting nodes in shared memory.(= init to 0)
   * delete
-    * It delete traffic zones in shared memory. when re-request recreated. 
+    * It delete traffic zones in shared memory. when re-request recreated.
 * **group**=\<`server`\|`filter`\|`upstream@alone`\|`upstream@group`\|`cache`\|`*`\>
   * server
   * filter
@@ -711,7 +736,7 @@ The following status information is provided in the JSON format:
     * msecs
       * The bucket values of histogram set by `vhost_traffic_status_histogram_buckets` directive.
     * counters
-      * The cumulative values for the reason that each bucket value is greater than or equal to the request processing time. 
+      * The cumulative values for the reason that each bucket value is greater than or equal to the request processing time.
 * filterZones
   * It provides the same fields with `serverZones` except that it included group names.
 * upstreamZones
@@ -768,7 +793,7 @@ The following status information is provided in the JSON format:
   * maxSize
     * The limit on the maximum size of the cache specified in the configuration. If `max_size` in `proxy_cache_path` directive is not specified, the system dependent value `NGX_MAX_OFF_T_VALUE` is assigned by default. In other words, this value is from nginx, not what I specified.
   * usedSize
-    * The current size of the cache. This value is taken from nginx like the above `maxSize` value. 
+    * The current size of the cache. This value is taken from nginx like the above `maxSize` value.
   * inBytes
     * The total number of bytes received from the cache.
   * outBytes
@@ -854,7 +879,7 @@ It is able to limit total traffic per each host by using the directive
 It also is able to limit all traffic by using the directive
 [`vhost_traffic_status_limit_traffic_by_set_key`](#vhost_traffic_status_limit_traffic_by_set_key).
 When the limit is exceeded, the server will return the 503
-(Service Temporarily Unavailable) error in reply to a request. 
+(Service Temporarily Unavailable) error in reply to a request.
 The return code can be changeable.
 
 ### To limit traffic for server
@@ -1141,7 +1166,7 @@ http {
 }
 ```
 
-* The `/status` uri is excluded from the status traffic calculation and limit feature. 
+* The `/status` uri is excluded from the status traffic calculation and limit feature.
 See the following directives:
   * [vhost_traffic_status_bypass_limit](#vhost_traffic_status_bypass_limit)
   * [vhost_traffic_status_bypass_stats](#vhost_traffic_status_bypass_stats)
@@ -1468,7 +1493,7 @@ If the *number* is exceeded, the existing nodes are deleted by the [LRU](https:/
 The *number* argument is the size of the node that will be limited.
 The default value `0` does not limit filters.
 The one node is an object in `filterZones` in JSON document.
-The *string* arguments are the matching string values for the group string value set by `vhost_traffic_status_filter_by_set_key` directive. 
+The *string* arguments are the matching string values for the group string value set by `vhost_traffic_status_filter_by_set_key` directive.
 Even if only the first part matches, matching is successful like the regular expression `/^string.*/`.
 By default, If you do not set *string* arguments then it applied for all filters.
 
@@ -1933,7 +1958,7 @@ To cut a release, create a changelog entry PR with [git-chglog](https://github.c
     sed -i "s/NGX_HTTP_VTS_MODULE_VERSION \".*/NGX_HTTP_VTS_MODULE_VERSION \"${version}\"/" src/ngx_http_vhost_traffic_status_module.h
     git add src/ngx_http_vhost_traffic_status_module.h
     git-chglog -t .chglog/RELNOTES.tmpl --next-tag "${version}" "${version}" | git commit -F-
-    
+
 After the PR is merged, create the new tag and release on the [GitHub Releases](https://github.com/vozlt/nginx-module-vts/releases).
 
 ## See Also
