@@ -2,6 +2,8 @@
 
 use Test::Nginx::Socket;
 
+my $lua_checked = system("nginx -V 2>&1 | grep lua");
+plan skip_all => 'test skipped due to unsupport lua' unless defined $lua_checked && $lua_checked ne "";
 plan tests => repeat_each() * blocks() * 8;
 no_shuffle();
 run_tests();

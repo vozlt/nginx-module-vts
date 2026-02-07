@@ -86,13 +86,10 @@ jobs:
       - name: 'build freenginx'
         working-directory: freenginx
         run: |
-          ./auto/configure --prefix=/usr/local/freenginx --with-ld-opt="-Wl,-rpath,/usr/local/lib" --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/ngx_devel_kit --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/lua-nginx-module --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts --with-http_ssl_module
+          ./auto/configure --prefix=/usr/local/freenginx --with-ld-opt="-Wl,-rpath,/usr/local/lib" --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts
           make
           sudo make install
           /usr/local/freenginx/sbin/nginx -V
-        env:
-          LUAJIT_LIB: /usr/local/lib
-          LUAJIT_INC: /usr/local/include/luajit-2.1
       - name: 'prepare cpanm'
         run: |
           sudo apt install -y cpanminus
