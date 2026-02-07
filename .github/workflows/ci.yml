@@ -40,11 +40,13 @@ jobs:
         with:
           repository: openresty/lua-nginx-module
           path: lua-nginx-module
+          ref: abab54f85e03fa7899ea347fca94b051e28d4550 # to avoid undefined symbol ngx_http_lua_ffi_socket_tcp_get_ssl_pointer
       - name: 'checkout lua-resty-core'
         uses: actions/checkout@v3
         with:
           repository: openresty/lua-resty-core
           path: lua-resty-core
+          ref: 0b61f611bb99279adb9b896856ad7ec87e80b616
       - name: 'checkout lua-resty-lrucache'
         uses: actions/checkout@v3
         with:
