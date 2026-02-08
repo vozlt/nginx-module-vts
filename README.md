@@ -51,6 +51,7 @@ Table of Contents
 * [Customizing](#customizing)
   * [To customize after the module installed](#to-customize-after-the-module-installed)
   * [To customize before the module installed](#to-customize-before-the-module-installed)
+* [React Dashboard](#react-dashboard)
 * [Directives](#directives)
   * [vhost_traffic_status](#vhost_traffic_status)
   * [vhost_traffic_status_zone](#vhost_traffic_status_zone)
@@ -1227,6 +1228,56 @@ Please see the [vhost_traffic_status_dump](#vhost_traffic_status_dump) directive
 
 5. Install the nginx binary.
 
+
+## React Dashboard
+
+An alternative React-based dashboard is available under the `front/` directory. It fetches data from the existing `/status/format/json` API and renders the same tables as the built-in HTML page.
+
+### Prerequisites
+
+* Node.js >= 20.19 (or >= 22.12)
+* npm
+
+### Build
+
+```
+shell> make front-build
+```
+
+This produces static files in `front/dist/`.
+
+### Serve via nginx
+
+Add the following `location` block alongside the existing `/status` configuration:
+
+```Nginx
+location = /status/dashboard {
+    return 301 /status/dashboard/;
+}
+
+location /status/dashboard/ {
+    alias /path/to/nginx-module-vts/front/dist/;
+    index index.html;
+}
+```
+
+After reloading nginx, the React dashboard is available at `/status/dashboard`.
+
+### Development
+
+```
+shell> make front-dev
+```
+
+The Vite dev server proxies `/status/format/json` requests to `http://localhost:80` so the dashboard can be developed against a running nginx instance.
+
+### Clean
+
+```
+shell> make front-clean
+```
+
+Removes `front/dist/` and `front/node_modules/`.
 
 ## Directives
 
