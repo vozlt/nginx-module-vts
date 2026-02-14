@@ -300,6 +300,10 @@ ngx_http_vhost_traffic_status_dump_restore_add_node(ngx_event_t *ev,
 
         *vtsn = *ovtsn;
 
+        /* invalidate pointers serialized from the old process */
+        vtsn->stat_status_code_counter = NULL;
+        vtsn->stat_status_code_length = 0;
+
         ngx_memcpy(vtsn->data, key->data, key->len);
 
         ngx_rbtree_insert(ctx->rbtree, node);
