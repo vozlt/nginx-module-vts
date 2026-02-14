@@ -330,12 +330,12 @@ ngx_http_vhost_traffic_status_display_encode_uri(ngx_http_request_t *r,
         if (p == NULL) {
             ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                           "display_encode_uri::ngx_pnalloc() failed");
+            return;
         }
 
         (void) ngx_escape_html(p, uri->data, uri->len);
         euri->data = p;
         euri->len = uri->len + len;
-        uri = euri;
     }
     return;
 }
