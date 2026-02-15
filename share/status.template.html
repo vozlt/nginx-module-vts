@@ -500,6 +500,12 @@
                 return s;
             }
 
+            function eHtml(s) {
+                var div = document.createElement('div');
+                div.appendChild(document.createTextNode(s));
+                return div.innerHTML;
+            }
+
             function sHe(t, v) {
                 var ts = t.split(' ');
                 return '<' + t + '>' + (v) + '</' + ts[0] + '>';
@@ -631,7 +637,7 @@
                            ? '<img class="flag flag-{}" />'.format(name.toLowerCase())
                            : '';
 
-                    s = '{}{}'.format(aHe('th', '{}{}'.format(flag, name)),
+                    s = '{}{}'.format(aHe('th', '{}{}'.format(flag, eHtml(name))),
                                       aHe('td', [(zone.requestCounter + zone.overCounts['maxIntegerSize'] * zone.overCounts['requestCounter']),
                                                  aPs.getValue('{}.{}'.format(uniq, 'requestCounter'), zone.requestCounter), mTh(zone.requestMsec)
                                                 ]));
@@ -681,7 +687,7 @@
 
                     clas = (n++ % 2) ? 'odd' : '';
 
-                    s = '{}{}'.format(aHe('th', peer.server),
+                    s = '{}{}'.format(aHe('th', eHtml(peer.server)),
                                       aHe('td', [sTh(peer.backup, peer.down), mTh(peer.responseMsec),
                                                  peer.weight, peer.maxFails, peer.failTimeout,
                                                  (peer.requestCounter + peer.overCounts['maxIntegerSize'] * peer.overCounts['requestCounter']),
@@ -722,7 +728,7 @@
 
                     clas = (n++ % 2) ? 'odd' : '';
 
-                    s = '{}{}'.format(aHe('th', name),
+                    s = '{}{}'.format(aHe('th', eHtml(name)),
                                       aHe('td', [bTh(zone.maxSize),
                                                  bTh(zone.usedSize),
                                                  bTh(zone.outBytes + zone.overCounts['maxIntegerSize'] * zone.overCounts['outBytes']),

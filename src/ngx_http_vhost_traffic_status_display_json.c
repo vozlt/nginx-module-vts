@@ -95,8 +95,6 @@ ngx_http_vhost_traffic_status_display_set_server_node(
                       "display_set_server_node::escape_json_pool() failed");
     }
 
-    ngx_http_vhost_traffic_status_display_encode_uri(r, &dst);
-
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_START,
         &dst, vtsn->stat_request_counter,
         vtsn->stat_in_bytes,
@@ -314,32 +312,6 @@ ngx_http_vhost_traffic_status_display_set_filter_node(ngx_http_request_t *r,
     return ngx_http_vhost_traffic_status_display_set_server_node(r, buf, &key, vtsn);
 }
 
-void
-ngx_http_vhost_traffic_status_display_encode_uri(ngx_http_request_t *r,
-    ngx_str_t *uri)
-{
-
-    size_t     len;
-    ngx_str_t  *euri;
-    u_char     *p;
-    euri = uri;
-    len = ngx_escape_html(NULL, uri->data, uri->len);
-
-    if (len) {
-        p = ngx_pnalloc(r->pool, uri->len + len);
-        if (p == NULL) {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                          "display_encode_uri::ngx_pnalloc() failed");
-        }
-
-        (void) ngx_escape_html(p, uri->data, uri->len);
-        euri->data = p;
-        euri->len = uri->len + len;
-        uri = euri;
-    }
-    return;
-}
-
 u_char *
 ngx_http_vhost_traffic_status_display_set_filter(ngx_http_request_t *r,
     u_char *buf, ngx_rbtree_node_t *node)
@@ -385,7 +357,6 @@ ngx_http_vhost_traffic_status_display_set_filter(ngx_http_request_t *r,
                                   "display_set_filter::escape_json_pool() failed");
                 }
 
-                ngx_http_vhost_traffic_status_display_encode_uri(r, &filter);
                 buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_OBJECT_S,
                                   &filter);
 
@@ -446,7 +417,6 @@ ngx_http_vhost_traffic_status_display_set_upstream_node(ngx_http_request_t *r,
     }
 
     if (vtsn != NULL) {
-        ngx_http_vhost_traffic_status_display_encode_uri(r, &key);
         buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_UPSTREAM,
                 &key, vtsn->stat_request_counter,
                 vtsn->stat_in_bytes, vtsn->stat_out_bytes,
@@ -489,7 +459,6 @@ ngx_http_vhost_traffic_status_display_set_upstream_node(ngx_http_request_t *r,
                 vtsn->stat_request_time_counter_oc, vtsn->stat_response_time_counter_oc);
 
     } else {
-        ngx_http_vhost_traffic_status_display_encode_uri(r, &key);
         buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_UPSTREAM,
                 &key, (ngx_atomic_uint_t) 0,
                 (ngx_atomic_uint_t) 0, (ngx_atomic_uint_t) 0,
@@ -619,7 +588,6 @@ ngx_http_vhost_traffic_status_display_set_upstream_group(ngx_http_request_t *r,
 
             o = buf;
 
-            ngx_http_vhost_traffic_status_display_encode_uri(r, &uscf->host);
             buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_ARRAY_S,
                               &uscf->host);
             s = buf;
@@ -760,7 +728,6 @@ not_supported:
 
     ngx_str_set(&key, "::nogroups");
 
-    ngx_http_vhost_traffic_status_display_encode_uri(r, &key);
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_ARRAY_S, &key);
 
     s = buf;
@@ -800,7 +767,6 @@ u_char
                       "display_set_cache_node::escape_json_pool() failed");
     }
 
-    ngx_http_vhost_traffic_status_display_encode_uri(r, &key);
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_CACHE,
                       &key, vtsn->stat_cache_max_size,
                       vtsn->stat_cache_used_size,
