@@ -254,9 +254,6 @@ u_char *ngx_http_vhost_traffic_status_display_set_cache(
 u_char *ngx_http_vhost_traffic_status_display_set(ngx_http_request_t *r,
     u_char *buf);
 
-void ngx_http_vhost_traffic_status_display_encode_uri(
-    ngx_http_request_t *r, ngx_str_t *uri);
-
 #endif /* _NGX_HTTP_VTS_DISPLAY_JSON_H_INCLUDED_ */
 
 /* vi:set ft=c ts=4 sw=4 et fdm=marker: */
