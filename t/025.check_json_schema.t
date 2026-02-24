@@ -18,7 +18,7 @@ add_response_body_check(
 
 our $hostname = lc(hostname());
 
-plan tests => repeat_each() * 14;
+plan tests => repeat_each() * 18;
 no_shuffle();
 run_tests();
 
@@ -116,3 +116,23 @@ __DATA__
 [200, 200]
 --- response_body_like eval
 ['cached', 'cacheZones.*cache_test']
+
+=== TEST 5: User-Agent with special chars produces valid JSON (issue #328)
+--- http_config
+    vhost_traffic_status_zone;
+--- config
+    location /status {
+        vhost_traffic_status_display;
+        vhost_traffic_status_display_format json;
+        access_log off;
+    }
+    location /probe {
+        vhost_traffic_status_filter_by_set_key $http_user_agent ua::$server_name;
+        return 200 "OK";
+    }
+--- more_headers
+User-Agent: Mozilla/5.0 "evil" <script>alert(1)</script>
+--- request eval
+['GET /probe', 'GET /status/format/json']
+--- response_body_like eval
+['OK', 'filterZones']
