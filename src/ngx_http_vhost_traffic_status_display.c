@@ -216,6 +216,15 @@ ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
                               "display_handler_control::replace_strc() failed");
             }
 
+            /* Decode percent-encoded space (%20) for zone names with spaces */
+            ngx_str_set(&encoded_ch, "%20");
+
+            rc = ngx_http_vhost_traffic_status_replace_strc(control->zone, &encoded_ch, ' ');
+            if (rc != NGX_OK) {
+                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                              "display_handler_control::replace_strc() failed");
+            }
+
             (void) ngx_http_vhost_traffic_status_replace_chrc(control->zone, '@',
                        NGX_HTTP_VHOST_TRAFFIC_STATUS_KEY_SEPARATOR);
 
