@@ -12,41 +12,43 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: 'checkout'
-        uses: actions/checkout@v3
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           path: nginx-module-vts
       - name: 'checkout nginx'
-        uses: actions/checkout@v3
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: nginx/nginx
           path: nginx
+          ref: '9a503b1317c283e1fd0f27008428ea441c1ac9ee'
       - name: 'checkout freenginx'
-        uses: actions/checkout@v3
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: freenginx/nginx
           path: freenginx
+          ref: 'ae840a5b257282a355af1e4d20df81383f658961'
       - name: 'checkout luajit2'
-        uses: actions/checkout@v3
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: openresty/luajit2
           path: luajit2
       - name: 'checkout ngx_devel_kit'
-        uses: actions/checkout@v3
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: vision5/ngx_devel_kit
           path: ngx_devel_kit
       - name: 'checkout lua-nginx-module'
-        uses: actions/checkout@v3
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: openresty/lua-nginx-module
           path: lua-nginx-module
       - name: 'checkout lua-resty-core'
-        uses: actions/checkout@v3
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: openresty/lua-resty-core
           path: lua-resty-core
       - name: 'checkout lua-resty-lrucache'
-        uses: actions/checkout@v3
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: openresty/lua-resty-lrucache
           path: lua-resty-lrucache
@@ -64,7 +66,7 @@ jobs:
           sudo ln -s /home/runner/work/nginx-module-vts/nginx-module-vts/lua-resty-lrucache/lib/resty/lrucache lrucache
           sudo ln -s /home/runner/work/nginx-module-vts/nginx-module-vts/lua-resty-lrucache/lib/resty/lrucache.lua lrucache.lua
       - name: 'prepare nginx_upstream_check'
-        uses: actions/checkout@v3
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: yaoweibin/nginx_upstream_check_module
           path: nginx_upstream_check
