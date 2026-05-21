@@ -20,11 +20,13 @@ jobs:
         with:
           repository: nginx/nginx
           path: nginx
+          ref: '9a503b1317c283e1fd0f27008428ea441c1ac9ee'
       - name: 'checkout freenginx'
         uses: actions/checkout@v3
         with:
           repository: freenginx/nginx
           path: freenginx
+          ref: 'ae840a5b257282a355af1e4d20df81383f658961'
       - name: 'checkout luajit2'
         uses: actions/checkout@v3
         with:
