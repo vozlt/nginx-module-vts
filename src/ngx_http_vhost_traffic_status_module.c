@@ -293,6 +293,9 @@ ngx_http_vhost_traffic_status_handler(ngx_http_request_t *r)
     if (!ctx->enable || !vtscf->enable || vtscf->bypass_stats) {
         return NGX_DECLINED;
     }
+    if (r != r->main) {
+        return NGX_DECLINED;
+    }
     if (vtscf->shm_zone == NULL) {
         return NGX_DECLINED;
     }

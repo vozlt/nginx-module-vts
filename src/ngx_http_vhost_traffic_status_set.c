@@ -40,6 +40,9 @@ ngx_http_vhost_traffic_status_set_handler(ngx_http_request_t *r)
     if (!ctx->enable || !vtscf->filter) {
         return NGX_DECLINED;
     }
+    if (r != r->main) {
+        return NGX_DECLINED;
+    }
 
     rc = ngx_http_vhost_traffic_status_set_by_filter_variables(r);
     if (rc != NGX_OK) {

@@ -15,8 +15,11 @@ static ngx_int_t ngx_http_vhost_traffic_status_shm_add_node_upstream(ngx_http_re
     ngx_http_vhost_traffic_status_node_t *vtsn, unsigned init);
 
 #if (NGX_HTTP_CACHE)
+static ngx_int_t ngx_http_vhost_traffic_status_shm_get_cache_size(ngx_http_request_t *r,
+    ngx_atomic_uint_t *cache_max_size, ngx_atomic_uint_t *cache_used_size);
 static ngx_int_t ngx_http_vhost_traffic_status_shm_add_node_cache(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, unsigned init);
+    ngx_http_vhost_traffic_status_node_t *vtsn, unsigned init,
+    ngx_atomic_uint_t cache_max_size, ngx_atomic_uint_t cache_used_size);
 #endif
 
 static ngx_int_t ngx_http_vhost_traffic_status_shm_add_filter_node(ngx_http_request_t *r,
@@ -87,6 +90,7 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
     size_t                                     size;
     unsigned                                   init;
     uint32_t                                   hash;
+    ngx_int_t                                  rc;
     ngx_int_t                                  status_code_slot;
     ngx_slab_pool_t                           *shpool;
     ngx_rbtree_node_t                         *node, *lrun;
@@ -94,6 +98,9 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t      *vtsn;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
     ngx_http_vhost_traffic_status_shm_info_t  *shm_info;
+#if (NGX_HTTP_CACHE)
+    ngx_atomic_uint_t                          cache_max_size, cache_used_size;
+#endif
 
     ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
 
@@ -104,6 +111,19 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
     }
 
     shpool = (ngx_slab_pool_t *) vtscf->shm_zone->shm.addr;
+
+#if (NGX_HTTP_CACHE)
+    cache_max_size = 0;
+    cache_used_size = 0;
+
+    if (type == NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_CC) {
+        rc = ngx_http_vhost_traffic_status_shm_get_cache_size(r, &cache_max_size,
+                                                              &cache_used_size);
+        if (rc != NGX_OK) {
+            return rc;
+        }
+    }
+#endif
 
 
     status_code_slot = 0;
@@ -213,7 +233,9 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
 
 #if (NGX_HTTP_CACHE)
     case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_CC:
-        (void) ngx_http_vhost_traffic_status_shm_add_node_cache(r, vtsn, init);
+        (void) ngx_http_vhost_traffic_status_shm_add_node_cache(r, vtsn, init,
+                                                                cache_max_size,
+                                                                cache_used_size);
         break;
 #endif
 
@@ -270,8 +292,8 @@ ngx_http_vhost_traffic_status_shm_add_node_upstream(ngx_http_request_t *r,
 #if (NGX_HTTP_CACHE)
 
 static ngx_int_t
-ngx_http_vhost_traffic_status_shm_add_node_cache(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, unsigned init)
+ngx_http_vhost_traffic_status_shm_get_cache_size(ngx_http_request_t *r,
+    ngx_atomic_uint_t *cache_max_size, ngx_atomic_uint_t *cache_used_size)
 {
     ngx_http_cache_t       *c;
     ngx_http_upstream_t    *u;
@@ -279,36 +301,40 @@ ngx_http_vhost_traffic_status_shm_add_node_cache(ngx_http_request_t *r,
 
     u = r->upstream;
 
-    if (u != NULL && u->cache_status != 0 && r->cache != NULL) {
-        c = r->cache;
-        cache = c->file_cache;
-
-    } else {
+    if (u == NULL || u->cache_status == 0 || r->cache == NULL) {
         return NGX_OK;
     }
 
-    /*
-     * If max_size in proxy_cache_path directive is not specified,
-     * the system dependent value NGX_MAX_OFF_T_VALUE is assigned by default.
-     *
-     * proxy_cache_path ... keys_zone=name:size [max_size=size] ...
-     *
-     *     keys_zone's shared memory size:
-     *         cache->shm_zone->shm.size
-     *
-     *     max_size's size:
-     *         cache->max_size
-     */
+    c = r->cache;
+    cache = c->file_cache;
+
+    *cache_max_size = (ngx_atomic_uint_t) (cache->max_size * cache->bsize);
+
+    ngx_shmtx_lock(&cache->shpool->mutex);
+    *cache_used_size = (ngx_atomic_uint_t) (cache->sh->size * cache->bsize);
+    ngx_shmtx_unlock(&cache->shpool->mutex);
+
+    return NGX_OK;
+}
+
+static ngx_int_t
+ngx_http_vhost_traffic_status_shm_add_node_cache(ngx_http_request_t *r,
+    ngx_http_vhost_traffic_status_node_t *vtsn, unsigned init,
+    ngx_atomic_uint_t cache_max_size, ngx_atomic_uint_t cache_used_size)
+{
+    ngx_http_upstream_t    *u;
+
+    u = r->upstream;
+
+    if (u == NULL || u->cache_status == 0 || r->cache == NULL) {
+        return NGX_OK;
+    }
 
     if (init == NGX_HTTP_VHOST_TRAFFIC_STATUS_NODE_NONE) {
-        vtsn->stat_cache_max_size = (ngx_atomic_uint_t) (cache->max_size * cache->bsize);
+        vtsn->stat_cache_max_size = cache_max_size;
 
     } else {
-        ngx_shmtx_lock(&cache->shpool->mutex);
-
-        vtsn->stat_cache_used_size = (ngx_atomic_uint_t) (cache->sh->size * cache->bsize);
-
-        ngx_shmtx_unlock(&cache->shpool->mutex);
+        vtsn->stat_cache_used_size = cache_used_size;
     }
 
     return NGX_OK;
@@ -479,7 +505,7 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r)
     ngx_http_upstream_main_conf_t  *umcf;
 
     if (r->upstream_states == NULL || r->upstream_states->nelts == 0
-        || r->upstream->state == NULL)
+        || r->upstream == NULL || r->upstream->state == NULL)
     {
         return NGX_OK;
     }
