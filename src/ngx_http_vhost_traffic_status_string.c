@@ -168,6 +168,39 @@ ngx_http_vhost_traffic_status_replace_strc(ngx_str_t *buf,
 
 
 ngx_int_t
+ngx_http_vhost_traffic_status_url_decode(ngx_str_t *buf)
+{
+    size_t   len;
+    u_char  *p, *dst;
+
+    p = dst = buf->data;
+    len = buf->len;
+
+    while (len > 0) {
+        if (*p == '%' && len >= 3 && isxdigit(*(p + 1)) && isxdigit(*(p + 2))) {
+            ngx_int_t  n;
+
+            n = ngx_hextoi(p + 1, 2);
+            if (n != NGX_ERROR) {
+                *dst++ = (u_char) n;
+                p += 3;
+                len -= 3;
+                continue;
+            }
+        }
+
+        *dst++ = *p++;
+        len--;
+    }
+
+    buf->len = dst - buf->data;
+    *(buf->data + buf->len) = '\0';
+
+    return NGX_OK;
+}
+
+
+ngx_int_t
 ngx_http_vhost_traffic_status_escape_prometheus(ngx_pool_t *pool, ngx_str_t *buf, u_char *p, size_t n)
 {
     u_char  c, *pa, *pb, *last, *char_end;

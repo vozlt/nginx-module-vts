@@ -67,7 +67,7 @@ static ngx_int_t
 ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
 {
     ngx_int_t                                  size, rc;
-    ngx_str_t                                  type, alpha, encoded_ch, arg_cmd, arg_group, arg_zone;
+    ngx_str_t                                  type, alpha, arg_cmd, arg_group, arg_zone, decoded_group;
     ngx_buf_t                                 *b;
     ngx_chain_t                                out;
     ngx_slab_pool_t                           *shpool;
@@ -125,37 +125,44 @@ ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
 
         if (ngx_http_arg(r, (u_char *) "group", 5, &arg_group) == NGX_OK) {
 
-            if ((arg_group.len == 1 && ngx_strncmp(arg_group.data, "*", 1) == 0)
-                     || (arg_group.len == 3 && ngx_strncasecmp(arg_group.data, (u_char *) "%2A", 3) == 0))
+            rc = ngx_http_vhost_traffic_status_copy_str(r->pool, &decoded_group, &arg_group);
+            if (rc != NGX_OK) {
+                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                              "display_handler_control::copy_str() failed");
+            }
+
+            rc = ngx_http_vhost_traffic_status_url_decode(&decoded_group);
+            if (rc != NGX_OK) {
+                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                              "display_handler_control::url_decode() failed");
+            }
+
+            if (decoded_group.len == 1 && ngx_strncmp(decoded_group.data, "*", 1) == 0)
             {
                 control->group = -1;
             }
-            else if (arg_group.len == 6
-                     && ngx_strncasecmp(arg_group.data, (u_char *) "server", 6) == 0)
+            else if (decoded_group.len == 6
+                     && ngx_strncasecmp(decoded_group.data, (u_char *) "server", 6) == 0)
             {
                 control->group = NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_NO;
             }
-            else if ((arg_group.len == 14
-                     && ngx_strncasecmp(arg_group.data, (u_char *) "upstream@alone", 14) == 0)
-                     || (arg_group.len == 16
-                     && ngx_strncasecmp(arg_group.data, (u_char *) "upstream%40alone", 16) == 0))
+            else if (decoded_group.len == 14
+                     && ngx_strncasecmp(decoded_group.data, (u_char *) "upstream@alone", 14) == 0)
             {
                 control->group = NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UA;
             }
-            else if ((arg_group.len == 14
-                     && ngx_strncasecmp(arg_group.data, (u_char *) "upstream@group", 14) == 0)
-                     || (arg_group.len == 16
-                     && ngx_strncasecmp(arg_group.data, (u_char *) "upstream%40group", 16) == 0))
+            else if (decoded_group.len == 14
+                     && ngx_strncasecmp(decoded_group.data, (u_char *) "upstream@group", 14) == 0)
             {
                 control->group = NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UG;
             }
-            else if (arg_group.len == 5
-                     && ngx_strncasecmp(arg_group.data, (u_char *) "cache", 5) == 0)
+            else if (decoded_group.len == 5
+                     && ngx_strncasecmp(decoded_group.data, (u_char *) "cache", 5) == 0)
             {
                 control->group = NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_CC;
             }
-            else if (arg_group.len == 6
-                     && ngx_strncasecmp(arg_group.data, (u_char *) "filter", 6) == 0)
+            else if (decoded_group.len == 6
+                     && ngx_strncasecmp(decoded_group.data, (u_char *) "filter", 6) == 0)
             {
                 control->group = NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG;
             }
@@ -176,44 +183,10 @@ ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
                               "display_handler_control::copy_str() failed");
             }
 
-            ngx_str_set(&encoded_ch, "%2A");
-
-            rc = ngx_http_vhost_traffic_status_replace_strc(control->zone, &encoded_ch, '*');
+            rc = ngx_http_vhost_traffic_status_url_decode(control->zone);
             if (rc != NGX_OK) {
                 ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                              "display_handler_control::replace_strc() failed");
-            }
-
-            ngx_str_set(&encoded_ch, "%2a");
-
-            rc = ngx_http_vhost_traffic_status_replace_strc(control->zone, &encoded_ch, '*');
-            if (rc != NGX_OK) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                              "display_handler_control::replace_strc() failed");
-            }
-
-            ngx_str_set(&encoded_ch, "%3A");
-
-            rc = ngx_http_vhost_traffic_status_replace_strc(control->zone, &encoded_ch, ':');
-            if (rc != NGX_OK) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                              "display_handler_control::replace_strc() failed");
-            }
-
-            ngx_str_set(&encoded_ch, "%3a");
-
-            rc = ngx_http_vhost_traffic_status_replace_strc(control->zone, &encoded_ch, ':');
-            if (rc != NGX_OK) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                              "display_handler_control::replace_strc() failed");
-            }
-
-            ngx_str_set(&encoded_ch, "%40");
-
-            rc = ngx_http_vhost_traffic_status_replace_strc(control->zone, &encoded_ch, '@');
-            if (rc != NGX_OK) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                              "display_handler_control::replace_strc() failed");
+                              "display_handler_control::url_decode() failed");
             }
 
             (void) ngx_http_vhost_traffic_status_replace_chrc(control->zone, '@',
