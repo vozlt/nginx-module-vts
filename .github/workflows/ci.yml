@@ -120,3 +120,65 @@ jobs:
         run: |
           echo "/usr/local/freenginx/sbin/" >> $GITHUB_PATH
           sudo PATH=/usr/local/freenginx/sbin:$PATH prove -r t
+
+  asan:
+    name: 'asan'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 'checkout'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: nginx-module-vts
+      - name: 'checkout nginx'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: nginx/nginx
+          path: nginx
+          ref: 'a92a537860c7b87d3793d9eb41c9cf3ed833b53c'
+      - name: 'prepare cpanm'
+        run: |
+          sudo apt install -y cpanminus
+          sudo cpanm --notest Test::Nginx::Socket > build.log 2>&1 || (cat build.log && exit 1)
+      - name: 'prepare promtool'
+        run: |
+          sudo apt-get update && sudo apt-get install -y curl
+          curl -L $(curl -s https://api.github.com/repos/prometheus/prometheus/releases/latest | grep browser_download_url | grep linux-amd64 | cut -d '"' -f 4) -o prometheus-latest.tar.gz
+          tar xvf prometheus-latest.tar.gz
+          sudo mv prometheus-*/promtool /usr/local/bin
+      - name: 'relax ASLR entropy'
+        # the sanitizer runtime cannot map its shadow memory with the high
+        # entropy ASLR of the ubuntu-24.04 kernel
+        run: sudo sysctl -w vm.mmap_rnd_bits=28 || true
+      - name: 'build nginx with AddressSanitizer'
+        working-directory: nginx
+        run: |
+          ./auto/configure \
+            --prefix=/usr/local/nginx-asan \
+            --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts \
+            --with-cc-opt="-fsanitize=address -fno-omit-frame-pointer -g -O1" \
+            --with-ld-opt="-fsanitize=address"
+          make -j$(nproc)
+          sudo make install
+          /usr/local/nginx-asan/sbin/nginx -V
+      - name: 'test under AddressSanitizer'
+        working-directory: nginx-module-vts
+        run: |
+          # the nginx workers drop privileges, so they need to be able to
+          # write their own report files
+          sudo mkdir -p /tmp/asan && sudo chmod 777 /tmp/asan
+          # the lua tests need modules that are not part of this build
+          sudo ASAN_OPTIONS=detect_leaks=0:abort_on_error=1:disable_coredump=1:log_path=/tmp/asan/vts \
+               PATH=/usr/local/nginx-asan/sbin:$PATH prove $(ls t/*.t | grep -v '_by_lua')
+      - name: 'check AddressSanitizer reports'
+        if: always()
+        run: |
+          if compgen -G '/tmp/asan/vts.*' > /dev/null; then
+            echo '::error::AddressSanitizer reported memory errors'
+            cat /tmp/asan/vts.*
+            exit 1
+          fi
+          echo 'no AddressSanitizer reports'
+      - name: 'dump nginx error log'
+        if: failure()
+        working-directory: nginx-module-vts
+        run: sudo tail -n 100 t/servroot/logs/error.log || true

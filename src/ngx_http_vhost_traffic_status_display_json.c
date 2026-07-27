@@ -95,6 +95,12 @@ ngx_http_vhost_traffic_status_display_set_server_node(
                       "display_set_server_node::escape_json_pool() failed");
     }
 
+    if (ngx_http_vhost_traffic_status_display_buffer_check(r, buf, dst.len,
+            NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSON) != NGX_OK)
+    {
+        return buf;
+    }
+
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_START,
         &dst, vtsn->stat_request_counter,
         vtsn->stat_in_bytes,
@@ -316,6 +322,7 @@ u_char *
 ngx_http_vhost_traffic_status_display_set_filter(ngx_http_request_t *r,
     u_char *buf, ngx_rbtree_node_t *node)
 {
+    u_char                                       *o, *s;
     ngx_str_t                                     key, filter;
     ngx_uint_t                                    i, j, n, rc;
     ngx_array_t                                  *filter_keys, *filter_nodes;
@@ -357,13 +364,31 @@ ngx_http_vhost_traffic_status_display_set_filter(ngx_http_request_t *r,
                                   "display_set_filter::escape_json_pool() failed");
                 }
 
+                if (ngx_http_vhost_traffic_status_display_buffer_check(r, buf,
+                        filter.len, NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSON)
+                    != NGX_OK)
+                {
+                    break;
+                }
+
+                o = buf;
+
                 buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_OBJECT_S,
                                   &filter);
+
+                s = buf;
 
                 nodes = filter_nodes->elts;
                 for (j = 0; j < filter_nodes->nelts; j++) {
                     buf = ngx_http_vhost_traffic_status_display_set_filter_node(r, buf,
                               nodes[j].node);
+                }
+
+                /* all the nodes of this group have been skipped */
+                if (s == buf) {
+                    buf = o;
+                    filter_nodes = NULL;
+                    continue;
                 }
 
                 buf--;
@@ -414,6 +439,12 @@ ngx_http_vhost_traffic_status_display_set_upstream_node(ngx_http_request_t *r,
     if (rc != NGX_OK) {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                       "display_set_upstream_node::escape_json_pool() failed");
+    }
+
+    if (ngx_http_vhost_traffic_status_display_buffer_check(r, buf, key.len,
+            NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSON) != NGX_OK)
+    {
+        return buf;
     }
 
     if (vtsn != NULL) {
@@ -765,6 +796,12 @@ u_char
     if (rc != NGX_OK) {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                       "display_set_cache_node::escape_json_pool() failed");
+    }
+
+    if (ngx_http_vhost_traffic_status_display_buffer_check(r, buf, key.len,
+            NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSON) != NGX_OK)
+    {
+        return buf;
     }
 
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_CACHE,

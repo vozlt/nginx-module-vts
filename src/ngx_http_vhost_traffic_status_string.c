@@ -74,8 +74,13 @@ ngx_http_vhost_traffic_status_escape_json_pool(ngx_pool_t *pool,
 {
     u_char  *p;
 
-    buf->len = dst->len * 6;
-    buf->data = ngx_pcalloc(pool, buf->len);
+    /*
+     * The escaped string is not always NUL terminated by the escaping itself,
+     * so one extra byte is allocated for the terminator and the length is
+     * taken from the returned pointer instead of ngx_strlen().
+     */
+    buf->len = ngx_http_vhost_traffic_status_escape_json_len(dst->data, dst->len);
+    buf->data = ngx_pcalloc(pool, buf->len + 1);
     if (buf->data == NULL) {
         *buf = *dst;
         return NGX_ERROR;
@@ -89,9 +94,24 @@ ngx_http_vhost_traffic_status_escape_json_pool(ngx_pool_t *pool,
     p = (u_char *) ngx_escape_json(p, dst->data, dst->len);
 #endif
 
-    buf->len = ngx_strlen(buf->data);
+    buf->len = (size_t) (p - buf->data);
 
     return NGX_OK;
+}
+
+
+/*
+ * Returns the length that the string takes once escaped by
+ * ngx_http_vhost_traffic_status_escape_json_pool(), without allocating.
+ */
+size_t
+ngx_http_vhost_traffic_status_escape_json_len(u_char *p, size_t n)
+{
+#if !defined(nginx_version) || nginx_version < 1007009
+    return n + (size_t) ngx_http_vhost_traffic_status_escape_json(NULL, p, n);
+#else
+    return n + (size_t) ngx_escape_json(NULL, p, n);
+#endif
 }
 
 
@@ -164,6 +184,51 @@ ngx_http_vhost_traffic_status_replace_strc(ngx_str_t *buf,
     *(buf->data + buf->len) = '\0';
 
     return NGX_OK;
+}
+
+
+/*
+ * Returns the length that the string takes once escaped by
+ * ngx_http_vhost_traffic_status_escape_prometheus(), without allocating.
+ * It must stay in sync with the escaping loop below.
+ */
+size_t
+ngx_http_vhost_traffic_status_escape_prometheus_len(u_char *p, size_t n)
+{
+    u_char  *pa, *last, *char_end;
+    size_t   size;
+
+    last = p + n;
+    pa = p;
+    size = 0;
+
+    while (pa < last) {
+        if (isascii(*pa)) {
+            if (*pa == '"' || *pa == '\\' || *pa == '\n') {
+                /* "\\" + the character itself */
+                size += 2;
+
+            } else {
+                size += 1;
+            }
+
+            pa++;
+
+        } else {
+            char_end = pa;
+            if (*pa >= 0xf8 || ngx_utf8_decode(&char_end, last - pa) > 0x10ffff) {
+                /* invalid UTF-8 - escaped as "\\\\xHH" */
+                size += 5;
+                pa++;
+
+            } else {
+                size += (size_t) (char_end - pa);
+                pa = char_end;
+            }
+        }
+    }
+
+    return size;
 }
 
 

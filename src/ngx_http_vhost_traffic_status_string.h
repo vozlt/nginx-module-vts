@@ -22,6 +22,9 @@ ngx_int_t ngx_http_vhost_traffic_status_replace_strc(ngx_str_t *buf,
 ngx_int_t ngx_http_vhost_traffic_status_escape_prometheus(ngx_pool_t *pool, ngx_str_t *buf,
 	u_char *p, size_t n);
 
+size_t ngx_http_vhost_traffic_status_escape_json_len(u_char *p, size_t n);
+size_t ngx_http_vhost_traffic_status_escape_prometheus_len(u_char *p, size_t n);
+
 #endif /* _NGX_HTTP_VTS_STRING_H_INCLUDED_ */
 
 /* vi:set ft=c ts=4 sw=4 et fdm=marker: */
