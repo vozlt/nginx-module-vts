@@ -6,6 +6,7 @@
 
 #include "ngx_http_vhost_traffic_status_module.h"
 #include "ngx_http_vhost_traffic_status_shm.h"
+#include "ngx_http_vhost_traffic_status_display.h"
 #include "ngx_http_vhost_traffic_status_display_prometheus.h"
 
 
@@ -63,6 +64,12 @@ ngx_http_vhost_traffic_status_display_prometheus_set_server_node(
     server = *key;
 
     (void) ngx_http_vhost_traffic_status_node_position_key(&server, 1);
+
+    if (ngx_http_vhost_traffic_status_display_buffer_check(r, buf, key->len,
+            NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_PROMETHEUS) != NGX_OK)
+    {
+        return buf;
+    }
 
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER,
                       &server, vtsn->stat_in_bytes,
@@ -227,6 +234,12 @@ ngx_http_vhost_traffic_status_display_prometheus_set_filter_node(
     (void) ngx_http_vhost_traffic_status_node_position_key(&filter, 1);
     (void) ngx_http_vhost_traffic_status_node_position_key(&filter_name, 2);
 
+    if (ngx_http_vhost_traffic_status_display_buffer_check(r, buf, key->len,
+            NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_PROMETHEUS) != NGX_OK)
+    {
+        return buf;
+    }
+
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_FILTER,
                       &filter, &filter_name, vtsn->stat_in_bytes,
                       &filter, &filter_name, vtsn->stat_out_bytes,
@@ -341,6 +354,13 @@ ngx_http_vhost_traffic_status_display_prometheus_set_upstream_node(
         (void) ngx_http_vhost_traffic_status_node_position_key(&upstream_server, 1);
     }
 
+    if (ngx_http_vhost_traffic_status_display_buffer_check(r, buf,
+            key->len + sizeof("::nogroups") - 1,
+            NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_PROMETHEUS) != NGX_OK)
+    {
+        return buf;
+    }
+
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM,
                       &upstream, &upstream_server, vtsn->stat_in_bytes,
                       &upstream, &upstream_server, vtsn->stat_out_bytes,
@@ -451,6 +471,12 @@ ngx_http_vhost_traffic_status_display_prometheus_set_cache_node(
     cache = *key;
 
     (void) ngx_http_vhost_traffic_status_node_position_key(&cache, 1);
+
+    if (ngx_http_vhost_traffic_status_display_buffer_check(r, buf, key->len,
+            NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_PROMETHEUS) != NGX_OK)
+    {
+        return buf;
+    }
 
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_CACHE,
                       &cache, vtsn->stat_cache_max_size,

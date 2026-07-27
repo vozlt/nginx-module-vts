@@ -295,6 +295,15 @@ typedef struct {
     ngx_array_t                            *limit_filter_traffics;
 
     ngx_http_vhost_traffic_status_node_t    stats;
+
+    /*
+     * End of the response buffer currently being filled by the display
+     * handlers. It is set right after the buffer is created and is used by
+     * ngx_http_vhost_traffic_status_display_buffer_check() to make sure that
+     * a node never writes past the end of the buffer.
+     */
+    u_char                                 *display_buf_end;
+
     ngx_msec_t                              start_msec;
     ngx_flag_t                              format;
     ngx_str_t                               jsonp;
