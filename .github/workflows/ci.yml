@@ -182,3 +182,34 @@ jobs:
         if: failure()
         working-directory: nginx-module-vts
         run: sudo tail -n 100 t/servroot/logs/error.log || true
+
+  build-variants:
+    name: 'build (${{ matrix.variant.name }})'
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+          # NGX_HTTP_CACHE guards a fair amount of the module, both states
+          # have to compile
+          - name: 'with cache'
+            opts: ''
+          - name: 'without cache'
+            opts: '--without-http-cache'
+    steps:
+      - name: 'checkout'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: nginx-module-vts
+      - name: 'checkout nginx'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: nginx/nginx
+          path: nginx
+          ref: 'a92a537860c7b87d3793d9eb41c9cf3ed833b53c'
+      - name: 'build nginx'
+        working-directory: nginx
+        run: |
+          ./auto/configure ${{ matrix.variant.opts }} \
+            --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts
+          make -j$(nproc)
