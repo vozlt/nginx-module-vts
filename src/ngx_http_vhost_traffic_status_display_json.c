@@ -17,9 +17,11 @@
 
 /*
  * The `resolve` parameter of the upstream server directive is available since
- * nginx 1.27.3 and needs an upstream zone.
+ * nginx 1.27.3 and needs an upstream zone. It came with the peers `resolve`
+ * list and with NGX_HTTP_UPSTREAM_MODIFY, freenginx has neither of them.
  */
-#if (NGX_HTTP_UPSTREAM_ZONE) && (nginx_version >= 1027003)
+#if (NGX_HTTP_UPSTREAM_ZONE) && (nginx_version >= 1027003)                     \
+    && defined(NGX_HTTP_UPSTREAM_MODIFY) && !(defined freenginx)
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_RESOLVE  1
 
 static ngx_array_t *ngx_http_vhost_traffic_status_display_upstream_peer_names(
