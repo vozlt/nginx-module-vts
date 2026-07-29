@@ -179,6 +179,11 @@
     "}"                                                                        \
     "},"
 
+/* length of type prefix "UG" + separator 0x1f */
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_PREFIX_LEN 3
+/* total key overhead: type prefix "UG" + separator 0x1f + separator 0x1f between host and peer */
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_KEY_LEN 4
+
 #if (NGX_HTTP_CACHE)
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_CACHE_S "\"cacheZones\":{"
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_CACHE "\"%V\":{"                \
