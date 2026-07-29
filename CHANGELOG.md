@@ -2,6 +2,22 @@
 ## [Unreleased]
 
 
+## [v0.2.6] - 2026-07-29
+### Ci
+- build with and without the HTTP cache
+- add AddressSanitizer job
+- support nginx 1.30.2
+- fix freenginx build
+- Fix undefinded symbol for nginx lua module
+- Fix lua-nginx-module ref to avoid undefined symbol
+
+### Feat
+- add React frontend dashboard for VTS status
+
+### Test
+- fix lua support check
+
+
 ## [v0.2.5] - 2025-12-28
 ### Ci
 - temporarily disable FreeNginx CI due to lua-nginx-module compatibility
@@ -380,7 +396,8 @@
 - added type casting(ngx_atomic_t) in the ngx_vhost_traffic_status_node_init() and ngx_vhost_traffic_status_node_set()
 
 
-[Unreleased]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.5...HEAD
+[Unreleased]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.6...HEAD
+[v0.2.6]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.5...v0.2.6
 [v0.2.5]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.4...v0.2.5
 [v0.2.4]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.3...v0.2.4
 [v0.2.3]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.2...v0.2.3
