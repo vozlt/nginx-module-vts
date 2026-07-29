@@ -1976,16 +1976,16 @@ vhost_traffic_status_measure_status_codes all;
 
 ## Releases
 
-To cut a release, create a changelog entry PR with [git-chglog](https://github.com/git-chglog/git-chglog)
+To cut a release, create a changelog entry PR with [git-cliff](https://git-cliff.org/)
 
     version="v0.2.0"
     git checkout -b "cut-${version}"
-    git-chglog -o CHANGELOG.md --next-tag "${version}"
+    util/changelog.sh "${version}"
     git add CHANGELOG.md
     sed -i "s/NGX_HTTP_VTS_MODULE_VERSION \".*/NGX_HTTP_VTS_MODULE_VERSION \"${version}\"/" src/ngx_http_vhost_traffic_status_module.h
     git add src/ngx_http_vhost_traffic_status_module.h
-    git-chglog -t .chglog/RELNOTES.tmpl --next-tag "${version}" "${version}" | git commit -F-
-    
+    util/changelog.sh "${version}" --notes | git commit -F-
+
 After the PR is merged, create the new tag and release on the [GitHub Releases](https://github.com/vozlt/nginx-module-vts/releases).
 
 ## See Also

@@ -1,0 +1,62 @@
+# Configuration of git-cliff (https://git-cliff.org/).
+#
+# It reproduces the format that git-chglog produced before that project was
+# deprecated. Only the section of the release being cut is generated, see
+# util/changelog.sh: the commits of the early releases use types that do not
+# parse the same way any more and regenerating them would drop entries.
+
+[changelog]
+header = """<a name="unreleased"></a>
+## [Unreleased]
+
+"""
+body = """
+{% if version %}\
+## {% if previous.version %}[{{ version }}]{% else %}{{ version }}{% endif %} - {{ timestamp | date(format="%Y-%m-%d", timezone="Asia/Seoul") }}
+{% else %}\
+## [Unreleased]
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}\
+### {{ group }}
+{% for commit in commits %}\
+- {% if commit.scope %}**{{ commit.scope }}:** {% endif %}{{ commit.message }}
+{% endfor %}
+{% endfor %}
+"""
+footer = """
+{% for release in releases -%}
+{% if loop.first %}[Unreleased]: https://github.com/vozlt/nginx-module-vts/compare/{{ release.version }}...HEAD
+{% endif -%}
+{% if release.previous.version -%}
+[{{ release.version }}]: https://github.com/vozlt/nginx-module-vts/compare/{{ release.previous.version }}...{{ release.version }}
+{% endif -%}
+{% endfor %}"""
+trim = false
+postprocessors = [
+  { pattern = '#(\d+)', replace = "[#${1}](https://github.com/vozlt/nginx-module-vts/issues/${1})" },
+]
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+sort_commits = "newest"
+commit_parsers = [
+  { message = "(?i)^bugfix", group = "Bugfix" },
+  { message = "(?i)^chore", group = "Chore" },
+  { message = "(?i)^ci", group = "Ci" },
+  { message = "(?i)^comment", group = "Comment" },
+  { message = "(?i)^compatibility", group = "Compatibility" },
+  { message = "(?i)^debug", group = "Debug" },
+  { message = "(?i)^delete", group = "Delete" },
+  { message = "(?i)^docs", group = "Docs" },
+  { message = "(?i)^exception", group = "Exception" },
+  { message = "(?i)^feature", group = "Feature" },
+  { message = "(?i)^feat", group = "Feat" },
+  { message = "(?i)^fix", group = "Fix" },
+  { message = "(?i)^perf", group = "Perf" },
+  { message = "(?i)^prometheus", group = "Prometheus" },
+  { message = "(?i)^refactor", group = "Refactor" },
+  { message = "(?i)^style", group = "Style" },
+  { message = "(?i)^tag", group = "Tag" },
+  { message = "(?i)^test", group = "Test" },
+]
