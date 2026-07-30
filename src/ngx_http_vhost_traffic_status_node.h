@@ -170,6 +170,9 @@ ngx_int_t ngx_http_vhost_traffic_status_node_time_queue_rear(
 ngx_msec_t ngx_http_vhost_traffic_status_node_time_queue_average(
     ngx_http_vhost_traffic_status_node_time_queue_t *q,
     ngx_int_t method, ngx_msec_t period);
+ngx_msec_t ngx_http_vhost_traffic_status_node_time_queue_average_ro(
+    ngx_http_vhost_traffic_status_node_time_queue_t *q,
+    ngx_int_t method, ngx_msec_t period);
 ngx_msec_t ngx_http_vhost_traffic_status_node_time_queue_amm(
     ngx_http_vhost_traffic_status_node_time_queue_t *q,
     ngx_msec_t period);

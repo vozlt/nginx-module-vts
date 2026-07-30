@@ -234,11 +234,8 @@ static ngx_int_t
 ngx_http_vhost_traffic_status_shm_add_node_upstream(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t *vtsn, unsigned init)
 {
-    ngx_msec_int_t                             ms;
-    ngx_atomic_t                               oresponse_time_counter;
-    ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
-
-    vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
+    ngx_msec_int_t  ms;
+    ngx_atomic_t    oresponse_time_counter;
 
     /* only the response time counter is compared below */
     oresponse_time_counter = vtsn->stat_upstream.response_time_counter;
@@ -255,9 +252,13 @@ ngx_http_vhost_traffic_status_shm_add_node_upstream(ngx_http_request_t *r,
 
     } else {
         vtsn->stat_upstream.response_time_counter += (ngx_atomic_uint_t) ms;
-        vtsn->stat_upstream.response_time = ngx_http_vhost_traffic_status_node_time_queue_average(
-                                                &vtsn->stat_upstream.response_times,
-                                                vtscf->average_method, vtscf->average_period);
+
+        /*
+         * response_time is not kept up to date here either, for the same
+         * reason as stat_request_time in
+         * ngx_http_vhost_traffic_status_node_set(): the readers average the
+         * queue when they need the value.
+         */
 
         if (oresponse_time_counter > vtsn->stat_upstream.response_time_counter)
         { 
