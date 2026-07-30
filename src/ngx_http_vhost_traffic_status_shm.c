@@ -117,11 +117,12 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
                                                                               ctx->measure_status_codes);
     }
 
+    /* the hash does not touch the shared memory, keep it out of the lock */
+    hash = ngx_crc32_short(key->data, key->len);
+
     ngx_shmtx_lock(&shpool->mutex);
 
     /* find node */
-    hash = ngx_crc32_short(key->data, key->len);
-
     node = ngx_http_vhost_traffic_status_find_node(r, key, type, hash);
 
     /* set common */
