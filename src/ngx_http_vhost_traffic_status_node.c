@@ -361,12 +361,12 @@ ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t status_code_slot)
 {
     ngx_msec_int_t                             ms;
-    ngx_http_vhost_traffic_status_node_t       ovtsn;
+    ngx_http_vhost_traffic_status_node_oc_t    ovtsn;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
 
     vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
 
-    ovtsn = *vtsn;
+    ngx_http_vhost_traffic_status_copy_oc((&ovtsn), vtsn);
 
     vtsn->ignore_status = vtscf->ignore_status;
     ms = ngx_http_vhost_traffic_status_request_time(r);

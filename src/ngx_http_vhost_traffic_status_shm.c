@@ -235,12 +235,13 @@ ngx_http_vhost_traffic_status_shm_add_node_upstream(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t *vtsn, unsigned init)
 {
     ngx_msec_int_t                             ms;
-    ngx_http_vhost_traffic_status_node_t       ovtsn;
+    ngx_atomic_t                               oresponse_time_counter;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
 
     vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
 
-    ovtsn = *vtsn;
+    /* only the response time counter is compared below */
+    oresponse_time_counter = vtsn->stat_upstream.response_time_counter;
     ms = ngx_http_vhost_traffic_status_upstream_response_time(r);
 
     ngx_http_vhost_traffic_status_node_time_queue_insert(&vtsn->stat_upstream.response_times,
@@ -258,7 +259,7 @@ ngx_http_vhost_traffic_status_shm_add_node_upstream(ngx_http_request_t *r,
                                                 &vtsn->stat_upstream.response_times,
                                                 vtscf->average_method, vtscf->average_period);
 
-        if (ovtsn.stat_upstream.response_time_counter > vtsn->stat_upstream.response_time_counter)
+        if (oresponse_time_counter > vtsn->stat_upstream.response_time_counter)
         { 
             vtsn->stat_response_time_counter_oc++;
         }
