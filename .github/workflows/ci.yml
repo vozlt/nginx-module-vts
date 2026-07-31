@@ -154,8 +154,12 @@ jobs:
         run: |
           # -fno-sanitize-recover makes undefined behaviour abort the worker
           # instead of printing and carrying on, so the test that reached it
-          # fails. nonnull-attribute is left out: ngx_pstrdup() hands the null
-          # data pointer of an empty string to ngx_memcpy() on every start
+          # fails. nonnull-attribute is left out: ngx_pstrdup() hands the
+          # null data pointer of an empty conf_param to ngx_memcpy() on every
+          # start of nginx. Fixed upstream by b0a4d0fb82 and released in the
+          # mainline 1.31.0, the stable branch does not carry it, 1.30.4
+          # included, so the check stays out while the tests build a stable
+          # release
           ./auto/configure \
             --prefix=/usr/local/nginx-asan \
             --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts \
