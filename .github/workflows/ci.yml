@@ -149,18 +149,21 @@ jobs:
         # the sanitizer runtime cannot map its shadow memory with the high
         # entropy ASLR of the ubuntu-24.04 kernel
         run: sudo sysctl -w vm.mmap_rnd_bits=28 || true
-      - name: 'build nginx with AddressSanitizer'
+      - name: 'build nginx with the sanitizers'
         working-directory: nginx
         run: |
+          # -fno-sanitize-recover makes undefined behaviour abort the worker
+          # instead of printing and carrying on, so the test that reached it
+          # fails
           ./auto/configure \
             --prefix=/usr/local/nginx-asan \
             --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts \
-            --with-cc-opt="-fsanitize=address -fno-omit-frame-pointer -g -O1" \
-            --with-ld-opt="-fsanitize=address"
+            --with-cc-opt="-fsanitize=address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g -O1" \
+            --with-ld-opt="-fsanitize=address,undefined"
           make -j$(nproc)
           sudo make install
           /usr/local/nginx-asan/sbin/nginx -V
-      - name: 'test under AddressSanitizer'
+      - name: 'test under the sanitizers'
         working-directory: nginx-module-vts
         run: |
           # the nginx workers drop privileges, so they need to be able to
@@ -168,16 +171,17 @@ jobs:
           sudo mkdir -p /tmp/asan && sudo chmod 777 /tmp/asan
           # the lua tests need modules that are not part of this build
           sudo ASAN_OPTIONS=detect_leaks=0:abort_on_error=1:disable_coredump=1:log_path=/tmp/asan/vts \
+               UBSAN_OPTIONS=print_stacktrace=1:log_path=/tmp/asan/vts \
                PATH=/usr/local/nginx-asan/sbin:$PATH prove $(ls t/*.t | grep -v '_by_lua')
-      - name: 'check AddressSanitizer reports'
+      - name: 'check the sanitizer reports'
         if: always()
         run: |
           if compgen -G '/tmp/asan/vts.*' > /dev/null; then
-            echo '::error::AddressSanitizer reported memory errors'
+            echo '::error::the sanitizers reported errors'
             cat /tmp/asan/vts.*
             exit 1
           fi
-          echo 'no AddressSanitizer reports'
+          echo 'no sanitizer reports'
       - name: 'dump nginx error log'
         if: failure()
         working-directory: nginx-module-vts
