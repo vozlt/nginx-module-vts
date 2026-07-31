@@ -115,6 +115,46 @@
 
 #endif
 
+/*
+ * Pairs with ngx_http_vhost_traffic_status_add_oc(): copy_oc() takes the
+ * counters before the node is updated, add_oc() compares them with the
+ * updated node afterwards. Both take the copy by address.
+ */
+#if (NGX_HTTP_CACHE)
+#define ngx_http_vhost_traffic_status_copy_oc(o, c) {                          \
+    o->stat_request_counter = c->stat_request_counter;                         \
+    o->stat_in_bytes = c->stat_in_bytes;                                       \
+    o->stat_out_bytes = c->stat_out_bytes;                                     \
+    o->stat_1xx_counter = c->stat_1xx_counter;                                 \
+    o->stat_2xx_counter = c->stat_2xx_counter;                                 \
+    o->stat_3xx_counter = c->stat_3xx_counter;                                 \
+    o->stat_4xx_counter = c->stat_4xx_counter;                                 \
+    o->stat_5xx_counter = c->stat_5xx_counter;                                 \
+    o->stat_request_time_counter = c->stat_request_time_counter;               \
+    o->stat_cache_miss_counter = c->stat_cache_miss_counter;                   \
+    o->stat_cache_bypass_counter = c->stat_cache_bypass_counter;               \
+    o->stat_cache_expired_counter = c->stat_cache_expired_counter;             \
+    o->stat_cache_stale_counter = c->stat_cache_stale_counter;                 \
+    o->stat_cache_updating_counter = c->stat_cache_updating_counter;           \
+    o->stat_cache_revalidated_counter = c->stat_cache_revalidated_counter;     \
+    o->stat_cache_hit_counter = c->stat_cache_hit_counter;                     \
+    o->stat_cache_scarce_counter = c->stat_cache_scarce_counter;               \
+}
+#else
+#define ngx_http_vhost_traffic_status_copy_oc(o, c) {                          \
+    o->stat_request_counter = c->stat_request_counter;                         \
+    o->stat_in_bytes = c->stat_in_bytes;                                       \
+    o->stat_out_bytes = c->stat_out_bytes;                                     \
+    o->stat_1xx_counter = c->stat_1xx_counter;                                 \
+    o->stat_2xx_counter = c->stat_2xx_counter;                                 \
+    o->stat_3xx_counter = c->stat_3xx_counter;                                 \
+    o->stat_4xx_counter = c->stat_4xx_counter;                                 \
+    o->stat_5xx_counter = c->stat_5xx_counter;                                 \
+    o->stat_request_time_counter = c->stat_request_time_counter;               \
+}
+#endif
+
+
 #if (NGX_HTTP_CACHE)
 #define ngx_http_vhost_traffic_status_add_oc(o, c) {                           \
     if (o->stat_request_counter > c->stat_request_counter) {                   \

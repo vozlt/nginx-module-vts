@@ -117,11 +117,12 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
                                                                               ctx->measure_status_codes);
     }
 
+    /* the hash does not touch the shared memory, keep it out of the lock */
+    hash = ngx_crc32_short(key->data, key->len);
+
     ngx_shmtx_lock(&shpool->mutex);
 
     /* find node */
-    hash = ngx_crc32_short(key->data, key->len);
-
     node = ngx_http_vhost_traffic_status_find_node(r, key, type, hash);
 
     /* set common */
@@ -233,13 +234,11 @@ static ngx_int_t
 ngx_http_vhost_traffic_status_shm_add_node_upstream(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t *vtsn, unsigned init)
 {
-    ngx_msec_int_t                             ms;
-    ngx_http_vhost_traffic_status_node_t       ovtsn;
-    ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
+    ngx_msec_int_t  ms;
+    ngx_atomic_t    oresponse_time_counter;
 
-    vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
-
-    ovtsn = *vtsn;
+    /* only the response time counter is compared below */
+    oresponse_time_counter = vtsn->stat_upstream.response_time_counter;
     ms = ngx_http_vhost_traffic_status_upstream_response_time(r);
 
     ngx_http_vhost_traffic_status_node_time_queue_insert(&vtsn->stat_upstream.response_times,
@@ -253,11 +252,15 @@ ngx_http_vhost_traffic_status_shm_add_node_upstream(ngx_http_request_t *r,
 
     } else {
         vtsn->stat_upstream.response_time_counter += (ngx_atomic_uint_t) ms;
-        vtsn->stat_upstream.response_time = ngx_http_vhost_traffic_status_node_time_queue_average(
-                                                &vtsn->stat_upstream.response_times,
-                                                vtscf->average_method, vtscf->average_period);
 
-        if (ovtsn.stat_upstream.response_time_counter > vtsn->stat_upstream.response_time_counter)
+        /*
+         * response_time is not kept up to date here either, for the same
+         * reason as stat_request_time in
+         * ngx_http_vhost_traffic_status_node_set(): the readers average the
+         * queue when they need the value.
+         */
+
+        if (oresponse_time_counter > vtsn->stat_upstream.response_time_counter)
         { 
             vtsn->stat_response_time_counter_oc++;
         }

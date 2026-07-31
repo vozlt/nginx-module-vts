@@ -361,20 +361,22 @@ ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t status_code_slot)
 {
     ngx_msec_int_t                             ms;
-    ngx_http_vhost_traffic_status_node_t       ovtsn;
+    ngx_http_vhost_traffic_status_node_oc_t    ovtsn;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
 
     vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
 
-    ovtsn = *vtsn;
+    ngx_http_vhost_traffic_status_copy_oc((&ovtsn), vtsn);
 
     vtsn->ignore_status = vtscf->ignore_status;
     ms = ngx_http_vhost_traffic_status_request_time(r);
     ngx_http_vhost_traffic_status_node_update(r, vtsn, ms, status_code_slot);
 
-    vtsn->stat_request_time = ngx_http_vhost_traffic_status_node_time_queue_average(
-                                  &vtsn->stat_request_times, vtscf->average_method,
-                                  vtscf->average_period);
+    /*
+     * stat_request_time is not kept up to date here: averaging the queue on
+     * every request costs a loop over the whole queue while the shared memory
+     * is locked. The readers compute it when they need it.
+     */
 
     ngx_http_vhost_traffic_status_add_oc((&ovtsn), vtsn);
 }
@@ -505,6 +507,37 @@ ngx_http_vhost_traffic_status_node_time_queue_average(
     }
 
     return avg;
+}
+
+
+/*
+   Same as ngx_http_vhost_traffic_status_node_time_queue_average(), for the
+   callers that do not hold the shared memory lock: the average reinitializes
+   a queue it finds inconsistent, so it is given a copy to work on.
+
+   The copy is not atomic and the queue may be initialized while it is taken,
+   which leaves the length zero for a moment, so the snapshot is checked
+   before it is walked: the average takes the index of an entry modulo the
+   length.
+*/
+ngx_msec_t
+ngx_http_vhost_traffic_status_node_time_queue_average_ro(
+    ngx_http_vhost_traffic_status_node_time_queue_t *q,
+    ngx_int_t method, ngx_msec_t period)
+{
+    ngx_http_vhost_traffic_status_node_time_queue_t  copy;
+
+    copy = *q;
+
+    if (copy.len != NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_QUEUE_LEN
+        || copy.front < 0 || copy.front >= copy.len
+        || copy.rear < 0 || copy.rear >= copy.len)
+    {
+        return 0;
+    }
+
+    return ngx_http_vhost_traffic_status_node_time_queue_average(&copy, method,
+                                                                 period);
 }
 
 

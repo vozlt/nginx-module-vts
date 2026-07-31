@@ -81,9 +81,12 @@ ngx_http_vhost_traffic_status_set_by_filter_node_member(
     ngx_http_vhost_traffic_status_node_t *vtsn,
     ngx_http_upstream_server_t *us)
 {
-    ngx_str_t  *member;
+    ngx_str_t                                 *member;
+    ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
 
     member = control->arg_name;
+    vtscf = ngx_http_get_module_loc_conf(control->r,
+                                         ngx_http_vhost_traffic_status_module);
 
     if (ngx_http_vhost_traffic_status_node_member_cmp(member, "requestCounter") == 0)
     {
@@ -95,7 +98,10 @@ ngx_http_vhost_traffic_status_set_by_filter_node_member(
     }
     else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "requestMsec") == 0)
     {
-        return vtsn->stat_request_time;
+        return (ngx_atomic_uint_t)
+                   ngx_http_vhost_traffic_status_node_time_queue_average_ro(
+                       &vtsn->stat_request_times, vtscf->average_method,
+                       vtscf->average_period);
     }
     else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "responseMsecCounter") == 0)
     {
@@ -103,7 +109,10 @@ ngx_http_vhost_traffic_status_set_by_filter_node_member(
     }
     else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "responseMsec") == 0)
     {
-        return vtsn->stat_upstream.response_time;
+        return (ngx_atomic_uint_t)
+                   ngx_http_vhost_traffic_status_node_time_queue_average_ro(
+                       &vtsn->stat_upstream.response_times, vtscf->average_method,
+                       vtscf->average_period);
     }
     else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "inBytes") == 0)
     {

@@ -47,6 +47,34 @@ typedef struct {
 } ngx_http_vhost_traffic_status_node_upstream_t;
 
 
+/*
+   Holds the counters that ngx_http_vhost_traffic_status_add_oc() compares.
+   Taking a copy of the whole node just to detect the wrap of these counters
+   would copy a few kilobytes while the shared memory is locked.
+*/
+typedef struct {
+    ngx_atomic_t                                           stat_request_counter;
+    ngx_atomic_t                                           stat_in_bytes;
+    ngx_atomic_t                                           stat_out_bytes;
+    ngx_atomic_t                                           stat_1xx_counter;
+    ngx_atomic_t                                           stat_2xx_counter;
+    ngx_atomic_t                                           stat_3xx_counter;
+    ngx_atomic_t                                           stat_4xx_counter;
+    ngx_atomic_t                                           stat_5xx_counter;
+    ngx_atomic_t                                           stat_request_time_counter;
+#if (NGX_HTTP_CACHE)
+    ngx_atomic_t                                           stat_cache_miss_counter;
+    ngx_atomic_t                                           stat_cache_bypass_counter;
+    ngx_atomic_t                                           stat_cache_expired_counter;
+    ngx_atomic_t                                           stat_cache_stale_counter;
+    ngx_atomic_t                                           stat_cache_updating_counter;
+    ngx_atomic_t                                           stat_cache_revalidated_counter;
+    ngx_atomic_t                                           stat_cache_hit_counter;
+    ngx_atomic_t                                           stat_cache_scarce_counter;
+#endif
+} ngx_http_vhost_traffic_status_node_oc_t;
+
+
 typedef struct {
     u_char                                                 color;
     ngx_atomic_t                                           stat_request_counter;
@@ -140,6 +168,9 @@ ngx_int_t ngx_http_vhost_traffic_status_node_time_queue_rear(
     ngx_http_vhost_traffic_status_node_time_queue_t *q);
 
 ngx_msec_t ngx_http_vhost_traffic_status_node_time_queue_average(
+    ngx_http_vhost_traffic_status_node_time_queue_t *q,
+    ngx_int_t method, ngx_msec_t period);
+ngx_msec_t ngx_http_vhost_traffic_status_node_time_queue_average_ro(
     ngx_http_vhost_traffic_status_node_time_queue_t *q,
     ngx_int_t method, ngx_msec_t period);
 ngx_msec_t ngx_http_vhost_traffic_status_node_time_queue_amm(

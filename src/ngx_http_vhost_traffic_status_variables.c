@@ -114,6 +114,7 @@ ngx_http_vhost_traffic_status_node_variable(ngx_http_request_t *r,
     unsigned                                   type;
     ngx_int_t                                  rc;
     ngx_str_t                                  key, dst;
+    ngx_atomic_t                               value;
     ngx_slab_pool_t                           *shpool;
     ngx_rbtree_node_t                         *node;
     ngx_http_vhost_traffic_status_node_t      *vtsn;
@@ -151,7 +152,19 @@ ngx_http_vhost_traffic_status_node_variable(ngx_http_request_t *r,
 
     vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
 
-    v->len = ngx_sprintf(p, "%uA", *((ngx_atomic_t *) ((char *) vtsn + data))) - p;
+    if (data == offsetof(ngx_http_vhost_traffic_status_node_t, stat_request_time)) {
+
+        /* not kept up to date by the request path, average the queue here */
+
+        value = (ngx_atomic_t) ngx_http_vhost_traffic_status_node_time_queue_average(
+                                   &vtsn->stat_request_times, vtscf->average_method,
+                                   vtscf->average_period);
+
+    } else {
+        value = *((ngx_atomic_t *) ((char *) vtsn + data));
+    }
+
+    v->len = ngx_sprintf(p, "%uA", value) - p;
     v->valid = 1;
     v->no_cacheable = 0;
     v->not_found = 0;
