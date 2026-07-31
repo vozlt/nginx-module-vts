@@ -100,7 +100,7 @@ ngx_http_vhost_traffic_status_node_upstream_lookup(
 
                 for (j = 0; j < uscf->servers->nelts; j++) {
 
-                    /* a server of a group resolves to one address per A record */
+                    /* a server gives one peer per address its name resolves to */
 
                     for (k = 0; k < us[j].naddrs; k++) {
                         if (us[j].addrs[k].name.len != ush.len) {

@@ -10,12 +10,23 @@
 use Test::Nginx::Socket;
 
 use IO::Socket::IP;
-use Socket qw(getaddrinfo SOCK_STREAM);
+use Socket qw(getaddrinfo getnameinfo SOCK_STREAM NI_NUMERICHOST NIx_NOSERV);
+
+# The test asks for the two peers by name, so it needs the name to give
+# those two addresses and no others will do.
 
 my ($err, @addrs) = getaddrinfo('localhost', '', { socktype => SOCK_STREAM });
+my %resolved;
 
-plan skip_all => 'localhost resolves to one address only'
-    if $err or @addrs < 2;
+unless ($err) {
+    for my $addr (@addrs) {
+        my ($e, $host) = getnameinfo($addr->{addr}, NI_NUMERICHOST, NIx_NOSERV);
+        $resolved{$host} = 1 unless $e;
+    }
+}
+
+plan skip_all => 'localhost does not resolve to both loopback addresses'
+    if $err or not ($resolved{'127.0.0.1'} and $resolved{'::1'});
 
 plan skip_all => 'the IPv6 loopback is not usable'
     unless IO::Socket::IP->new(LocalHost => '::1', LocalPort => 0, Listen => 1);
