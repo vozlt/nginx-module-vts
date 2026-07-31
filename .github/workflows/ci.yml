@@ -154,11 +154,12 @@ jobs:
         run: |
           # -fno-sanitize-recover makes undefined behaviour abort the worker
           # instead of printing and carrying on, so the test that reached it
-          # fails
+          # fails. nonnull-attribute is left out: ngx_pstrdup() hands the null
+          # data pointer of an empty string to ngx_memcpy() on every start
           ./auto/configure \
             --prefix=/usr/local/nginx-asan \
             --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts \
-            --with-cc-opt="-fsanitize=address,undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g -O1" \
+            --with-cc-opt="-fsanitize=address,undefined -fno-sanitize=nonnull-attribute -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g -O1" \
             --with-ld-opt="-fsanitize=address,undefined"
           make -j$(nproc)
           sudo make install
