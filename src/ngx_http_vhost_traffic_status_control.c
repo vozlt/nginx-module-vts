@@ -44,7 +44,7 @@ ngx_http_vhost_traffic_status_node_upstream_lookup(
 {
     ngx_int_t                       rc;
     ngx_str_t                       key, usg, ush;
-    ngx_uint_t                      i, j;
+    ngx_uint_t                      i, j, k;
     ngx_http_upstream_server_t     *us;
     ngx_http_upstream_srv_conf_t   *uscf, **uscfp;
     ngx_http_upstream_main_conf_t  *umcf;
@@ -99,17 +99,34 @@ ngx_http_vhost_traffic_status_node_upstream_lookup(
             if (ngx_strncmp(uscf->host.data, usg.data, usg.len) == 0) {
 
                 for (j = 0; j < uscf->servers->nelts; j++) {
-                    if (us[j].addrs->name.len == ush.len) {
-                        if (ngx_strncmp(us[j].addrs->name.data, ush.data, ush.len) == 0) {
-                            *usn = us[j];
+
+                    /* a server gives one peer per address its name resolves to */
+
+                    for (k = 0; k < us[j].naddrs; k++) {
+                        if (us[j].addrs[k].name.len != ush.len) {
+                            continue;
+                        }
+
+                        if (ngx_strncmp(us[j].addrs[k].name.data, ush.data,
+                                        ush.len)
+                            != 0)
+                        {
+                            continue;
+                        }
+
+                        *usn = us[j];
 
 #if nginx_version > 1007001
-                            usn->name = us[j].addrs->name;
+                        usn->name = us[j].addrs[k].name;
 #endif
 
-                            control->count++;
-                            break;
-                        }
+                        control->count++;
+
+                        break;
+                    }
+
+                    if (control->count) {
+                        break;
                     }
                 }
 
