@@ -83,3 +83,18 @@ GET /status/
 --- request
 GET /status/format/html
 --- response_body_like: href="/status/format/json" id="jsonUri"
+
+
+
+=== TEST 6: the buffer of the page holds a uri longer than a page
+--- http_config
+    vhost_traffic_status_zone;
+    large_client_header_buffers 4 64k;
+--- config
+    location /status {
+        vhost_traffic_status_display;
+        vhost_traffic_status_display_format html;
+    }
+--- request eval
+"GET /status/" . ("a" x 20000)
+--- response_body_like: nginx vhost traffic status monitor

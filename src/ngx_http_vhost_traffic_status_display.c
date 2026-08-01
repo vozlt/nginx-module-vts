@@ -781,7 +781,16 @@ ngx_http_vhost_traffic_status_display_get_size(ngx_http_request_t *r,
     switch (format) {
 
     case NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_HTML:
-        return sizeof(NGX_HTTP_VHOST_TRAFFIC_STATUS_HTML_DATA) + ngx_pagesize;
+
+        /*
+         * The page carries the uri of the request, escaped. The handler takes
+         * it from r->uri and only ever shortens it, so the whole of it escaped
+         * is the bound.
+         */
+
+        return sizeof(NGX_HTTP_VHOST_TRAFFIC_STATUS_HTML_DATA)
+               + r->uri.len + ngx_escape_html(NULL, r->uri.data, r->uri.len)
+               + ngx_pagesize;
 
     case NGX_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSONP:
         size += vtscf->jsonp.len + sizeof("()") - 1;
