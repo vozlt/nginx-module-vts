@@ -321,15 +321,27 @@ ngx_http_vhost_traffic_status_set_by_filter_node(
     ngx_http_vhost_traffic_status_control_t *control,
     ngx_str_t *buf)
 {
-    u_char                                *p;
-    ngx_int_t                              rc;
-    ngx_str_t                              key;
-    ngx_rbtree_node_t                     *node;
-    ngx_http_request_t                    *r;
-    ngx_http_upstream_server_t             us;
-    ngx_http_vhost_traffic_status_node_t  *vtsn;
+    u_char                                    *p;
+    ngx_int_t                                  rc;
+    ngx_str_t                                  key;
+    ngx_uint_t                                 found;
+    ngx_atomic_uint_t                          value;
+    ngx_slab_pool_t                           *shpool;
+    ngx_rbtree_node_t                         *node;
+    ngx_http_request_t                        *r;
+    ngx_http_upstream_server_t                 us;
+    ngx_http_vhost_traffic_status_node_t      *vtsn;
+    ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
 
     r = control->r;
+
+    vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
+
+    if (vtscf->shm_zone == NULL) {
+        return NGX_ERROR;
+    }
+
+    shpool = (ngx_slab_pool_t *) vtscf->shm_zone->shm.addr;
 
     rc = ngx_http_vhost_traffic_status_node_generate_key(r->pool, &key, control->zone,
                                                          control->group);
@@ -340,13 +352,6 @@ ngx_http_vhost_traffic_status_set_by_filter_node(
         return NGX_ERROR;
     }
 
-    node = ngx_http_vhost_traffic_status_find_node(r, &key, control->group, 0);
-    if (node == NULL) {
-        return NGX_ERROR;
-    }
-
-    vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
-
     p = ngx_pnalloc(r->pool, NGX_ATOMIC_T_LEN);
     if (p == NULL) {
         return NGX_ERROR;
@@ -356,28 +361,62 @@ ngx_http_vhost_traffic_status_set_by_filter_node(
 
     ngx_memzero(&us, sizeof(ngx_http_upstream_server_t));
 
-    switch (control->group) {
+    /*
+     * Every other reader of the tree holds the mutex of the zone while it
+     * walks it and while it reads the node it found. This one did not, and a
+     * node can be taken out of the tree and handed back to the slab under it:
+     * by the eviction of vhost_traffic_status_filter_max_node, or by the
+     * delete command of the control handler.
+     */
 
-    case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_NO:
-    case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_CC:
-    case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG:
-        buf->len = ngx_sprintf(p, "%uA", ngx_http_vhost_traffic_status_set_by_filter_node_member(
-                                             control, vtsn, &us)) - p;
-        break;
+    rc = NGX_OK;
+    found = 0;
+    value = 0;
 
-    case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UA:
-    case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UG:
-        ngx_http_vhost_traffic_status_node_upstream_lookup(control, &us);
-        if (control->count) {
-            buf->len = ngx_sprintf(p, "%uA", ngx_http_vhost_traffic_status_set_by_filter_node_member(
-                                                 control, vtsn, &us)) - p;
-        } else {
-            return NGX_ERROR;
+    ngx_shmtx_lock(&shpool->mutex);
+
+    /* one way out, so that no path can leave the mutex behind */
+
+    node = ngx_http_vhost_traffic_status_find_node(r, &key, control->group, 0);
+
+    if (node == NULL) {
+        rc = NGX_ERROR;
+
+    } else {
+        vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
+
+        switch (control->group) {
+
+        case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_NO:
+        case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_CC:
+        case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG:
+            value = ngx_http_vhost_traffic_status_set_by_filter_node_member(
+                        control, vtsn, &us);
+            found = 1;
+            break;
+
+        case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UA:
+        case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UG:
+            ngx_http_vhost_traffic_status_node_upstream_lookup(control, &us);
+            if (control->count) {
+                value = ngx_http_vhost_traffic_status_set_by_filter_node_member(
+                            control, vtsn, &us);
+                found = 1;
+
+            } else {
+                rc = NGX_ERROR;
+            }
+            break;
         }
-        break;
     }
 
-    return NGX_OK;
+    ngx_shmtx_unlock(&shpool->mutex);
+
+    if (found) {
+        buf->len = ngx_sprintf(p, "%uA", value) - p;
+    }
+
+    return rc;
 }
 
 
