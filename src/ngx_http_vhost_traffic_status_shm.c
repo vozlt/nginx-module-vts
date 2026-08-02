@@ -130,7 +130,7 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
         init = NGX_HTTP_VHOST_TRAFFIC_STATUS_NODE_NONE;
 
         /* delete lru node */
-        lrun = ngx_http_vhost_traffic_status_find_lru(r);
+        lrun = ngx_http_vhost_traffic_status_find_lru(r, type, key);
         if (lrun != NULL) {
             ngx_rbtree_delete(ctx->rbtree, lrun);
             ngx_slab_free_locked(shpool, lrun);

@@ -129,8 +129,10 @@ found:
 
 
 ngx_rbtree_node_t *
-ngx_http_vhost_traffic_status_find_lru(ngx_http_request_t *r)
+ngx_http_vhost_traffic_status_find_lru(ngx_http_request_t *r, unsigned type,
+    ngx_str_t *key)
 {
+    ngx_str_t                                  filter;
     ngx_rbtree_node_t                         *node;
     ngx_http_vhost_traffic_status_ctx_t       *ctx;
     ngx_http_vhost_traffic_status_shm_info_t  *shm_info;
@@ -140,6 +142,28 @@ ngx_http_vhost_traffic_status_find_lru(ngx_http_request_t *r)
 
     /* disabled */
     if (ctx->filter_max_node == 0) {
+        return NULL;
+    }
+
+    /*
+     * The cap counts the nodes of the filter groups the directive names, so
+     * only an insertion into one of those groups can take it over. A server
+     * zone, an upstream peer, a cache or a filter of a group the directive
+     * does not name has nothing to do with it, and dropping a node for one
+     * of them loses a measurement while the zone still has room.
+     */
+
+    if (type != NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG) {
+        return NULL;
+    }
+
+    filter = *key;
+
+    if (ngx_http_vhost_traffic_status_node_position_key(&filter, 1) != NGX_OK) {
+        return NULL;
+    }
+
+    if (ngx_http_vhost_traffic_status_filter_max_node_match(r, &filter) != NGX_OK) {
         return NULL;
     }
 
