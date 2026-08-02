@@ -222,3 +222,25 @@ jobs:
           ./auto/configure ${{ matrix.variant.opts }} \
             --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts
           make -j$(nproc)
+
+  front:
+    name: 'front'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 'checkout'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: 'prepare node'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: front/package-lock.json
+      - name: 'install'
+        working-directory: front
+        run: npm ci
+      - name: 'test'
+        working-directory: front
+        run: npm test
+      - name: 'build'
+        working-directory: front
+        run: npm run build
