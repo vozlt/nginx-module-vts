@@ -197,7 +197,8 @@ void ngx_http_vhost_traffic_status_find_name(ngx_http_request_t *r,
 ngx_rbtree_node_t *ngx_http_vhost_traffic_status_find_node(ngx_http_request_t *r,
     ngx_str_t *key, unsigned type, uint32_t key_hash);
 
-ngx_rbtree_node_t *ngx_http_vhost_traffic_status_find_lru(ngx_http_request_t *r);
+ngx_rbtree_node_t *ngx_http_vhost_traffic_status_find_lru(ngx_http_request_t *r,
+    unsigned type, ngx_str_t *key);
 ngx_rbtree_node_t *ngx_http_vhost_traffic_status_find_lru_node(ngx_http_request_t *r,
     ngx_rbtree_node_t *a, ngx_rbtree_node_t *b);
 ngx_rbtree_node_t *ngx_http_vhost_traffic_status_find_lru_node_cmp(ngx_http_request_t *r,
