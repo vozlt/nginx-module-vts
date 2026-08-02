@@ -35,7 +35,8 @@
     "\"name\":\"%V\","                                                         \
     "\"maxSize\":%ui,"                                                         \
     "\"usedSize\":%ui,"                                                        \
-    "\"usedNode\":%ui"                                                         \
+    "\"usedNode\":%ui,"                                                        \
+    "\"freeSize\":%ui"                                                         \
     "},"
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_S "\"serverZones\":{"

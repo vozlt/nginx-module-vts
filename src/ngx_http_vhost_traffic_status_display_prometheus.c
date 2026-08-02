@@ -40,7 +40,8 @@ ngx_http_vhost_traffic_status_display_prometheus_set_main(ngx_http_request_t *r,
                       (double) vtscf->start_msec / 1000,
                       ap, ac, hn, rd, rq, wa, wr,
                       shm_info->name, shm_info->max_size,
-                      shm_info->used_size, shm_info->used_node);
+                      shm_info->used_size, shm_info->used_node,
+                      shm_info->free_size);
 
     return buf;
 }

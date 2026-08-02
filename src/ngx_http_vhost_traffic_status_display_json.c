@@ -84,7 +84,8 @@ ngx_http_vhost_traffic_status_display_set_main(ngx_http_request_t *r,
                       ngx_http_vhost_traffic_status_current_msec(),
                       ac, rd, wr, wa, ap, hn, rq,
                       shm_info->name, shm_info->max_size,
-                      shm_info->used_size, shm_info->used_node);
+                      shm_info->used_size, shm_info->used_node,
+                      shm_info->free_size);
 
     return buf;
 }

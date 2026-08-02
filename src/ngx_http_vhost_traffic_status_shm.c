@@ -67,14 +67,31 @@ void
 ngx_http_vhost_traffic_status_shm_info(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_shm_info_t *shm_info)
 {
-    ngx_http_vhost_traffic_status_ctx_t  *ctx;
+    ngx_slab_pool_t                           *shpool;
+    ngx_http_vhost_traffic_status_ctx_t       *ctx;
+    ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
 
     ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
+    vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
 
     ngx_memzero(shm_info, sizeof(ngx_http_vhost_traffic_status_shm_info_t));
 
     shm_info->name = &ctx->shm_name;
     shm_info->max_size = ctx->shm_size;
+
+    /*
+     * used_size below is the sum of the sizes of the nodes, which is not what
+     * the zone has spent: the slab hands out a whole page or a whole slot for
+     * each of them. Ask the slab what it has left, so that the display says
+     * whether another node fits. A node is larger than half a page, so where
+     * a page is 4k this is the room for more of them; where it is larger the
+     * figure is a lower bound, since a partly used page can still hold one.
+     */
+
+    if (vtscf->shm_zone != NULL) {
+        shpool = (ngx_slab_pool_t *) vtscf->shm_zone->shm.addr;
+        shm_info->free_size = shpool->pfree * ngx_pagesize;
+    }
 
     ngx_http_vhost_traffic_status_shm_info_node(r, shm_info, ctx->rbtree->root);
 }

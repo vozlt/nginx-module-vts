@@ -228,7 +228,8 @@ JSON document contains as follows:
         "name":...,
         "maxSize":...,
         "usedSize":...,
-        "usedNode":...
+        "usedNode":...,
+        "freeSize":...
     },
     "serverZones": {
         "...":{
@@ -674,6 +675,8 @@ The following status information is provided in the JSON format:
     * The current size of the shared memory.
   * usedNode
     * The current number of node using in shared memory. It can get an approximate size for one node with the following formula: (*usedSize* / *usedNode*)
+  * freeSize
+    * The room the shared memory has left for more nodes. *usedSize* above is the sum of the sizes of the nodes, which is not what the zone has spent, because the slab allocator hands out a whole page or a whole slot for each of them. A zone therefore stops accepting nodes while *usedSize* still reads below *maxSize*, and this is the value that says so. A node is larger than half a page, so where a page is 4k this is the room for more of them; where the page is larger it is a lower bound, since a partly used page can still hold one.
 * serverZones
   * requestCounter
     * The total number of client requests received from clients.
