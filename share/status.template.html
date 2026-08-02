@@ -386,7 +386,17 @@
                 });
             };
 
-            var vtsStatusURI = "{{uri}}/format/json", vtsUpdateInterval = 1000, vtsUpdate;
+            /*
+             * Taken from the address the browser used rather than from the one
+             * the module sees, so that the page keeps working behind a proxy
+             * that serves it under another path.
+             */
+            var vtsStatusURI = (function () {
+                var path = window.location.pathname
+                               .replace(/\/format\/(?:html|json|jsonp|prometheus)\/*$/, '')
+                               .replace(/\/+$/, '');
+                return path + '/format/json';
+            })(), vtsUpdateInterval = 1000, vtsUpdate;
 
             var vtsStatusVars = {
                 titles: {
