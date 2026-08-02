@@ -1,4 +1,4 @@
-class RateTracker {
+export class RateTracker {
   private data: Record<string, number> = {};
   private lastMsec: number | undefined = undefined;
   private period: number | undefined = undefined;
