@@ -126,7 +126,7 @@ def validate(data):
 
     # sharedZones
     if "sharedZones" in data:
-        sz_keys = ["name", "maxSize", "usedSize", "usedNode"]
+        sz_keys = ["name", "maxSize", "usedSize", "usedNode", "freeSize"]
         errors.extend(check_keys(data["sharedZones"], sz_keys, "sharedZones"))
 
     # serverZones

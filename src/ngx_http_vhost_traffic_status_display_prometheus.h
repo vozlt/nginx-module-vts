@@ -28,7 +28,8 @@
     "# TYPE nginx_vts_main_shm_usage_bytes gauge\n"                            \
     "nginx_vts_main_shm_usage_bytes{shared=\"max_size\"} %ui\n"                \
     "nginx_vts_main_shm_usage_bytes{shared=\"used_size\"} %ui\n"               \
-    "nginx_vts_main_shm_usage_bytes{shared=\"used_node\"} %ui\n"
+    "nginx_vts_main_shm_usage_bytes{shared=\"used_node\"} %ui\n"                \
+    "nginx_vts_main_shm_usage_bytes{shared=\"free_size\"} %ui\n"
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_S                  \
     "# HELP nginx_vts_server_bytes_total The request/response bytes\n"         \
