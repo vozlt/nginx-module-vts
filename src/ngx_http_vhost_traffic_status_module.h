@@ -362,6 +362,56 @@ typedef struct {
     ngx_uint_t                              ignore_status;
 
     ngx_rbtree_node_t                     **node_caches;
+
+    /* t10s trim patch: one flag per individual metric family, each
+     * independently on/off via nginx.conf, no recompile needed. Defaults
+     * mirror the fleet's trimmed set (see
+     * ngx_http_vhost_traffic_status_module.c merge_loc_conf for the actual
+     * default values). Accounting gates live in
+     * ngx_http_vhost_traffic_status_node.c / _shm.c; display gates live in
+     * ngx_http_vhost_traffic_status_display_prometheus.c. */
+
+    /* server zone */
+    ngx_flag_t                              display_server_bytes_total;
+    ngx_flag_t                              display_server_requests_total;
+    ngx_flag_t                              display_server_cache_total;
+    ngx_flag_t                              display_server_request_seconds_total;
+    ngx_flag_t                              display_server_request_seconds;
+    ngx_flag_t                              display_server_request_duration_bucket;
+    ngx_flag_t                              display_server_request_duration_sum;
+    ngx_flag_t                              display_server_request_duration_count;
+
+    /* filter zone */
+    ngx_flag_t                              display_filter_bytes_total;
+    ngx_flag_t                              display_filter_requests_total;
+    ngx_flag_t                              display_filter_cache_total;
+    ngx_flag_t                              display_filter_request_seconds_total;
+    ngx_flag_t                              display_filter_request_seconds;
+    ngx_flag_t                              display_filter_request_duration_bucket;
+    ngx_flag_t                              display_filter_request_duration_sum;
+    ngx_flag_t                              display_filter_request_duration_count;
+
+    /* upstream zone -- request (includes upstream) timing */
+    ngx_flag_t                              display_upstream_bytes_total;
+    ngx_flag_t                              display_upstream_requests_total;
+    ngx_flag_t                              display_upstream_request_seconds_total;
+    ngx_flag_t                              display_upstream_request_seconds;
+    ngx_flag_t                              display_upstream_request_duration_bucket;
+    ngx_flag_t                              display_upstream_request_duration_sum;
+    ngx_flag_t                              display_upstream_request_duration_count;
+
+    /* upstream zone -- response (upstream-only) timing */
+    ngx_flag_t                              display_upstream_response_seconds_total;
+    ngx_flag_t                              display_upstream_response_seconds;
+    ngx_flag_t                              display_upstream_response_duration_bucket;
+    ngx_flag_t                              display_upstream_response_duration_sum;
+    ngx_flag_t                              display_upstream_response_duration_count;
+
+    /* main/info -- not per-request accounted, gates output only */
+    ngx_flag_t                              display_main_connections;
+    ngx_flag_t                              display_main_shm_usage_bytes;
+    ngx_flag_t                              display_start_time_seconds;
+    ngx_flag_t                              display_info;
 } ngx_http_vhost_traffic_status_loc_conf_t;
 
 

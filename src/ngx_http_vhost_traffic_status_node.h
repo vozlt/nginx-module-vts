@@ -34,6 +34,13 @@ typedef struct {
 typedef struct {
     ngx_http_vhost_traffic_status_node_histogram_t         buckets[NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_BUCKET_LEN];
     ngx_int_t                                              len;
+
+    /* t10s trim patch: dedicated observation counter, incremented once per
+     * histogram_observe() call. vtsn->stat_request_counter can't be reused
+     * for the "+Inf"/_count line here -- it's incremented on every request
+     * regardless of whether this histogram is gated on, so it silently
+     * over-reports once a histogram is toggled back on after being off. */
+    ngx_atomic_uint_t                                      observed;
 } ngx_http_vhost_traffic_status_node_histogram_bucket_t;
 
 
@@ -145,11 +152,13 @@ ngx_rbtree_node_t *ngx_http_vhost_traffic_status_node_lookup(
 void ngx_http_vhost_traffic_status_node_zero(
     ngx_http_vhost_traffic_status_node_t *vtsn);
 void ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t status_code_slot);
+    ngx_http_vhost_traffic_status_node_t *vtsn, unsigned type,
+    ngx_int_t status_code_slot);
 void ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t status_code_slot);
 void ngx_http_vhost_traffic_status_node_update(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_msec_int_t ms, ngx_int_t status_code_slot);
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_msec_int_t ms,
+    unsigned type, ngx_int_t status_code_slot);
 
 void ngx_http_vhost_traffic_status_node_time_queue_zero(
     ngx_http_vhost_traffic_status_node_time_queue_t *q);

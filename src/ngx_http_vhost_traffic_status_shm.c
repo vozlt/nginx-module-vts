@@ -206,7 +206,7 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
             vtsn->stat_status_code_length = ctx->measure_status_codes->nelts;
         }
 
-        ngx_http_vhost_traffic_status_node_init(r, vtsn, status_code_slot);
+        ngx_http_vhost_traffic_status_node_init(r, vtsn, type, status_code_slot);
 
         vtsn->stat_upstream.type = type;
         ngx_memcpy(vtsn->data, key->data, key->len);
@@ -251,24 +251,49 @@ static ngx_int_t
 ngx_http_vhost_traffic_status_shm_add_node_upstream(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t *vtsn, unsigned init)
 {
-    ngx_msec_int_t  ms;
-    ngx_atomic_t    oresponse_time_counter;
+    ngx_msec_int_t                             ms;
+    ngx_atomic_t                               oresponse_time_counter;
+    ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
+
+    vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
 
     /* only the response time counter is compared below */
     oresponse_time_counter = vtsn->stat_upstream.response_time_counter;
     ms = ngx_http_vhost_traffic_status_upstream_response_time(r);
 
-    ngx_http_vhost_traffic_status_node_time_queue_insert(&vtsn->stat_upstream.response_times,
-                                                         ms);
-    ngx_http_vhost_traffic_status_node_histogram_observe(&vtsn->stat_upstream.response_buckets,
-                                                         ms);
+    /* t10s trim patch: each piece of response-time accounting is gated by
+     * its own metric flag(s), same pattern as node_update():
+     *   - response_time_counter (sum) feeds BOTH the "_seconds_total" dup
+     *     and "_duration_seconds_sum" -- needed if either is on
+     *   - the time-queue/average feeds only the "_seconds" gauge
+     *   - histogram_observe() feeds only "_duration_seconds_bucket"
+     *     (and the +Inf line, via b->observed) */
+    {
+    unsigned do_sum = vtscf->display_upstream_response_seconds_total
+                      || vtscf->display_upstream_response_duration_sum;
+    unsigned do_queue = vtscf->display_upstream_response_seconds;
+    unsigned do_bucket = vtscf->display_upstream_response_duration_bucket;
+
+    if (do_queue) {
+        ngx_http_vhost_traffic_status_node_time_queue_insert(&vtsn->stat_upstream.response_times,
+                                                             ms);
+    }
+
+    if (do_bucket) {
+        ngx_http_vhost_traffic_status_node_histogram_observe(&vtsn->stat_upstream.response_buckets,
+                                                             ms);
+    }
 
     if (init == NGX_HTTP_VHOST_TRAFFIC_STATUS_NODE_NONE) {
-        vtsn->stat_upstream.response_time_counter = (ngx_atomic_uint_t) ms;
+        if (do_sum) {
+            vtsn->stat_upstream.response_time_counter = (ngx_atomic_uint_t) ms;
+        }
         vtsn->stat_upstream.response_time = (ngx_msec_t) ms;
 
     } else {
-        vtsn->stat_upstream.response_time_counter += (ngx_atomic_uint_t) ms;
+        if (do_sum) {
+            vtsn->stat_upstream.response_time_counter += (ngx_atomic_uint_t) ms;
+        }
 
         /*
          * response_time is not kept up to date here either, for the same
@@ -277,10 +302,12 @@ ngx_http_vhost_traffic_status_shm_add_node_upstream(ngx_http_request_t *r,
          * queue when they need the value.
          */
 
-        if (oresponse_time_counter > vtsn->stat_upstream.response_time_counter)
-        { 
+        if (do_sum
+            && oresponse_time_counter > vtsn->stat_upstream.response_time_counter)
+        {
             vtsn->stat_response_time_counter_oc++;
         }
+    }
     }
 
     return NGX_OK;

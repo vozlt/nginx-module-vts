@@ -242,6 +242,207 @@ static ngx_command_t ngx_http_vhost_traffic_status_commands[] = {
       offsetof(ngx_http_vhost_traffic_status_loc_conf_t, ignore_status),
       &ngx_http_vhost_traffic_status_ignore_status_masks },
 
+    /* t10s trim patch: one flag per individual metric family, default
+     * values match the fleet's trimmed set -- see merge_loc_conf below for
+     * defaults, and display_prometheus.c for what each one gates. */
+
+    /* server zone */
+    { ngx_string("vhost_traffic_status_display_server_bytes_total"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_server_bytes_total),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_server_requests_total"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_server_requests_total),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_server_cache_total"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_server_cache_total),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_server_request_seconds_total"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_server_request_seconds_total),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_server_request_seconds"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_server_request_seconds),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_server_request_duration_bucket"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_server_request_duration_bucket),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_server_request_duration_sum"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_server_request_duration_sum),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_server_request_duration_count"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_server_request_duration_count),
+      NULL },
+
+    /* filter zone */
+    { ngx_string("vhost_traffic_status_display_filter_bytes_total"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_filter_bytes_total),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_filter_requests_total"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_filter_requests_total),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_filter_cache_total"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_filter_cache_total),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_filter_request_seconds_total"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_filter_request_seconds_total),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_filter_request_seconds"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_filter_request_seconds),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_filter_request_duration_bucket"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_filter_request_duration_bucket),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_filter_request_duration_sum"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_filter_request_duration_sum),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_filter_request_duration_count"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_filter_request_duration_count),
+      NULL },
+
+    /* upstream zone -- request (includes upstream) timing */
+    { ngx_string("vhost_traffic_status_display_upstream_bytes_total"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_upstream_bytes_total),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_upstream_requests_total"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_upstream_requests_total),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_upstream_request_seconds_total"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_upstream_request_seconds_total),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_upstream_request_seconds"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_upstream_request_seconds),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_upstream_request_duration_bucket"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_upstream_request_duration_bucket),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_upstream_request_duration_sum"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_upstream_request_duration_sum),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_upstream_request_duration_count"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_upstream_request_duration_count),
+      NULL },
+
+    /* upstream zone -- response (upstream-only) timing */
+    { ngx_string("vhost_traffic_status_display_upstream_response_seconds_total"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_upstream_response_seconds_total),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_upstream_response_seconds"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_upstream_response_seconds),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_upstream_response_duration_bucket"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_upstream_response_duration_bucket),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_upstream_response_duration_sum"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_upstream_response_duration_sum),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_upstream_response_duration_count"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_upstream_response_duration_count),
+      NULL },
+
+    /* main/info */
+    { ngx_string("vhost_traffic_status_display_main_connections"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_main_connections),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_main_shm_usage_bytes"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_main_shm_usage_bytes),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_start_time_seconds"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_start_time_seconds),
+      NULL },
+
+    { ngx_string("vhost_traffic_status_display_info"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot, NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_vhost_traffic_status_loc_conf_t, display_info),
+      NULL },
+
     ngx_null_command
 };
 
@@ -1014,6 +1215,43 @@ ngx_http_vhost_traffic_status_create_loc_conf(ngx_conf_t *cf)
     conf->bypass_stats = NGX_CONF_UNSET;
     conf->stats_by_upstream = NGX_CONF_UNSET;
 
+    conf->display_server_bytes_total = NGX_CONF_UNSET;
+    conf->display_server_requests_total = NGX_CONF_UNSET;
+    conf->display_server_cache_total = NGX_CONF_UNSET;
+    conf->display_server_request_seconds_total = NGX_CONF_UNSET;
+    conf->display_server_request_seconds = NGX_CONF_UNSET;
+    conf->display_server_request_duration_bucket = NGX_CONF_UNSET;
+    conf->display_server_request_duration_sum = NGX_CONF_UNSET;
+    conf->display_server_request_duration_count = NGX_CONF_UNSET;
+
+    conf->display_filter_bytes_total = NGX_CONF_UNSET;
+    conf->display_filter_requests_total = NGX_CONF_UNSET;
+    conf->display_filter_cache_total = NGX_CONF_UNSET;
+    conf->display_filter_request_seconds_total = NGX_CONF_UNSET;
+    conf->display_filter_request_seconds = NGX_CONF_UNSET;
+    conf->display_filter_request_duration_bucket = NGX_CONF_UNSET;
+    conf->display_filter_request_duration_sum = NGX_CONF_UNSET;
+    conf->display_filter_request_duration_count = NGX_CONF_UNSET;
+
+    conf->display_upstream_bytes_total = NGX_CONF_UNSET;
+    conf->display_upstream_requests_total = NGX_CONF_UNSET;
+    conf->display_upstream_request_seconds_total = NGX_CONF_UNSET;
+    conf->display_upstream_request_seconds = NGX_CONF_UNSET;
+    conf->display_upstream_request_duration_bucket = NGX_CONF_UNSET;
+    conf->display_upstream_request_duration_sum = NGX_CONF_UNSET;
+    conf->display_upstream_request_duration_count = NGX_CONF_UNSET;
+
+    conf->display_upstream_response_seconds_total = NGX_CONF_UNSET;
+    conf->display_upstream_response_seconds = NGX_CONF_UNSET;
+    conf->display_upstream_response_duration_bucket = NGX_CONF_UNSET;
+    conf->display_upstream_response_duration_sum = NGX_CONF_UNSET;
+    conf->display_upstream_response_duration_count = NGX_CONF_UNSET;
+
+    conf->display_main_connections = NGX_CONF_UNSET;
+    conf->display_main_shm_usage_bytes = NGX_CONF_UNSET;
+    conf->display_start_time_seconds = NGX_CONF_UNSET;
+    conf->display_info = NGX_CONF_UNSET;
+
     conf->node_caches = ngx_pcalloc(cf->pool, sizeof(ngx_rbtree_node_t *)
                                     * (NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG + 1));
     conf->node_caches[NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_NO] = NULL;
@@ -1127,6 +1365,83 @@ ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf, void *parent, void 
     ngx_conf_merge_value(conf->stats_by_upstream, prev->stats_by_upstream, 1);
     ngx_conf_merge_bitmask_value(conf->ignore_status, prev->ignore_status,
 (NGX_CONF_BITMASK_SET|NGX_HTTP_VHOST_TRAFFIC_STATUS_IGNORE_STATUS_OFF));
+
+    /* t10s trim patch defaults -- mirrors the fleet's trimmed set:
+     * off (0) = the 15 removed metrics, on (1) = the 17 kept metrics */
+
+    /* server zone */
+    ngx_conf_merge_value(conf->display_server_bytes_total,
+                         prev->display_server_bytes_total, 0);
+    ngx_conf_merge_value(conf->display_server_requests_total,
+                         prev->display_server_requests_total, 1);
+    ngx_conf_merge_value(conf->display_server_cache_total,
+                         prev->display_server_cache_total, 0);
+    ngx_conf_merge_value(conf->display_server_request_seconds_total,
+                         prev->display_server_request_seconds_total, 0);
+    ngx_conf_merge_value(conf->display_server_request_seconds,
+                         prev->display_server_request_seconds, 0);
+    ngx_conf_merge_value(conf->display_server_request_duration_bucket,
+                         prev->display_server_request_duration_bucket, 1);
+    ngx_conf_merge_value(conf->display_server_request_duration_sum,
+                         prev->display_server_request_duration_sum, 1);
+    ngx_conf_merge_value(conf->display_server_request_duration_count,
+                         prev->display_server_request_duration_count, 1);
+
+    /* filter zone */
+    ngx_conf_merge_value(conf->display_filter_bytes_total,
+                         prev->display_filter_bytes_total, 1);
+    ngx_conf_merge_value(conf->display_filter_requests_total,
+                         prev->display_filter_requests_total, 1);
+    ngx_conf_merge_value(conf->display_filter_cache_total,
+                         prev->display_filter_cache_total, 0);
+    ngx_conf_merge_value(conf->display_filter_request_seconds_total,
+                         prev->display_filter_request_seconds_total, 0);
+    ngx_conf_merge_value(conf->display_filter_request_seconds,
+                         prev->display_filter_request_seconds, 0);
+    ngx_conf_merge_value(conf->display_filter_request_duration_bucket,
+                         prev->display_filter_request_duration_bucket, 0);
+    ngx_conf_merge_value(conf->display_filter_request_duration_sum,
+                         prev->display_filter_request_duration_sum, 0);
+    ngx_conf_merge_value(conf->display_filter_request_duration_count,
+                         prev->display_filter_request_duration_count, 0);
+
+    /* upstream zone -- request (includes upstream) timing */
+    ngx_conf_merge_value(conf->display_upstream_bytes_total,
+                         prev->display_upstream_bytes_total, 1);
+    ngx_conf_merge_value(conf->display_upstream_requests_total,
+                         prev->display_upstream_requests_total, 1);
+    ngx_conf_merge_value(conf->display_upstream_request_seconds_total,
+                         prev->display_upstream_request_seconds_total, 0);
+    ngx_conf_merge_value(conf->display_upstream_request_seconds,
+                         prev->display_upstream_request_seconds, 0);
+    ngx_conf_merge_value(conf->display_upstream_request_duration_bucket,
+                         prev->display_upstream_request_duration_bucket, 1);
+    ngx_conf_merge_value(conf->display_upstream_request_duration_sum,
+                         prev->display_upstream_request_duration_sum, 1);
+    ngx_conf_merge_value(conf->display_upstream_request_duration_count,
+                         prev->display_upstream_request_duration_count, 1);
+
+    /* upstream zone -- response (upstream-only) timing */
+    ngx_conf_merge_value(conf->display_upstream_response_seconds_total,
+                         prev->display_upstream_response_seconds_total, 0);
+    ngx_conf_merge_value(conf->display_upstream_response_seconds,
+                         prev->display_upstream_response_seconds, 0);
+    ngx_conf_merge_value(conf->display_upstream_response_duration_bucket,
+                         prev->display_upstream_response_duration_bucket, 0);
+    ngx_conf_merge_value(conf->display_upstream_response_duration_sum,
+                         prev->display_upstream_response_duration_sum, 1);
+    ngx_conf_merge_value(conf->display_upstream_response_duration_count,
+                         prev->display_upstream_response_duration_count, 1);
+
+    /* main/info -- always on by default (cheap, not per-request accounted) */
+    ngx_conf_merge_value(conf->display_main_connections,
+                         prev->display_main_connections, 1);
+    ngx_conf_merge_value(conf->display_main_shm_usage_bytes,
+                         prev->display_main_shm_usage_bytes, 1);
+    ngx_conf_merge_value(conf->display_start_time_seconds,
+                         prev->display_start_time_seconds, 1);
+    ngx_conf_merge_value(conf->display_info,
+                         prev->display_info, 1);
 
     name = ctx->shm_name;
 

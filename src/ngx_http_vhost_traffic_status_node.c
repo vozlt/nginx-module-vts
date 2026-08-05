@@ -351,7 +351,8 @@ ngx_http_vhost_traffic_status_node_zero(ngx_http_vhost_traffic_status_node_t *vt
 */
 void
 ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t status_code_slot)
+    ngx_http_vhost_traffic_status_node_t *vtsn, unsigned type,
+    ngx_int_t status_code_slot)
 {
     ngx_msec_int_t  ms;
 
@@ -372,7 +373,7 @@ ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
     ms = ngx_http_vhost_traffic_status_request_time(r);
     vtsn->stat_request_time = (ngx_msec_t) ms;
 
-    ngx_http_vhost_traffic_status_node_update(r, vtsn, ms, status_code_slot);
+    ngx_http_vhost_traffic_status_node_update(r, vtsn, ms, type, status_code_slot);
 }
 
 
@@ -380,6 +381,78 @@ ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
    Update the node from a subsequent request. Now there is more than one request,
    calculate the average request time.
 */
+/*
+ * t10s trim patch: work out, for a given zone type, which pieces of
+ * per-request accounting are actually needed right now -- driven by the
+ * 32 individual per-metric flags (server/filter/upstream_request each
+ * have their own bytes/requests/cache/seconds_total/seconds/bucket/sum/
+ * count flags; see ngx_http_vhost_traffic_status_module.h).
+ *
+ *   do_bytes    -> stat_in_bytes/stat_out_bytes         (*_bytes_total)
+ *   do_requests -> add_rc() 1xx..5xx counters           (*_requests_total)
+ *   do_cache    -> add_cc() cache status counters       (*_cache_total)
+ *   do_sum      -> stat_request_time_counter            (*_seconds_total
+ *                  dup AND *_duration_seconds_sum -- same accumulator,
+ *                  needed if either metric is on)
+ *   do_queue    -> time_queue_insert/average            (*_seconds gauge)
+ *   do_bucket   -> histogram_observe() bucket array      (*_duration_
+ *                  seconds_bucket, and the +Inf line via b->observed)
+ *
+ * stat_request_counter itself is NOT gated -- it's a cheap, always-on
+ * counter used directly as the "_count" value (independent of whichever
+ * flag governs "bucket", so toggling bucket on/off later never desyncs
+ * count from reality).
+ */
+typedef struct {
+    unsigned  do_bytes;
+    unsigned  do_requests;
+    unsigned  do_cache;
+    unsigned  do_sum;
+    unsigned  do_queue;
+    unsigned  do_bucket;
+} ngx_http_vhost_traffic_status_gates_t;
+
+
+static void
+ngx_http_vhost_traffic_status_node_gates(ngx_http_vhost_traffic_status_loc_conf_t *vtscf,
+    unsigned type, ngx_http_vhost_traffic_status_gates_t *g)
+{
+    switch (type) {
+
+    case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG:
+        g->do_bytes = vtscf->display_filter_bytes_total;
+        g->do_requests = vtscf->display_filter_requests_total;
+        g->do_cache = vtscf->display_filter_cache_total;
+        g->do_sum = vtscf->display_filter_request_seconds_total
+                    || vtscf->display_filter_request_duration_sum;
+        g->do_queue = vtscf->display_filter_request_seconds;
+        g->do_bucket = vtscf->display_filter_request_duration_bucket;
+        break;
+
+    case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UA:
+    case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UG:
+        g->do_bytes = vtscf->display_upstream_bytes_total;
+        g->do_requests = vtscf->display_upstream_requests_total;
+        g->do_cache = 0; /* no cache concept for upstream zone */
+        g->do_sum = vtscf->display_upstream_request_seconds_total
+                    || vtscf->display_upstream_request_duration_sum;
+        g->do_queue = vtscf->display_upstream_request_seconds;
+        g->do_bucket = vtscf->display_upstream_request_duration_bucket;
+        break;
+
+    default: /* NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_NO (server), or CC (dead: no cache zone on the fleet) */
+        g->do_bytes = vtscf->display_server_bytes_total;
+        g->do_requests = vtscf->display_server_requests_total;
+        g->do_cache = vtscf->display_server_cache_total;
+        g->do_sum = vtscf->display_server_request_seconds_total
+                    || vtscf->display_server_request_duration_sum;
+        g->do_queue = vtscf->display_server_request_seconds;
+        g->do_bucket = vtscf->display_server_request_duration_bucket;
+        break;
+    }
+}
+
+
 void
 ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t status_code_slot)
@@ -394,7 +467,8 @@ ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
 
     vtsn->ignore_status = vtscf->ignore_status;
     ms = ngx_http_vhost_traffic_status_request_time(r);
-    ngx_http_vhost_traffic_status_node_update(r, vtsn, ms, status_code_slot);
+    ngx_http_vhost_traffic_status_node_update(r, vtsn, ms, vtsn->stat_upstream.type,
+                                              status_code_slot);
 
     /*
      * stat_request_time is not kept up to date here: averaging the queue on
@@ -408,34 +482,53 @@ ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
 
 void
 ngx_http_vhost_traffic_status_node_update(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_msec_int_t ms, ngx_int_t status_code_slot)
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_msec_int_t ms,
+    unsigned type, ngx_int_t status_code_slot)
 {
-    ngx_uint_t status = r->headers_out.status;
+    ngx_uint_t                                 status = r->headers_out.status;
+    ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
+    ngx_http_vhost_traffic_status_gates_t      g;
+
+    vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
+    ngx_http_vhost_traffic_status_node_gates(vtscf, type, &g);
 
     if (ngx_http_vhost_traffic_status_ignore_status(vtsn->ignore_status, status)) {
         return;
     }
 
+    /* always-on: cheap, and the single source of truth for "_count" lines
+     * (independent of the "bucket" flag -- see comment above) */
     vtsn->stat_request_counter++;
-    vtsn->stat_in_bytes += (ngx_atomic_uint_t) r->request_length;
-    vtsn->stat_out_bytes += (ngx_atomic_uint_t) r->connection->sent;
 
-    ngx_http_vhost_traffic_status_add_rc(status, vtsn);
+    if (g.do_bytes) {
+        vtsn->stat_in_bytes += (ngx_atomic_uint_t) r->request_length;
+        vtsn->stat_out_bytes += (ngx_atomic_uint_t) r->connection->sent;
+    }
+
+    if (g.do_requests) {
+        ngx_http_vhost_traffic_status_add_rc(status, vtsn);
+    }
 
     if (status_code_slot != -1 && vtsn->stat_status_code_counter != NULL ) {
         vtsn->stat_status_code_counter[status_code_slot]++;
     }
 
-    vtsn->stat_request_time_counter += (ngx_atomic_uint_t) ms;
+    if (g.do_sum) {
+        vtsn->stat_request_time_counter += (ngx_atomic_uint_t) ms;
+    }
 
-    ngx_http_vhost_traffic_status_node_time_queue_insert(&vtsn->stat_request_times,
-                                                         ms);
+    if (g.do_queue) {
+        ngx_http_vhost_traffic_status_node_time_queue_insert(&vtsn->stat_request_times,
+                                                             ms);
+    }
 
-    ngx_http_vhost_traffic_status_node_histogram_observe(&vtsn->stat_request_buckets,
-                                                         ms);
+    if (g.do_bucket) {
+        ngx_http_vhost_traffic_status_node_histogram_observe(&vtsn->stat_request_buckets,
+                                                             ms);
+    }
 
 #if (NGX_HTTP_CACHE)
-    if (r->upstream != NULL && r->upstream->cache_status != 0) {
+    if (g.do_cache && r->upstream != NULL && r->upstream->cache_status != 0) {
         ngx_http_vhost_traffic_status_add_cc(r->upstream->cache_status, vtsn);
     }
 #endif
@@ -680,12 +773,14 @@ ngx_http_vhost_traffic_status_node_histogram_bucket_init(ngx_http_request_t *r,
 
     if (vtscf->histogram_buckets == NULL) {
         b->len = 0;
+        b->observed = 0;
         return;
     }
 
     buckets = vtscf->histogram_buckets->elts;
     n = vtscf->histogram_buckets->nelts;
     b->len = n;
+    b->observed = 0;
 
     for (i = 0; i < n; i++) {
         b->buckets[i].msec = buckets[i].msec;
@@ -702,6 +797,8 @@ ngx_http_vhost_traffic_status_node_histogram_observe(
     ngx_uint_t  i, n;
 
     n = b->len;
+
+    b->observed++;
 
     for (i = 0; i < n; i++) {
         if (x <= b->buckets[i].msec) {
