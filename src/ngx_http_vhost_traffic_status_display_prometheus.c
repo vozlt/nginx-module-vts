@@ -353,7 +353,7 @@ ngx_http_vhost_traffic_status_display_prometheus_set_filter_node(
             if (vtscf->display_filter_request_duration_count) {
                 buf = ngx_sprintf(buf,
                           NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_FILTER_HISTOGRAM_COUNT,
-                          &filter, &filter_name, vtsn->stat_request_counter);
+                          &filter, &filter_name, b->observed);
             }
         }
     }
@@ -510,7 +510,7 @@ ngx_http_vhost_traffic_status_display_prometheus_set_upstream_node(
             if (vtscf->display_upstream_request_duration_count) {
                 buf = ngx_sprintf(buf,
                         NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM_HISTOGRAM_COUNT,
-                        &target, &upstream, &upstream_server, vtsn->stat_request_counter);
+                        &target, &upstream, &upstream_server, b->observed);
             }
         }
     }
@@ -548,7 +548,7 @@ ngx_http_vhost_traffic_status_display_prometheus_set_upstream_node(
             if (vtscf->display_upstream_response_duration_count) {
                 buf = ngx_sprintf(buf,
                         NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM_HISTOGRAM_COUNT,
-                        &target, &upstream, &upstream_server, vtsn->stat_request_counter);
+                        &target, &upstream, &upstream_server, b->observed);
             }
         }
     }

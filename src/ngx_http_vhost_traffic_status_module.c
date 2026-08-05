@@ -1366,20 +1366,20 @@ ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf, void *parent, void 
     ngx_conf_merge_bitmask_value(conf->ignore_status, prev->ignore_status,
 (NGX_CONF_BITMASK_SET|NGX_HTTP_VHOST_TRAFFIC_STATUS_IGNORE_STATUS_OFF));
 
-    /* t10s trim patch defaults -- mirrors the fleet's trimmed set:
-     * off (0) = the 15 removed metrics, on (1) = the 17 kept metrics */
+    /* all display_* flags default to on (1) -- matches stock behavior,
+     * nothing is dropped unless explicitly configured off */
 
     /* server zone */
     ngx_conf_merge_value(conf->display_server_bytes_total,
-                         prev->display_server_bytes_total, 0);
+                         prev->display_server_bytes_total, 1);
     ngx_conf_merge_value(conf->display_server_requests_total,
                          prev->display_server_requests_total, 1);
     ngx_conf_merge_value(conf->display_server_cache_total,
-                         prev->display_server_cache_total, 0);
+                         prev->display_server_cache_total, 1);
     ngx_conf_merge_value(conf->display_server_request_seconds_total,
-                         prev->display_server_request_seconds_total, 0);
+                         prev->display_server_request_seconds_total, 1);
     ngx_conf_merge_value(conf->display_server_request_seconds,
-                         prev->display_server_request_seconds, 0);
+                         prev->display_server_request_seconds, 1);
     ngx_conf_merge_value(conf->display_server_request_duration_bucket,
                          prev->display_server_request_duration_bucket, 1);
     ngx_conf_merge_value(conf->display_server_request_duration_sum,
@@ -1393,17 +1393,17 @@ ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf, void *parent, void 
     ngx_conf_merge_value(conf->display_filter_requests_total,
                          prev->display_filter_requests_total, 1);
     ngx_conf_merge_value(conf->display_filter_cache_total,
-                         prev->display_filter_cache_total, 0);
+                         prev->display_filter_cache_total, 1);
     ngx_conf_merge_value(conf->display_filter_request_seconds_total,
-                         prev->display_filter_request_seconds_total, 0);
+                         prev->display_filter_request_seconds_total, 1);
     ngx_conf_merge_value(conf->display_filter_request_seconds,
-                         prev->display_filter_request_seconds, 0);
+                         prev->display_filter_request_seconds, 1);
     ngx_conf_merge_value(conf->display_filter_request_duration_bucket,
-                         prev->display_filter_request_duration_bucket, 0);
+                         prev->display_filter_request_duration_bucket, 1);
     ngx_conf_merge_value(conf->display_filter_request_duration_sum,
-                         prev->display_filter_request_duration_sum, 0);
+                         prev->display_filter_request_duration_sum, 1);
     ngx_conf_merge_value(conf->display_filter_request_duration_count,
-                         prev->display_filter_request_duration_count, 0);
+                         prev->display_filter_request_duration_count, 1);
 
     /* upstream zone -- request (includes upstream) timing */
     ngx_conf_merge_value(conf->display_upstream_bytes_total,
@@ -1411,9 +1411,9 @@ ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf, void *parent, void 
     ngx_conf_merge_value(conf->display_upstream_requests_total,
                          prev->display_upstream_requests_total, 1);
     ngx_conf_merge_value(conf->display_upstream_request_seconds_total,
-                         prev->display_upstream_request_seconds_total, 0);
+                         prev->display_upstream_request_seconds_total, 1);
     ngx_conf_merge_value(conf->display_upstream_request_seconds,
-                         prev->display_upstream_request_seconds, 0);
+                         prev->display_upstream_request_seconds, 1);
     ngx_conf_merge_value(conf->display_upstream_request_duration_bucket,
                          prev->display_upstream_request_duration_bucket, 1);
     ngx_conf_merge_value(conf->display_upstream_request_duration_sum,
@@ -1423,11 +1423,11 @@ ngx_http_vhost_traffic_status_merge_loc_conf(ngx_conf_t *cf, void *parent, void 
 
     /* upstream zone -- response (upstream-only) timing */
     ngx_conf_merge_value(conf->display_upstream_response_seconds_total,
-                         prev->display_upstream_response_seconds_total, 0);
+                         prev->display_upstream_response_seconds_total, 1);
     ngx_conf_merge_value(conf->display_upstream_response_seconds,
-                         prev->display_upstream_response_seconds, 0);
+                         prev->display_upstream_response_seconds, 1);
     ngx_conf_merge_value(conf->display_upstream_response_duration_bucket,
-                         prev->display_upstream_response_duration_bucket, 0);
+                         prev->display_upstream_response_duration_bucket, 1);
     ngx_conf_merge_value(conf->display_upstream_response_duration_sum,
                          prev->display_upstream_response_duration_sum, 1);
     ngx_conf_merge_value(conf->display_upstream_response_duration_count,
