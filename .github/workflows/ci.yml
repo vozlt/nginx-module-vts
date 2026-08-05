@@ -244,3 +244,12 @@ jobs:
       - name: 'build'
         working-directory: front
         run: npm run build
+
+  lockcheck:
+    name: 'lock discipline'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 'checkout'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: 'read the sources'
+        run: python3 util/lockcheck.py
