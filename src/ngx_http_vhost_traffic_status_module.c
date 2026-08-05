@@ -643,10 +643,11 @@ ngx_http_vhost_traffic_status_init_zone(ngx_shm_zone_t *shm_zone, void *data)
 {
     ngx_http_vhost_traffic_status_ctx_t  *octx = data;
 
-    size_t                                len;
-    ngx_slab_pool_t                      *shpool;
-    ngx_rbtree_node_t                    *sentinel;
-    ngx_http_vhost_traffic_status_ctx_t  *ctx;
+    size_t                                     len;
+    ngx_slab_pool_t                           *shpool;
+    ngx_rbtree_node_t                         *sentinel;
+    ngx_http_vhost_traffic_status_ctx_t       *ctx;
+    ngx_http_vhost_traffic_status_shm_data_t  *shm_data;
 
     ctx = shm_zone->data;
 
@@ -658,16 +659,40 @@ ngx_http_vhost_traffic_status_init_zone(ngx_shm_zone_t *shm_zone, void *data)
     shpool = (ngx_slab_pool_t *) shm_zone->shm.addr;
 
     if (shm_zone->shm.exists) {
-        ctx->rbtree = shpool->data;
+        shm_data = shpool->data;
+
+        /* the node struct's layout is compiled in; a binary upgrade that
+         * changes it (e.g. adding a field to a struct embedded in the node)
+         * must not reuse the old segment's data under the new layout -- fail
+         * loudly instead of silently misreading/corrupting shared memory.
+         * This only trips on a hot binary upgrade (USR2/WINCH) or a reload
+         * that keeps the shm segment alive with an incompatible layout; a
+         * full stop+start always gets a fresh segment. */
+        if (shm_data->node_size != sizeof(ngx_http_vhost_traffic_status_node_t)) {
+            ngx_log_error(NGX_LOG_EMERG, shm_zone->shm.log, 0,
+                          "vhost_traffic_status_zone \"%V\": existing shared "
+                          "memory has a node size of %uz bytes, this binary "
+                          "expects %uz -- the module's internal layout "
+                          "changed; stop nginx completely (not reload or a "
+                          "hot binary upgrade) so a fresh segment is created",
+                          &shm_zone->shm.name, shm_data->node_size,
+                          sizeof(ngx_http_vhost_traffic_status_node_t));
+            return NGX_ERROR;
+        }
+
+        ctx->rbtree = &shm_data->rbtree;
         return NGX_OK;
     }
 
-    ctx->rbtree = ngx_slab_alloc(shpool, sizeof(ngx_rbtree_t));
-    if (ctx->rbtree == NULL) {
+    shm_data = ngx_slab_alloc(shpool, sizeof(ngx_http_vhost_traffic_status_shm_data_t));
+    if (shm_data == NULL) {
         return NGX_ERROR;
     }
 
-    shpool->data = ctx->rbtree;
+    shm_data->node_size = sizeof(ngx_http_vhost_traffic_status_node_t);
+    ctx->rbtree = &shm_data->rbtree;
+
+    shpool->data = shm_data;
 
     sentinel = ngx_slab_alloc(shpool, sizeof(ngx_rbtree_node_t));
     if (sentinel == NULL) {

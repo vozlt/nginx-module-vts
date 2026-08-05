@@ -277,6 +277,15 @@
 )
 
 
+/* header stored as shm_zone data: stamps the node struct's compiled-in size
+ * so init_zone() can detect an incompatible layout on shm reuse (config
+ * reload or hot binary upgrade) instead of silently misreading old data. */
+typedef struct {
+    size_t                                   node_size;
+    ngx_rbtree_t                             rbtree;
+} ngx_http_vhost_traffic_status_shm_data_t;
+
+
 typedef struct {
     ngx_rbtree_t                           *rbtree;
 
