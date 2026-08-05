@@ -149,6 +149,22 @@ def check(path):
     return findings
 
 
+def stale(paths):
+    """Names in CALLED_LOCKED that no longer belong to any function.
+
+    An entry that has outlived its function is a hole in the check rather
+    than a harmless leftover: it covers whatever is written under that name
+    next. Say so instead of carrying it."""
+
+    seen = set()
+
+    for path in paths:
+        text = pathlib.Path(path).read_text()
+        seen.update(name for name, _, _ in functions(text))
+
+    return sorted(CALLED_LOCKED - seen)
+
+
 def main(argv):
     paths = argv[1:] or sorted(str(p) for p in pathlib.Path("src").glob("*.c"))
 
@@ -157,6 +173,13 @@ def main(argv):
         return 2
 
     total = 0
+
+    # a single file on the command line cannot tell what the tree holds
+    if len(argv) == 1:
+        for name in stale(paths):
+            print("util/lockcheck.py: stale: %s() is listed as called with "
+                  "the mutex held but no longer exists" % name)
+            total += 1
 
     for path in paths:
         for line, kind, message in check(path):
