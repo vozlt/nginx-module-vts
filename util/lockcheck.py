@@ -111,13 +111,30 @@ def check(path):
                 given = max(n for n, line in enumerate(body) if UNLOCK in line)
 
                 for n in range(taken, given):
-                    if not re.search(r"\breturn\b", body[n]):
-                        continue
+                    if re.search(r"\breturn\b", body[n]):
+                        if UNLOCK in "\n".join(body[max(0, n - WINDOW):n]):
+                            continue
 
-                    if UNLOCK not in "\n".join(body[max(0, n - WINDOW):n]):
                         findings.append((start + n, "held",
                                          "%s() returns while holding the mutex"
                                          % name))
+                        continue
+
+                    # a goto is safe when its label is inside the region too,
+                    # which is how limit.c and variables.c converge on one exit
+                    m = re.search(r"\bgoto\s+([A-Za-z_][A-Za-z0-9_]*)", body[n])
+
+                    if m is None:
+                        continue
+
+                    label = re.compile(r"^\s*%s\s*:" % re.escape(m.group(1)))
+
+                    if any(label.match(l) for l in body[taken:given]):
+                        continue
+
+                    findings.append((start + n, "held",
+                                     "%s() jumps out of the region holding the "
+                                     "mutex" % name))
 
         if name in CALLED_LOCKED or LOCK in joined:
             continue
