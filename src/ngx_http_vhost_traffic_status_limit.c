@@ -119,7 +119,6 @@ ngx_http_vhost_traffic_status_limit_handler_traffic(ngx_http_request_t *r,
                 continue;
             }
 
-            vtscf->node_caches[type] = node;
 
             vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
 
@@ -141,7 +140,6 @@ ngx_http_vhost_traffic_status_limit_handler_traffic(ngx_http_request_t *r,
                 continue;
             }
 
-            vtscf->node_caches[type] = node;
 
             vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
 
