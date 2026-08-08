@@ -238,6 +238,9 @@ jobs:
       - name: 'install'
         working-directory: front
         run: npm ci
+      - name: 'lint'
+        working-directory: front
+        run: npm run lint
       - name: 'test'
         working-directory: front
         run: npm test
