@@ -25,12 +25,22 @@ export function useVtsData(initialInterval = 1000) {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
     /* fetchData reaches setState only after an await, except that a
        synchronous throw from fetch() would hit its catch first. Queue the
-       first call so the effect body never sets state itself. */
-    queueMicrotask(fetchData);
+       first call so the effect body never sets state itself, and drop it if
+       this effect has been cleaned up by the time it runs - a queued
+       callback cannot be cancelled, and under StrictMode the discarded
+       first setup would otherwise fetch as well. */
+    queueMicrotask(() => {
+      if (!cancelled) {
+        void fetchData();
+      }
+    });
     timerRef.current = window.setInterval(fetchData, interval);
     return () => {
+      cancelled = true;
       if (timerRef.current !== undefined) {
         window.clearInterval(timerRef.current);
       }
