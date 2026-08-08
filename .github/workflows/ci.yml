@@ -20,7 +20,7 @@ jobs:
         with:
           repository: nginx/nginx
           path: nginx
-          ref: 'a92a537860c7b87d3793d9eb41c9cf3ed833b53c'
+          ref: '017cf98dcce217946572a896f0992370475e189f'
       - name: 'checkout freenginx'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -134,7 +134,7 @@ jobs:
         with:
           repository: nginx/nginx
           path: nginx
-          ref: 'a92a537860c7b87d3793d9eb41c9cf3ed833b53c'
+          ref: '017cf98dcce217946572a896f0992370475e189f'
       - name: 'prepare cpanm'
         run: |
           sudo apt install -y cpanminus
@@ -215,7 +215,7 @@ jobs:
         with:
           repository: nginx/nginx
           path: nginx
-          ref: 'a92a537860c7b87d3793d9eb41c9cf3ed833b53c'
+          ref: '017cf98dcce217946572a896f0992370475e189f'
       - name: 'build nginx'
         working-directory: nginx
         run: |
