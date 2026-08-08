@@ -99,13 +99,11 @@ ngx_rbtree_node_t *
 ngx_http_vhost_traffic_status_find_node(ngx_http_request_t *r,
     ngx_str_t *key, unsigned type, uint32_t key_hash)
 {
-    uint32_t                                   hash;
-    ngx_rbtree_node_t                         *node;
-    ngx_http_vhost_traffic_status_ctx_t       *ctx;
-    ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
+    uint32_t                              hash;
+    ngx_rbtree_node_t                    *node;
+    ngx_http_vhost_traffic_status_ctx_t  *ctx;
 
     ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
-    vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
 
     hash = key_hash;
 
@@ -113,16 +111,7 @@ ngx_http_vhost_traffic_status_find_node(ngx_http_request_t *r,
         hash = ngx_crc32_short(key->data, key->len);
     }
 
-    if (vtscf->node_caches[type] != NULL) {
-        if (vtscf->node_caches[type]->key == hash) {
-            node = vtscf->node_caches[type];
-            goto found;
-        }
-    }
-
     node = ngx_http_vhost_traffic_status_node_lookup(ctx->rbtree, key, hash);
-
-found:
 
     return node;
 }

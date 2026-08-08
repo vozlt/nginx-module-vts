@@ -239,8 +239,6 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
         break;
     }
 
-    vtscf->node_caches[type] = node;
-
     ngx_shmtx_unlock(&shpool->mutex);
 
     return NGX_OK;

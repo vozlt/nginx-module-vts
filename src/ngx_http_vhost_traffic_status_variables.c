@@ -178,7 +178,6 @@ not_found:
 
 done:
 
-    vtscf->node_caches[type] = node;
 
     ngx_shmtx_unlock(&shpool->mutex);
 

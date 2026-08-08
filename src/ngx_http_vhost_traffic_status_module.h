@@ -361,7 +361,6 @@ typedef struct {
     ngx_flag_t                              stats_by_upstream;
     ngx_uint_t                              ignore_status;
 
-    ngx_rbtree_node_t                     **node_caches;
 } ngx_http_vhost_traffic_status_loc_conf_t;
 
 
