@@ -848,10 +848,17 @@
             }
 
             async function vtsGetData() {
-                var monitor = document.getElementById('monitor');
-                var response = await fetch(vtsStatusURI);
-                monitor.innerHTML = template(JSON.parse(await response.text()));
-            };
+                const monitor = document.getElementById('monitor');
+                try {
+                    const response = await fetch(vtsStatusURI);
+                    if (!response.ok) {
+                        return;
+                    }
+                    monitor.innerHTML = template(await response.json());
+                } catch (e) {
+                    /* keep the last render, as the XMLHttpRequest version did */
+                }
+            }
 
             function vtsSetInterval(msec) {
                 clearInterval(vtsUpdate);
