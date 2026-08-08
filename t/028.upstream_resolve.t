@@ -69,9 +69,11 @@ if ($dns_pid == 0) {
     my $server = __FILE__;
     $server =~ s{[^/]+$}{dns_server.pl};
 
-    exec($^X, $server, $DNSPort, $SwitchIn, $FirstAddr, $SecondAddr);
-
-    POSIX::_exit(1);
+    # the _exit() is the path where exec() itself failed; writing it as the
+    # alternative rather than the next statement is also what keeps perl from
+    # warning that it is unlikely to be reached
+    exec($^X, $server, $DNSPort, $SwitchIn, $FirstAddr, $SecondAddr)
+        or POSIX::_exit(1);
 }
 
 END {
