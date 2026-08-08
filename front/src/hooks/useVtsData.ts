@@ -25,7 +25,10 @@ export function useVtsData(initialInterval = 1000) {
   }, []);
 
   useEffect(() => {
-    fetchData();
+    /* fetchData reaches setState only after an await, except that a
+       synchronous throw from fetch() would hit its catch first. Queue the
+       first call so the effect body never sets state itself. */
+    queueMicrotask(fetchData);
     timerRef.current = window.setInterval(fetchData, interval);
     return () => {
       if (timerRef.current !== undefined) {
