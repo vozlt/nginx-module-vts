@@ -2,6 +2,60 @@
 ## [Unreleased]
 
 
+## [v0.2.7] - 2026-08-09
+### Chore
+- keep the commits without a type in the changelog
+
+### Ci
+- say where the nonnull check comes back
+- leave the nonnull check out of UndefinedBehaviorSanitizer
+- turn on UndefinedBehaviorSanitizer as well
+
+### Feat
+- say how much of the shared zone is left
+
+### Fix
+- **front:** drop the queued first fetch when the effect was cleaned up
+- **front:** stop useVtsData setting state from the effect body, and lint in CI
+- **front:** update the lockfile for the open Dependabot advisories
+- read the sizes of the cache zone outside our own mutex
+- test r->upstream before reading through it
+- take out the per type node cache
+- read the tree of the shared memory under its mutex
+- consult the filter cap only for an insertion it governs
+- do not turn a counter that fell into a negative rate per second
+- take the address of the JSON from the browser, not from the module
+- look up an upstream peer among all addresses of a server line
+- Fix the gate and the label of the resolved peers output
+- Fix upstream resolver display bugs in nginx >= 1.27.3
+- Fix GitHub Copilot suggestions: replace magic numbers and add bounds checking
+- Fix output upstream whole peers
+- Fix invalid output when upstream re-resolved
+
+### Other
+- keep the walk of the configuration out of the mutex
+- size the page buffer from the uri it has to carry
+- say what naddrs holds and skip on the addresses the test needs
+- Replace git-chglog with git-cliff
+- Collect the peers that went away in one pass over the tree
+- Skip the resolve test where the parameter is not supported
+- Do not use the resolve list on freenginx
+- Add a test for the peers of an upstream zone
+- Do not average the time queue on every request
+- Do not copy the whole node to compare its counters
+- Hash the key before taking the lock
+
+### Test
+- write the exec() fallback as an alternative, not the next statement
+- two zones whose keys share a hash keep their own nodes
+- the shared zone says how much of it is left
+- the filter cap drops a node only for an insertion it governs
+- the rate per second of a counter that fell or has no period
+- the status page builds the address of its JSON from its own
+- control of an upstream peer that is not the first address
+- Test that a re-resolved peer keeps its statistics
+
+
 ## [v0.2.6] - 2026-07-29
 ### Ci
 - build with and without the HTTP cache
@@ -396,7 +450,8 @@
 - added type casting(ngx_atomic_t) in the ngx_vhost_traffic_status_node_init() and ngx_vhost_traffic_status_node_set()
 
 
-[Unreleased]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.6...HEAD
+[Unreleased]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.7...HEAD
+[v0.2.7]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.6...v0.2.7
 [v0.2.6]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.5...v0.2.6
 [v0.2.5]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.4...v0.2.5
 [v0.2.4]: https://github.com/vozlt/nginx-module-vts/compare/v0.2.3...v0.2.4
