@@ -259,3 +259,56 @@ __DATA__
     '{"vol0"'
 ]
 
+
+
+=== TEST 9: plus stays plus in filter zone
+--- http_config
+    vhost_traffic_status_zone;
+--- config
+    location /status {
+        vhost_traffic_status_display;
+        vhost_traffic_status_display_format json;
+        access_log off;
+    }
+    location /test_plus_literal {
+        set $volume "test+value";
+        vhost_traffic_status_filter_by_set_key $volume storage::$server_name;
+        return 200 "filter:OK";
+    }
+--- request eval
+[
+    'GET /test_plus_literal',
+    'GET /status/control?cmd=status&group=filter&zone=storage::localhost@test+value',
+]
+--- response_body_like eval
+[
+    'OK',
+    '{"test\+value"'
+]
+
+
+
+=== TEST 10: encoded plus decodes to literal plus in filter zone
+--- http_config
+    vhost_traffic_status_zone;
+--- config
+    location /status {
+        vhost_traffic_status_display;
+        vhost_traffic_status_display_format json;
+        access_log off;
+    }
+    location /test_plus_encoded {
+        set $volume "test+value";
+        vhost_traffic_status_filter_by_set_key $volume storage::$server_name;
+        return 200 "filter:OK";
+    }
+--- request eval
+[
+    'GET /test_plus_encoded',
+    'GET /status/control?cmd=status&group=filter&zone=storage::localhost@test%2Bvalue',
+]
+--- response_body_like eval
+[
+    'OK',
+    '{"test\+value"'
+]
