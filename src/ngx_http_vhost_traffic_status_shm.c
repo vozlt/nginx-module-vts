@@ -497,7 +497,7 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r)
     ngx_http_upstream_main_conf_t  *umcf;
 
     if (r->upstream_states == NULL || r->upstream_states->nelts == 0
-        || r->upstream->state == NULL)
+        || r->upstream == NULL || r->upstream->state == NULL)
     {
         return NGX_OK;
     }
