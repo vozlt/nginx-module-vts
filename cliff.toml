@@ -4,6 +4,12 @@
 # deprecated. Only the section of the release being cut is generated, see
 # util/changelog.sh: the commits of the early releases use types that do not
 # parse the same way any more and regenerating them would drop entries.
+#
+# filter_unconventional is off and the last parser catches everything that is
+# left, because not every commit in this repository carries a type: with the
+# filter on, cutting v0.2.7 dropped thirty of fifty-five commits, two whole
+# pull requests among them. Merges are skipped by name instead. The message of
+# a commit that has no type is its whole message, hence the split in the body.
 
 [changelog]
 header = """<a name="unreleased"></a>
@@ -19,7 +25,7 @@ body = """
 {% for group, commits in commits | group_by(attribute="group") %}\
 ### {{ group }}
 {% for commit in commits %}\
-- {% if commit.scope %}**{{ commit.scope }}:** {% endif %}{{ commit.message }}
+- {% if commit.scope %}**{{ commit.scope }}:** {% endif %}{{ commit.message | split(pat="\n") | first | trim }}
 {% endfor %}
 {% endfor %}
 """
@@ -38,9 +44,10 @@ postprocessors = [
 
 [git]
 conventional_commits = true
-filter_unconventional = true
+filter_unconventional = false
 sort_commits = "newest"
 commit_parsers = [
+  { message = "^Merge", skip = true },
   { message = "(?i)^bugfix", group = "Bugfix" },
   { message = "(?i)^chore", group = "Chore" },
   { message = "(?i)^ci", group = "Ci" },
@@ -59,4 +66,5 @@ commit_parsers = [
   { message = "(?i)^style", group = "Style" },
   { message = "(?i)^tag", group = "Tag" },
   { message = "(?i)^test", group = "Test" },
+  { message = ".*", group = "Other" },
 ]
