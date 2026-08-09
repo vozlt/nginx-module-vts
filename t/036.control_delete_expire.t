@@ -83,7 +83,7 @@ __DATA__
     'nothing',
     'nothing',
     'nothing',
-    '"stale"'
+    '"stale":\{'
 ]
 
 === TEST 3: an expire nothing has reached removes nothing
