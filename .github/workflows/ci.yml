@@ -100,11 +100,19 @@ jobs:
           sudo apt install -y cpanminus
           sudo cpanm --notest Test::Nginx::Socket > build.log 2>&1 || (cat build.log && exit 1)
       - name: 'prepare promtool'
+        env:
+          # pinned, like the nginx checkout and the actions above it. Asking
+          # the api for the latest release is an unauthenticated call from a
+          # shared runner address, and when it is rate limited the command
+          # substitution yields nothing, so curl is handed no url at all and
+          # the step fails somewhere unrelated to what it was testing
+          PROMETHEUS_VERSION: '3.13.2'
         run: |
-          sudo apt-get update && sudo apt-get install -y curl
-          curl -L $(curl -s https://api.github.com/repos/prometheus/prometheus/releases/latest | grep browser_download_url | grep linux-amd64 | cut -d '"' -f 4) -o prometheus-latest.tar.gz
-          tar xvf prometheus-latest.tar.gz
+          curl -fsSL -o prometheus.tar.gz \
+            "https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz"
+          tar xzf prometheus.tar.gz
           sudo mv prometheus-*/promtool /usr/local/bin
+          promtool --version
       - name: 'test'
         working-directory: nginx-module-vts
         run: |
@@ -140,11 +148,19 @@ jobs:
           sudo apt install -y cpanminus
           sudo cpanm --notest Test::Nginx::Socket > build.log 2>&1 || (cat build.log && exit 1)
       - name: 'prepare promtool'
+        env:
+          # pinned, like the nginx checkout and the actions above it. Asking
+          # the api for the latest release is an unauthenticated call from a
+          # shared runner address, and when it is rate limited the command
+          # substitution yields nothing, so curl is handed no url at all and
+          # the step fails somewhere unrelated to what it was testing
+          PROMETHEUS_VERSION: '3.13.2'
         run: |
-          sudo apt-get update && sudo apt-get install -y curl
-          curl -L $(curl -s https://api.github.com/repos/prometheus/prometheus/releases/latest | grep browser_download_url | grep linux-amd64 | cut -d '"' -f 4) -o prometheus-latest.tar.gz
-          tar xvf prometheus-latest.tar.gz
+          curl -fsSL -o prometheus.tar.gz \
+            "https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz"
+          tar xzf prometheus.tar.gz
           sudo mv prometheus-*/promtool /usr/local/bin
+          promtool --version
       - name: 'relax ASLR entropy'
         # the sanitizer runtime cannot map its shadow memory with the high
         # entropy ASLR of the ubuntu-24.04 kernel
