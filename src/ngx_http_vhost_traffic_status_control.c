@@ -20,6 +20,9 @@ static void ngx_http_vhost_traffic_status_node_status_zone(
 static ngx_int_t ngx_http_vhost_traffic_status_node_delete_get_nodes(
     ngx_http_vhost_traffic_status_control_t *control,
     ngx_array_t **nodes, ngx_rbtree_node_t *node);
+static ngx_int_t ngx_http_vhost_traffic_status_node_expire_match(
+    ngx_http_vhost_traffic_status_control_t *control,
+    ngx_http_vhost_traffic_status_node_t *vtsn);
 static void ngx_http_vhost_traffic_status_node_delete_all(
     ngx_http_vhost_traffic_status_control_t *control);
 static void ngx_http_vhost_traffic_status_node_delete_group(
@@ -387,6 +390,40 @@ ngx_http_vhost_traffic_status_node_status(
 
 
 static ngx_int_t
+ngx_http_vhost_traffic_status_node_expire_match(
+    ngx_http_vhost_traffic_status_control_t *control,
+    ngx_http_vhost_traffic_status_node_t *vtsn)
+{
+    ngx_int_t   i;
+    ngx_msec_t  last;
+
+    /* nothing was asked for, so every node the selection matches is taken */
+
+    if (control->expire == 0) {
+        return NGX_OK;
+    }
+
+    i = ngx_http_vhost_traffic_status_node_time_queue_rear(&vtsn->stat_request_times);
+    last = vtsn->stat_request_times.times[i].time;
+
+    /*
+     * The stored value is the epoch in milliseconds. ngx_msec_t is as wide as
+     * a pointer, so on a 32 bit build it wraps every 49.7 days; taking the
+     * difference in that same unsigned type stays right across the wrap,
+     * which is also what limits how large an expire can usefully be.
+     */
+
+    if ((ngx_msec_t) (ngx_http_vhost_traffic_status_current_msec() - last)
+        > control->expire)
+    {
+        return NGX_OK;
+    }
+
+    return NGX_DECLINED;
+}
+
+
+static ngx_int_t
 ngx_http_vhost_traffic_status_node_delete_get_nodes(
     ngx_http_vhost_traffic_status_control_t *control,
     ngx_array_t **nodes, ngx_rbtree_node_t *node)
@@ -401,8 +438,11 @@ ngx_http_vhost_traffic_status_node_delete_get_nodes(
     if (node != ctx->rbtree->sentinel) {
         vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
 
-        if ((ngx_int_t) vtsn->stat_upstream.type == control->group) {
-
+        if ((control->group == -1
+             || (ngx_int_t) vtsn->stat_upstream.type == control->group)
+            && ngx_http_vhost_traffic_status_node_expire_match(control, vtsn)
+               == NGX_OK)
+        {
             if (*nodes == NULL) {
                 *nodes = ngx_array_create(control->r->pool, 1,
                         sizeof(ngx_http_vhost_traffic_status_delete_t));
@@ -527,6 +567,7 @@ ngx_http_vhost_traffic_status_node_delete_zone(
     ngx_slab_pool_t                           *shpool;
     ngx_rbtree_node_t                         *node;
     ngx_http_vhost_traffic_status_ctx_t       *ctx;
+    ngx_http_vhost_traffic_status_node_t      *vtsn;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
 
     ctx = ngx_http_get_module_main_conf(control->r, ngx_http_vhost_traffic_status_module);
@@ -545,10 +586,16 @@ ngx_http_vhost_traffic_status_node_delete_zone(
     node = ngx_http_vhost_traffic_status_node_lookup(ctx->rbtree, &key, hash);
 
     if (node != NULL) {
-        ngx_rbtree_delete(ctx->rbtree, node);
-        ngx_slab_free_locked(shpool, node);
+        vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
 
-        control->count++;
+        if (ngx_http_vhost_traffic_status_node_expire_match(control, vtsn)
+            == NGX_OK)
+        {
+            ngx_rbtree_delete(ctx->rbtree, node);
+            ngx_slab_free_locked(shpool, node);
+
+            control->count++;
+        }
     }
 }
 
@@ -560,7 +607,21 @@ ngx_http_vhost_traffic_status_node_delete(
     switch (control->range) {
 
     case NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_RANGE_ALL:
-        ngx_http_vhost_traffic_status_node_delete_all(control);
+
+        /*
+         * delete_all() empties the tree by taking its root until there is
+         * none, which cannot leave anything behind. With an expire there is
+         * something to leave behind, so the walk that collects what matches
+         * is used instead; it takes every type when the group is -1.
+         */
+
+        if (control->expire) {
+            ngx_http_vhost_traffic_status_node_delete_group(control);
+
+        } else {
+            ngx_http_vhost_traffic_status_node_delete_all(control);
+        }
+
         break;
 
     case NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_RANGE_GROUP:

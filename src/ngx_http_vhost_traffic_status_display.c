@@ -74,8 +74,8 @@ done:
 static ngx_int_t
 ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
 {
-    ngx_int_t                                  size, rc;
-    ngx_str_t                                  type, alpha, encoded_ch, arg_cmd, arg_group, arg_zone;
+    ngx_int_t                                  size, rc, expire;
+    ngx_str_t                                  type, alpha, encoded_ch, arg_cmd, arg_group, arg_zone, arg_expire;
     ngx_buf_t                                 *b;
     ngx_chain_t                                out;
     ngx_slab_pool_t                           *shpool;
@@ -235,6 +235,24 @@ ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
             if (rc != NGX_OK) {
                 ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                               "display_handler_control::replace_strc() failed");
+            }
+        }
+
+        /*
+         * expire selects, among what group and zone already match, the nodes
+         * whose last request is older than the given number of seconds. A
+         * value that does not parse leaves the command undone rather than
+         * falling back to deleting everything the selection matches.
+         */
+
+        if (ngx_http_arg(r, (u_char *) "expire", 6, &arg_expire) == NGX_OK) {
+            expire = ngx_atoi(arg_expire.data, arg_expire.len);
+
+            if (expire == NGX_ERROR || expire < 0) {
+                control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_NONE;
+
+            } else {
+                control->expire = (ngx_msec_t) expire * 1000;
             }
         }
 
