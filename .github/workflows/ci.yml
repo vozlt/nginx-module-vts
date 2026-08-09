@@ -160,10 +160,21 @@ jobs:
           # mainline 1.31.0, the stable branch does not carry it, 1.30.4
           # included, so the check stays out while the tests build a stable
           # release
+          # NGX_HAVE_NONALIGNED is what lets nginx read four bytes at a
+          # time from an arbitrary offset - ngx_md5.c, ngx_http_parse.c and
+          # http/2 all take it. auto/os/conf turns it on for x86, which is
+          # what runs here, and UndefinedBehaviorSanitizer objects whenever
+          # the bytes happen to land off a four byte boundary. Whether they
+          # do is down to where a string falls in memory, so the job passes
+          # or fails on luck: an upstream over a long unix socket path made
+          # ngx_http_upstream_init_round_robin_sid() hash from an odd
+          # address and took the run down. Turn it off and nginx assembles
+          # the word a byte at a time instead, which reads the same and
+          # keeps the alignment check meaningful for this module
           ./auto/configure \
             --prefix=/usr/local/nginx-asan \
             --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts \
-            --with-cc-opt="-fsanitize=address,undefined -fno-sanitize=nonnull-attribute -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g -O1" \
+            --with-cc-opt="-DNGX_HAVE_NONALIGNED=0 -fsanitize=address,undefined -fno-sanitize=nonnull-attribute -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g -O1" \
             --with-ld-opt="-fsanitize=address,undefined"
           make -j$(nproc)
           sudo make install
