@@ -55,9 +55,10 @@ static ngx_http_variable_t  ngx_http_vhost_traffic_status_vars[] = {
       offsetof(ngx_http_vhost_traffic_status_node_t, stat_request_time_counter),
       NGX_HTTP_VAR_NOCACHEABLE, 0 },
 
+    /* the offset names the queue this averages, it is not read through */
     { ngx_string("vts_request_time"), NULL,
       ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_request_time),
+      offsetof(ngx_http_vhost_traffic_status_node_t, stat_request_times),
       NGX_HTTP_VAR_NOCACHEABLE, 0 },
 
 #if (NGX_HTTP_CACHE)
@@ -152,9 +153,9 @@ ngx_http_vhost_traffic_status_node_variable(ngx_http_request_t *r,
 
     vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
 
-    if (data == offsetof(ngx_http_vhost_traffic_status_node_t, stat_request_time)) {
+    if (data == offsetof(ngx_http_vhost_traffic_status_node_t, stat_request_times)) {
 
-        /* not kept up to date by the request path, average the queue here */
+        /* the queue is the value, there is no counter kept for it */
 
         value = (ngx_atomic_t) ngx_http_vhost_traffic_status_node_time_queue_average(
                                    &vtsn->stat_request_times, vtscf->average_method,

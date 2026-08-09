@@ -394,7 +394,6 @@ ngx_http_vhost_traffic_status_node_expire_match(
     ngx_http_vhost_traffic_status_control_t *control,
     ngx_http_vhost_traffic_status_node_t *vtsn)
 {
-    ngx_int_t   i;
     ngx_msec_t  last;
 
     /* nothing was asked for, so every node the selection matches is taken */
@@ -403,8 +402,7 @@ ngx_http_vhost_traffic_status_node_expire_match(
         return NGX_OK;
     }
 
-    i = ngx_http_vhost_traffic_status_node_time_queue_rear(&vtsn->stat_request_times);
-    last = vtsn->stat_request_times.times[i].time;
+    last = vtsn->stat_last_seen;
 
     /*
      * The stored value is the epoch in milliseconds. ngx_msec_t is as wide as

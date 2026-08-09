@@ -89,7 +89,21 @@ typedef struct {
     ngx_atomic_t                                           *stat_status_code_counter;
 
     ngx_atomic_t                                           stat_request_time_counter;
-    ngx_msec_t                                             stat_request_time;
+
+    /*
+       When the node was last reached, in milliseconds since the epoch. It is
+       written for every request, before the check that ignore_status makes,
+       so it says when the zone was last served rather than when it was last
+       counted. Nothing else here can stand in for it: the time queue holds
+       what was counted, which is not the same thing, and the readers of it
+       pair each timestamp with a duration.
+
+       It sits where stat_request_time used to. That field held the duration
+       of the first request and nothing read it - the one variable that names
+       it, $vts_request_time, uses the offset to recognise itself and then
+       averages the queue.
+    */
+    ngx_msec_t                                             stat_last_seen;
     ngx_http_vhost_traffic_status_node_time_queue_t        stat_request_times;
     ngx_http_vhost_traffic_status_node_histogram_bucket_t  stat_request_buckets;
 

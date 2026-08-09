@@ -311,6 +311,16 @@ ngx_http_vhost_traffic_status_dump_restore_add_node(ngx_event_t *ev,
         vtsn->stat_status_code_counter = NULL;
         vtsn->stat_status_code_length = 0;
 
+        /*
+         * The dump carries when each zone was last reached, which was however
+         * long ago the file was written. Reading it back as it stands would
+         * have the first sweep of an expire take everything the dump exists
+         * to keep, so the zones start again as reached now. It costs them one
+         * expire of life after a restart.
+         */
+
+        vtsn->stat_last_seen = ngx_http_vhost_traffic_status_current_msec();
+
         ngx_memcpy(vtsn->data, key->data, key->len);
 
         ngx_rbtree_insert(ctx->rbtree, node);
