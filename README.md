@@ -477,10 +477,15 @@ The available request arguments are as follows:
     `expire=0` selects everything, which is what leaving it out already does.
   * A value that cannot be read leaves the request undone rather than falling
     back to deleting everything selected.
-  * The age of a zone is kept as a timestamp in milliseconds. On a 32 bit build
-    that count wraps every 49.7 days, so a zone left untouched for longer than
-    that can read as more recent than it is and be missed by one sweep. It is
-    never deleted early.
+  * The age of a zone is the time of the last request this module **recorded**
+    against it, which is not the same as the last request it served.
+    `vhost_traffic_status_ignore_status` suppresses the recording, so a zone
+    whose requests are all excluded by it keeps the age it had before, or none
+    at all if it never had one, and `expire` will read it as idle and delete it
+    while it is still being served.
+  * The age is kept as a timestamp in milliseconds. On a 32 bit build that
+    count wraps every 49.7 days, so a zone left untouched for longer than that
+    can read as more recent than it is and be missed by one sweep.
 * **group**=\<`server`\|`filter`\|`upstream@alone`\|`upstream@group`\|`cache`\|`*`\>
   * server
   * filter

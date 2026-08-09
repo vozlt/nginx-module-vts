@@ -4,7 +4,7 @@ use Test::Nginx::Socket;
 
 # Two checks per request, and the blocks do not hold the same number of
 # them, so the total is spelled out rather than derived from blocks().
-plan tests => repeat_each() * 78;
+plan tests => repeat_each() * 86;
 no_shuffle();
 run_tests();
 
@@ -316,4 +316,46 @@ __DATA__
     'filter:OK',
     '"processingCounts":1',
     '"fresh":\{'
+]
+
+=== TEST 11: ignore_status hides the activity from expire
+--- http_config
+    vhost_traffic_status_zone;
+--- config
+    location /status {
+        vhost_traffic_status_display;
+        vhost_traffic_status_display_format json;
+        access_log off;
+    }
+    location /ig {
+        vhost_traffic_status_ignore_status 4xx;
+        vhost_traffic_status_filter_by_set_key $arg_k g::$server_name;
+        return 404 "nope";
+    }
+    location /f {
+        vhost_traffic_status_filter_by_set_key $arg_k g::$server_name;
+        return 200 "filter:OK";
+    }
+--- request eval
+[
+    'GET /ig?k=ignored',
+    'GET /f?k=normal',
+    "GET /status/control?cmd=delete&group=filter&zone=*&expire=1h",
+    'GET /status/format/json',
+]
+--- error_code eval
+[404, 200, 200, 200]
+--- response_body_like eval
+[
+    'nope',
+    'filter:OK',
+    '"processingCounts":1',
+    '"normal":\{'
+]
+--- response_body_unlike eval
+[
+    'nothing',
+    'nothing',
+    'nothing',
+    '"ignored":\{'
 ]
