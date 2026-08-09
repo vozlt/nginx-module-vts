@@ -318,7 +318,7 @@ __DATA__
     '"fresh":\{'
 ]
 
-=== TEST 11: ignore_status hides the activity from expire
+=== TEST 11: a zone serving an ignored status is still being used
 --- http_config
     vhost_traffic_status_zone;
 --- config
@@ -349,13 +349,6 @@ __DATA__
 [
     'nope',
     'filter:OK',
-    '"processingCounts":1',
-    '"normal":\{'
-]
---- response_body_unlike eval
-[
-    'nothing',
-    'nothing',
-    'nothing',
+    '"processingCounts":0',
     '"ignored":\{'
 ]
