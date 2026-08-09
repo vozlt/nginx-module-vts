@@ -611,7 +611,6 @@ u_char *
 ngx_http_vhost_traffic_status_display_set_upstream_group(ngx_http_request_t *r,
     u_char *buf)
 {
-    size_t                                 len;
     u_char                                *p, *o, *s;
     uint32_t                               hash;
     unsigned                               type, zone;
@@ -637,19 +636,19 @@ ngx_http_vhost_traffic_status_display_set_upstream_group(ngx_http_request_t *r,
     umcf = ngx_http_get_module_main_conf(r, ngx_http_upstream_module);
     uscfp = umcf->upstreams.elts;
 
-    len = 0;
-    for (i = 0; i < umcf->upstreams.nelts; i++) {
-        uscf = uscfp[i];
-        len = ngx_max(uscf->host.len, len);
-    }
-
-    dst.len = len + sizeof("@[ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255]:65535") - 1;
-    dst.data = ngx_pnalloc(r->pool, dst.len);
-    if (dst.data == NULL) {
-        return buf;
-    }
-
-    p = dst.data;
+    /*
+     * The key of a peer is the name of its group, the separator and the name
+     * of the peer. This used to be built in one buffer held for the whole
+     * walk, sized for the longest group name and an address and a port, on
+     * the reading that a peer is never named anything longer. A unix socket
+     * is named by its path, which passes that easily, and the overflow did
+     * more than run off the end: node_generate_key() takes the key from the
+     * same pool with ngx_pcalloc, which zeroes a region overlapping the tail
+     * just written, so the name was cut short, the lookup missed, and the
+     * peer read as though it had served nothing (#378).
+     *
+     * Each key is now given the room it needs where it is built.
+     */
 
 #if (NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_RESOLVE)
     /*
@@ -695,11 +694,17 @@ ngx_http_vhost_traffic_status_display_set_upstream_group(ngx_http_request_t *r,
             ngx_http_upstream_rr_peers_rlock(peers);
 
             for (peer = peers->peer; peer; peer = peer->next) {
+                dst.len = uscf->host.len + sizeof("@") - 1 + peer->name.len;
+                dst.data = ngx_pnalloc(r->pool, dst.len);
+                if (dst.data == NULL) {
+                    ngx_http_upstream_rr_peers_unlock(peers);
+                    return buf;
+                }
+
+                p = dst.data;
                 p = ngx_cpymem(p, uscf->host.data, uscf->host.len);
                 *p++ = NGX_HTTP_VHOST_TRAFFIC_STATUS_KEY_SEPARATOR;
                 p = ngx_cpymem(p, peer->name.data, peer->name.len);
-
-                dst.len = uscf->host.len + sizeof("@") - 1 + peer->name.len;
 
                 rc = ngx_http_vhost_traffic_status_node_generate_key(r->pool, &key, &dst, type);
                 if (rc != NGX_OK) {
@@ -745,7 +750,6 @@ ngx_http_vhost_traffic_status_display_set_upstream_group(ngx_http_request_t *r,
 #endif
                 }
 
-                p = dst.data;
             }
 
             ngx_http_upstream_rr_peers_unlock(peers);
@@ -781,11 +785,17 @@ not_supported:
 
                 /* for all A records */
                 for (k = 0; k < usn.naddrs; k++) {
+                    dst.len = uscf->host.len + sizeof("@") - 1
+                              + usn.addrs[k].name.len;
+                    dst.data = ngx_pnalloc(r->pool, dst.len);
+                    if (dst.data == NULL) {
+                        return buf;
+                    }
+
+                    p = dst.data;
                     p = ngx_cpymem(p, uscf->host.data, uscf->host.len);
                     *p++ = NGX_HTTP_VHOST_TRAFFIC_STATUS_KEY_SEPARATOR;
                     p = ngx_cpymem(p, usn.addrs[k].name.data, usn.addrs[k].name.len);
-
-                    dst.len = uscf->host.len + sizeof("@") - 1 + usn.addrs[k].name.len;
 
                     rc = ngx_http_vhost_traffic_status_node_generate_key(r->pool, &key, &dst, type);
                     if (rc != NGX_OK) {
@@ -815,7 +825,6 @@ not_supported:
 #endif
                     }
 
-                    p = dst.data;
                 }
             }
 
