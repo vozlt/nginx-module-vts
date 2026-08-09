@@ -429,7 +429,7 @@ It is able to reset or delete traffic zones through a query string.
 The request responds with a JSON document.
 
 * URI Syntax
-  * /*`{status_uri}`*/control?cmd=*`{command}`*&group=*`{group}`*&zone=*`{name}`*
+  * /*`{status_uri}`*/control?cmd=*`{command}`*&group=*`{group}`*&zone=*`{name}`*\[&expire=*`{seconds}`*\]
 
 ```Nginx
 http {
@@ -467,6 +467,16 @@ The available request arguments are as follows:
     * It reset traffic zones without deleting nodes in shared memory.(= init to 0)
   * delete
     * It delete traffic zones in shared memory. when re-request recreated. 
+* **expire**=\<`seconds`\>
+  * Only with `delete`. Among the zones that `group` and `zone` already select,
+    it deletes the ones whose last request is older than the given number of
+    seconds, and leaves the rest. Without it every selected zone is deleted, as
+    before. `processingCounts` in the response says how many were deleted.
+  * A value that is not a number leaves the request undone rather than falling
+    back to deleting everything selected.
+  * The age of a zone is kept as a timestamp in milliseconds. On a 32 bit build
+    that count wraps every 49.7 days, which is the largest `expire` that is
+    meaningful there.
 * **group**=\<`server`\|`filter`\|`upstream@alone`\|`upstream@group`\|`cache`\|`*`\>
   * server
   * filter
@@ -569,6 +579,24 @@ It delete the specified zones in shared memory.
   * /status/control?cmd=delete&group=upstream@alone&zone=*
 * cacheZones
   * /status/control?cmd=delete&group=cache&zone=*
+
+#### To delete only the zones that have not been used for a while
+Nodes are not freed when an upstream goes away, so a zone that sees a lot of
+upstreams appear and disappear fills up and then refuses every new node. This
+deletes what has gone quiet and keeps what is still in use. It works on a zone
+that is already full, so it is also the way out of that state.
+
+* everything not requested for an hour
+  * /status/control?cmd=delete&group=*&zone=*&expire=3600
+* upstream peers not requested for a day
+  * /status/control?cmd=delete&group=upstream@group&zone=*&expire=86400
+
+Nothing calls this on its own; drive it from cron or from whatever watches
+`freeSize` in `sharedZones`.
+
+Note that a zone restored from a dump carries the timestamps it had when the
+dump was written, so after a long shutdown everything looks old and a sweep
+straight afterwards empties it.
 
 #### To delete each zones
 * single zone in serverZones
