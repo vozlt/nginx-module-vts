@@ -4,7 +4,7 @@ use Test::Nginx::Socket;
 
 # Two checks per request, and the blocks do not hold the same number of
 # them, so the total is spelled out rather than derived from blocks().
-plan tests => repeat_each() * 42;
+plan tests => repeat_each() * 78;
 no_shuffle();
 run_tests();
 
@@ -166,4 +166,154 @@ __DATA__
     'filter:OK',
     '"processingCounts":0',
     '"one"'
+]
+
+=== TEST 6: a named zone that has aged is deleted
+--- http_config
+    vhost_traffic_status_zone;
+--- config
+    location /status {
+        vhost_traffic_status_display;
+        vhost_traffic_status_display_format json;
+        access_log off;
+    }
+    location /f {
+        vhost_traffic_status_filter_by_set_key $arg_k g::$server_name;
+        return 200 "filter:OK";
+    }
+    location /slow {
+        proxy_pass http://127.0.0.1:1981;
+    }
+--- request eval
+[
+    'GET /f?k=stale',
+    'GET /slow',
+    "GET /status/control?cmd=delete&group=filter&zone=g::localhost\@stale&expire=1",
+    'GET /status/format/json',
+]
+--- tcp_listen: 1981
+--- tcp_reply_delay: 2s
+--- tcp_reply eval
+"HTTP/1.1 200 OK\r\nContent-Length: 8\r\n\r\nslow:OK\n"
+--- response_body_unlike eval
+[
+    'nothing',
+    'nothing',
+    '"processingCounts":0',
+    '"stale":\{'
+]
+
+=== TEST 7: a named zone that has not aged is left alone
+--- http_config
+    vhost_traffic_status_zone;
+--- config
+    location /status {
+        vhost_traffic_status_display;
+        vhost_traffic_status_display_format json;
+        access_log off;
+    }
+    location /f {
+        vhost_traffic_status_filter_by_set_key $arg_k g::$server_name;
+        return 200 "filter:OK";
+    }
+--- request eval
+[
+    'GET /f?k=fresh',
+    "GET /status/control?cmd=delete&group=filter&zone=g::localhost\@fresh&expire=1h",
+    'GET /status/format/json',
+]
+--- response_body_like eval
+[
+    'filter:OK',
+    '"processingCounts":0',
+    '"fresh":\{'
+]
+
+=== TEST 8: an expire that cannot be read leaves everything alone
+--- http_config
+    vhost_traffic_status_zone;
+--- config
+    location /status {
+        vhost_traffic_status_display;
+        vhost_traffic_status_display_format json;
+        access_log off;
+    }
+    location /f {
+        vhost_traffic_status_filter_by_set_key $arg_k g::$server_name;
+        return 200 "filter:OK";
+    }
+--- request eval
+[
+    'GET /f?k=one',
+    "GET /status/control?cmd=delete&group=filter&zone=*&expire=typo",
+    'GET /status/format/json',
+]
+--- response_body_like eval
+[
+    'filter:OK',
+    '"processingReturn":false',
+    '"one":\{'
+]
+
+=== TEST 9: a negative expire is refused the same way
+--- http_config
+    vhost_traffic_status_zone;
+--- config
+    location /status {
+        vhost_traffic_status_display;
+        vhost_traffic_status_display_format json;
+        access_log off;
+    }
+    location /f {
+        vhost_traffic_status_filter_by_set_key $arg_k g::$server_name;
+        return 200 "filter:OK";
+    }
+--- request eval
+[
+    'GET /f?k=one',
+    "GET /status/control?cmd=delete&group=filter&zone=*&expire=-1",
+    'GET /status/format/json',
+]
+--- response_body_like eval
+[
+    'filter:OK',
+    '"processingReturn":false',
+    '"one":\{'
+]
+
+=== TEST 10: the suffix form is read the same as the seconds
+--- http_config
+    vhost_traffic_status_zone;
+--- config
+    location /status {
+        vhost_traffic_status_display;
+        vhost_traffic_status_display_format json;
+        access_log off;
+    }
+    location /f {
+        vhost_traffic_status_filter_by_set_key $arg_k g::$server_name;
+        return 200 "filter:OK";
+    }
+    location /slow {
+        proxy_pass http://127.0.0.1:1981;
+    }
+--- request eval
+[
+    'GET /f?k=stale',
+    'GET /slow',
+    'GET /f?k=fresh',
+    "GET /status/control?cmd=delete&group=filter&zone=*&expire=1s",
+    'GET /status/format/json',
+]
+--- tcp_listen: 1981
+--- tcp_reply_delay: 2s
+--- tcp_reply eval
+"HTTP/1.1 200 OK\r\nContent-Length: 8\r\n\r\nslow:OK\n"
+--- response_body_like eval
+[
+    'filter:OK',
+    'slow:OK',
+    'filter:OK',
+    '"processingCounts":1',
+    '"fresh":\{'
 ]

@@ -240,19 +240,27 @@ ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
 
         /*
          * expire selects, among what group and zone already match, the nodes
-         * whose last request is older than the given number of seconds. A
-         * value that does not parse leaves the command undone rather than
-         * falling back to deleting everything the selection matches.
+         * whose last request is older than the time given. It is read the way
+         * the configuration reads a time: a bare number is seconds, and 1h or
+         * 30m say the same thing shorter. ngx_parse_time() answers in
+         * milliseconds and refuses what it cannot represent, so there is no
+         * multiplication here left to overflow - on a 32 bit build that used
+         * to turn a large expire into a very small one and take the whole
+         * selection with it.
+         *
+         * A value it refuses leaves the command undone rather than falling
+         * back to deleting everything selected, which is the more expensive
+         * way to be wrong.
          */
 
         if (ngx_http_arg(r, (u_char *) "expire", 6, &arg_expire) == NGX_OK) {
-            expire = ngx_atoi(arg_expire.data, arg_expire.len);
+            expire = ngx_parse_time(&arg_expire, 0);
 
-            if (expire == NGX_ERROR || expire < 0) {
+            if (expire == NGX_ERROR) {
                 control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_NONE;
 
             } else {
-                control->expire = (ngx_msec_t) expire * 1000;
+                control->expire = (ngx_msec_t) expire;
             }
         }
 

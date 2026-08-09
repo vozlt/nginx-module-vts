@@ -467,16 +467,20 @@ The available request arguments are as follows:
     * It reset traffic zones without deleting nodes in shared memory.(= init to 0)
   * delete
     * It delete traffic zones in shared memory. when re-request recreated. 
-* **expire**=\<`seconds`\>
+* **expire**=\<`time`\>
   * Only with `delete`. Among the zones that `group` and `zone` already select,
-    it deletes the ones whose last request is older than the given number of
-    seconds, and leaves the rest. Without it every selected zone is deleted, as
-    before. `processingCounts` in the response says how many were deleted.
-  * A value that is not a number leaves the request undone rather than falling
+    it deletes the ones whose last request is older than the time given, and
+    leaves the rest. Without it every selected zone is deleted, as before.
+    `processingCounts` in the response says how many were deleted.
+  * The time is written the way it is written in the configuration: a bare
+    number is seconds, and `1h`, `30m`, `7d` say the same thing shorter.
+    `expire=0` selects everything, which is what leaving it out already does.
+  * A value that cannot be read leaves the request undone rather than falling
     back to deleting everything selected.
   * The age of a zone is kept as a timestamp in milliseconds. On a 32 bit build
-    that count wraps every 49.7 days, which is the largest `expire` that is
-    meaningful there.
+    that count wraps every 49.7 days, so a zone left untouched for longer than
+    that can read as more recent than it is and be missed by one sweep. It is
+    never deleted early.
 * **group**=\<`server`\|`filter`\|`upstream@alone`\|`upstream@group`\|`cache`\|`*`\>
   * server
   * filter
@@ -587,9 +591,11 @@ deletes what has gone quiet and keeps what is still in use. It works on a zone
 that is already full, so it is also the way out of that state.
 
 * everything not requested for an hour
-  * /status/control?cmd=delete&group=*&zone=*&expire=3600
+  * /status/control?cmd=delete&group=*&zone=*&expire=1h
 * upstream peers not requested for a day
-  * /status/control?cmd=delete&group=upstream@group&zone=*&expire=86400
+  * /status/control?cmd=delete&group=upstream@group&zone=*&expire=1d
+* one named zone, only if it has gone quiet
+  * /status/control?cmd=delete&group=filter&zone=*`filter_group`*@*`name`*&expire=7d
 
 Nothing calls this on its own; drive it from cron or from whatever watches
 `freeSize` in `sharedZones`.
