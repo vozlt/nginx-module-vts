@@ -477,15 +477,16 @@ The available request arguments are as follows:
     `expire=0` selects everything, which is what leaving it out already does.
   * A value that cannot be read leaves the request undone rather than falling
     back to deleting everything selected.
-  * The age of a zone is the time of the last request this module **recorded**
-    against it, which is not the same as the last request it served.
-    `vhost_traffic_status_ignore_status` suppresses the recording, so a zone
-    whose requests are all excluded by it keeps the age it had before, or none
-    at all if it never had one, and `expire` will read it as idle and delete it
-    while it is still being served.
+  * The age of a zone is the time of the last request it served, which is
+    recorded whether or not the request was counted, so a zone that
+    `vhost_traffic_status_ignore_status` excludes from the figures still
+    counts as in use here.
   * The age is kept as a timestamp in milliseconds. On a 32 bit build that
     count wraps every 49.7 days, so a zone left untouched for longer than that
     can read as more recent than it is and be missed by one sweep.
+  * A zone restored from a dump starts as though it had been reached at the
+    restart rather than when the file was written, so a sweep straight
+    afterwards does not empty what the dump was kept for.
 * **group**=\<`server`\|`filter`\|`upstream@alone`\|`upstream@group`\|`cache`\|`*`\>
   * server
   * filter
@@ -604,10 +605,6 @@ that is already full, so it is also the way out of that state.
 
 Nothing calls this on its own; drive it from cron or from whatever watches
 `freeSize` in `sharedZones`.
-
-Note that a zone restored from a dump carries the timestamps it had when the
-dump was written, so after a long shutdown everything looks old and a sweep
-straight afterwards empties it.
 
 #### To delete each zones
 * single zone in serverZones
