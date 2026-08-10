@@ -117,6 +117,62 @@ ngx_http_vhost_traffic_status_find_node(ngx_http_request_t *r,
 }
 
 
+/* whether this node is one of the ones the cap counts */
+
+ngx_int_t
+ngx_http_vhost_traffic_status_node_filter_counted(ngx_http_request_t *r,
+    ngx_http_vhost_traffic_status_node_t *vtsn)
+{
+    ngx_str_t  filter;
+
+    if (vtsn->stat_upstream.type != NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG) {
+        return NGX_DECLINED;
+    }
+
+    filter.data = vtsn->data;
+    filter.len = vtsn->len;
+
+    if (ngx_http_vhost_traffic_status_node_position_key(&filter, 1) != NGX_OK) {
+        return NGX_DECLINED;
+    }
+
+    if (ngx_http_vhost_traffic_status_filter_max_node_match(r, &filter)
+        != NGX_OK)
+    {
+        return NGX_DECLINED;
+    }
+
+    return NGX_OK;
+}
+
+
+/* only for the count that a change of configuration has invalidated */
+
+ngx_uint_t
+ngx_http_vhost_traffic_status_node_filter_count(ngx_http_request_t *r,
+    ngx_rbtree_node_t *node)
+{
+    ngx_uint_t                             n;
+    ngx_http_vhost_traffic_status_ctx_t   *ctx;
+    ngx_http_vhost_traffic_status_node_t  *vtsn;
+
+    ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
+
+    if (node == ctx->rbtree->sentinel) {
+        return 0;
+    }
+
+    vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
+
+    n = ngx_http_vhost_traffic_status_node_filter_counted(r, vtsn) == NGX_OK
+        ? 1 : 0;
+
+    return n
+           + ngx_http_vhost_traffic_status_node_filter_count(r, node->left)
+           + ngx_http_vhost_traffic_status_node_filter_count(r, node->right);
+}
+
+
 ngx_rbtree_node_t *
 ngx_http_vhost_traffic_status_find_lru(ngx_http_request_t *r, unsigned type,
     ngx_str_t *key)
@@ -124,7 +180,6 @@ ngx_http_vhost_traffic_status_find_lru(ngx_http_request_t *r, unsigned type,
     ngx_str_t                                  filter;
     ngx_rbtree_node_t                         *node;
     ngx_http_vhost_traffic_status_ctx_t       *ctx;
-    ngx_http_vhost_traffic_status_shm_info_t  *shm_info;
 
     ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
     node = NULL;
@@ -156,16 +211,24 @@ ngx_http_vhost_traffic_status_find_lru(ngx_http_request_t *r, unsigned type,
         return NULL;
     }
 
-    shm_info = ngx_pcalloc(r->pool, sizeof(ngx_http_vhost_traffic_status_shm_info_t));
+    /*
+     * The count used to be made here, by walking the whole tree, before it
+     * had even been compared against the cap - so the walk was paid on every
+     * insertion whether or not the cap was anywhere near. It is kept in the
+     * zone now, under the mutex this is already called with.
+     */
 
-    if (shm_info == NULL) { 
-        return NULL;
+    if (ctx->shm->signature != ctx->signature) {
+
+        /* the configuration it was made under is not this one */
+
+        ctx->shm->filter_nodes =
+            ngx_http_vhost_traffic_status_node_filter_count(r, ctx->rbtree->root);
+        ctx->shm->signature = ctx->signature;
     }
 
-    ngx_http_vhost_traffic_status_shm_info(r, shm_info);
-
     /* find */
-    if (shm_info->filter_used_node >= ctx->filter_max_node) {
+    if (ctx->shm->filter_nodes >= ctx->filter_max_node) {
         node = ngx_http_vhost_traffic_status_find_lru_node(r, NULL, ctx->rbtree->root);
     }
 

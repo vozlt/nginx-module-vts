@@ -169,6 +169,9 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
         if (lrun != NULL) {
             ngx_rbtree_delete(ctx->rbtree, lrun);
             ngx_slab_free_locked(shpool, lrun);
+
+            /* find_lru() only ever gives back one the cap counts */
+            ctx->shm->filter_nodes--;
         }
 
         size = offsetof(ngx_rbtree_node_t, color)
@@ -230,6 +233,12 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
         ngx_memcpy(vtsn->data, key->data, key->len);
 
         ngx_rbtree_insert(ctx->rbtree, node);
+
+        if (ngx_http_vhost_traffic_status_node_filter_counted(r, vtsn)
+            == NGX_OK)
+        {
+            ctx->shm->filter_nodes++;
+        }
 
     } else {
         init = NGX_HTTP_VHOST_TRAFFIC_STATUS_NODE_FIND;

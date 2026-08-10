@@ -566,6 +566,7 @@ ngx_http_vhost_traffic_status_node_delete_all(
     ngx_slab_pool_t                           *shpool;
     ngx_rbtree_node_t                         *node, *sentinel;
     ngx_http_vhost_traffic_status_ctx_t       *ctx;
+    ngx_http_vhost_traffic_status_node_t      *vtsn;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
 
     ctx = ngx_http_get_module_main_conf(control->r, ngx_http_vhost_traffic_status_module);
@@ -577,6 +578,13 @@ ngx_http_vhost_traffic_status_node_delete_all(
     shpool = (ngx_slab_pool_t *) vtscf->shm_zone->shm.addr;
 
     while (node != sentinel) {
+        vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
+
+        if (ngx_http_vhost_traffic_status_node_filter_counted(control->r, vtsn)
+            == NGX_OK)
+        {
+            ctx->shm->filter_nodes--;
+        }
 
         ngx_rbtree_delete(ctx->rbtree, node);
         ngx_slab_free_locked(shpool, node);
@@ -598,6 +606,7 @@ ngx_http_vhost_traffic_status_node_delete_group(
     ngx_slab_pool_t                           *shpool;
     ngx_rbtree_node_t                         *node;
     ngx_http_vhost_traffic_status_ctx_t       *ctx;
+    ngx_http_vhost_traffic_status_node_t      *vtsn;
     ngx_http_vhost_traffic_status_delete_t    *deletes;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
 
@@ -628,6 +637,14 @@ ngx_http_vhost_traffic_status_node_delete_group(
 
     for (i = 0; i < n; i++) {
         node = deletes[i].node;
+
+        vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
+
+        if (ngx_http_vhost_traffic_status_node_filter_counted(control->r, vtsn)
+            == NGX_OK)
+        {
+            ctx->shm->filter_nodes--;
+        }
 
         ngx_rbtree_delete(ctx->rbtree, node);
         ngx_slab_free_locked(shpool, node);
@@ -671,6 +688,13 @@ ngx_http_vhost_traffic_status_node_delete_zone(
         if (ngx_http_vhost_traffic_status_node_expire_match(control, vtsn)
             == NGX_OK)
         {
+            if (ngx_http_vhost_traffic_status_node_filter_counted(control->r,
+                                                                 vtsn)
+                == NGX_OK)
+            {
+                ctx->shm->filter_nodes--;
+            }
+
             ngx_rbtree_delete(ctx->rbtree, node);
             ngx_slab_free_locked(shpool, node);
 

@@ -266,6 +266,42 @@ next:
 }
 
 
+/*
+ * What the cap counts is settled by its own value and by the groups it names,
+ * and both come from the configuration. A reload can change either while the
+ * zone carries a count made under the old ones, so the count is stamped with
+ * this and made again when they do not agree.
+ */
+
+uint32_t
+ngx_http_vhost_traffic_status_filter_max_node_signature(
+    ngx_http_vhost_traffic_status_ctx_t *ctx)
+{
+    uint32_t                                       signature;
+    ngx_uint_t                                     i, n;
+    ngx_http_vhost_traffic_status_filter_match_t  *matches;
+
+    /* not the crc of nothing: a cap of zero has to differ from a cap of one */
+
+    signature = ngx_crc32_long((u_char *) &ctx->filter_max_node,
+                               sizeof(ngx_uint_t));
+
+    if (ctx->filter_max_node_matches == NULL) {
+        return signature;
+    }
+
+    matches = ctx->filter_max_node_matches->elts;
+    n = ctx->filter_max_node_matches->nelts;
+
+    for (i = 0; i < n; i++) {
+        signature = ngx_crc32_long(matches[i].match.data,
+                                   matches[i].match.len) ^ signature;
+    }
+
+    return signature;
+}
+
+
 ngx_int_t
 ngx_http_vhost_traffic_status_filter_max_node_match(ngx_http_request_t *r,
     ngx_str_t *filter)
