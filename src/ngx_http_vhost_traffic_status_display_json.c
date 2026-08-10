@@ -727,7 +727,15 @@ ngx_http_vhost_traffic_status_display_set_upstream_group(ngx_http_request_t *r,
                     usn.down = 0;
                 }
 #else
-                usn.down = (peer->fails >= peer->max_fails || peer->down);
+                /*
+                 * max_fails 0 turns the counting off, which nginx reads as
+                 * never taking the peer out; without the guard the comparison
+                 * holds from the first request and every such peer is called
+                 * down
+                 */
+                usn.down = (peer->down
+                            || (peer->max_fails
+                                && peer->fails >= peer->max_fails));
 #endif
 
 #if nginx_version > 1007001

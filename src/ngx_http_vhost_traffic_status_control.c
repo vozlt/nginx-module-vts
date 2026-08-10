@@ -9,6 +9,10 @@
 #include "ngx_http_vhost_traffic_status_display_json.h"
 #include "ngx_http_vhost_traffic_status_display.h"
 
+#if (NGX_HTTP_UPSTREAM_CHECK)
+#include "ngx_http_upstream_check_module.h"
+#endif
+
 
 static void ngx_http_vhost_traffic_status_node_status_all(
     ngx_http_vhost_traffic_status_control_t *control);
@@ -49,6 +53,10 @@ ngx_http_vhost_traffic_status_node_upstream_lookup(
     ngx_str_t                       key, usg, ush;
     ngx_uint_t                      i, j, k;
     ngx_http_upstream_server_t     *us;
+#if (NGX_HTTP_UPSTREAM_ZONE)
+    ngx_http_upstream_rr_peer_t    *peer;
+    ngx_http_upstream_rr_peers_t   *peers;
+#endif
     ngx_http_upstream_srv_conf_t   *uscf, **uscfp;
     ngx_http_upstream_main_conf_t  *umcf;
 
@@ -100,6 +108,80 @@ ngx_http_vhost_traffic_status_node_upstream_lookup(
 
         if (uscf->host.len == usg.len) {
             if (ngx_strncmp(uscf->host.data, usg.data, usg.len) == 0) {
+
+#if (NGX_HTTP_UPSTREAM_ZONE)
+
+                /*
+                 * A server line that resolves its name at run time leaves
+                 * nothing to match on: ngx_http_upstream_server() keeps a
+                 * placeholder holding the port, and addrs[0].name is never
+                 * set. The peers are made by the resolver and live in the
+                 * zone, which is where the display reads them since #322.
+                 *
+                 * Look there first, and fall back to the server lines, which
+                 * still carry the backup peers - the display splits them the
+                 * same way.
+                 */
+
+                if (uscf->shm_zone != NULL) {
+                    peers = uscf->peer.data;
+
+                    ngx_http_upstream_rr_peers_rlock(peers);
+
+                    for (peer = peers->peer; peer; peer = peer->next) {
+
+                        if (peer->name.len != ush.len) {
+                            continue;
+                        }
+
+                        if (ngx_strncmp(peer->name.data, ush.data, ush.len)
+                            != 0)
+                        {
+                            continue;
+                        }
+
+#if nginx_version > 1007001
+
+                        /*
+                         * ush rather than peer->name: the name of a peer
+                         * lives in the zone of the upstream and a re-resolve
+                         * can hand it back to the slab as soon as the lock
+                         * below is released, while the caller reads this
+                         * afterwards to write its answer. The two were just
+                         * compared byte for byte, and ush belongs to the
+                         * request.
+                         */
+
+                        usn->name = ush;
+#endif
+
+                        usn->weight = peer->weight;
+                        usn->max_fails = peer->max_fails;
+                        usn->fail_timeout = peer->fail_timeout;
+                        usn->backup = 0;
+
+#if (NGX_HTTP_UPSTREAM_CHECK)
+                        usn->down = ngx_http_upstream_check_peer_down(
+                                        peer->check_index) ? 1 : 0;
+#else
+                        usn->down = (peer->down
+                                     || (peer->max_fails
+                                         && peer->fails >= peer->max_fails));
+#endif
+
+                        control->count++;
+
+                        break;
+                    }
+
+                    ngx_http_upstream_rr_peers_unlock(peers);
+                }
+
+                if (control->count) {
+                    break;
+                }
+
+#endif
 
                 for (j = 0; j < uscf->servers->nelts; j++) {
 
