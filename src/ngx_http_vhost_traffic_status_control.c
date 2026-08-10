@@ -138,7 +138,18 @@ ngx_http_vhost_traffic_status_node_upstream_lookup(
                         }
 
 #if nginx_version > 1007001
-                        usn->name = peer->name;
+
+                        /*
+                         * ush rather than peer->name: the name of a peer
+                         * lives in the zone of the upstream and a re-resolve
+                         * can hand it back to the slab as soon as the lock
+                         * below is released, while the caller reads this
+                         * afterwards to write its answer. The two were just
+                         * compared byte for byte, and ush belongs to the
+                         * request.
+                         */
+
+                        usn->name = ush;
 #endif
 
                         usn->weight = peer->weight;
@@ -150,8 +161,9 @@ ngx_http_vhost_traffic_status_node_upstream_lookup(
                         usn->down = ngx_http_upstream_check_peer_down(
                                         peer->check_index) ? 1 : 0;
 #else
-                        usn->down = (peer->fails >= peer->max_fails
-                                     || peer->down);
+                        usn->down = (peer->down
+                                     || (peer->max_fails
+                                         && peer->fails >= peer->max_fails));
 #endif
 
                         control->count++;

@@ -91,7 +91,7 @@ END {
 plan skip_all => "the test resolver does not answer on 127.0.0.1:$DNSPort"
     unless dns_ready();
 
-plan tests => repeat_each() * 15;
+plan tests => repeat_each() * 21;
 no_shuffle();
 run_tests();
 
@@ -181,4 +181,40 @@ __DATA__
     '',
     qr/X-Peer-Counter: [1-9]/,
     '',
+]
+
+=== TEST 3: max_fails=0 turns the counting off, it does not mean down
+--- http_config
+    vhost_traffic_status_zone;
+
+    resolver 127.0.0.1:18654 valid=1s ipv6=off;
+    resolver_timeout 2s;
+
+    upstream backend {
+        zone backend 1m;
+        server vts-test.example:1984 resolve max_fails=0;
+    }
+--- config
+    location /ok {
+        return 200 "OK";
+    }
+    location /up {
+        proxy_pass http://backend/ok;
+    }
+    location /status {
+        vhost_traffic_status_display;
+        vhost_traffic_status_display_format json;
+        access_log off;
+    }
+--- request eval
+[
+    'GET /up',
+    'GET /status/format/json',
+    "GET /status/control?cmd=status&group=upstream\@group&zone=backend\@127.0.0.1%3A1984",
+]
+--- response_body_like eval
+[
+    'OK',
+    qr/"127\.0\.0\.1:1984".*"down":false/s,
+    qr/"server":"127\.0\.0\.1:1984".*"down":false/s,
 ]
