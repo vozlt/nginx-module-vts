@@ -74,8 +74,8 @@ done:
 static ngx_int_t
 ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
 {
-    ngx_int_t                                  size, rc;
-    ngx_str_t                                  type, alpha, encoded_ch, arg_cmd, arg_group, arg_zone;
+    ngx_int_t                                  size, rc, expire;
+    ngx_str_t                                  type, alpha, encoded_ch, arg_cmd, arg_group, arg_zone, arg_expire;
     ngx_buf_t                                 *b;
     ngx_chain_t                                out;
     ngx_slab_pool_t                           *shpool;
@@ -235,6 +235,32 @@ ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
             if (rc != NGX_OK) {
                 ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                               "display_handler_control::replace_strc() failed");
+            }
+        }
+
+        /*
+         * expire selects, among what group and zone already match, the nodes
+         * whose last request is older than the time given. It is read the way
+         * the configuration reads a time: a bare number is seconds, and 1h or
+         * 30m say the same thing shorter. ngx_parse_time() answers in
+         * milliseconds and refuses what it cannot represent, so there is no
+         * multiplication here left to overflow - on a 32 bit build that used
+         * to turn a large expire into a very small one and take the whole
+         * selection with it.
+         *
+         * A value it refuses leaves the command undone rather than falling
+         * back to deleting everything selected, which is the more expensive
+         * way to be wrong.
+         */
+
+        if (ngx_http_arg(r, (u_char *) "expire", 6, &arg_expire) == NGX_OK) {
+            expire = ngx_parse_time(&arg_expire, 0);
+
+            if (expire == NGX_ERROR) {
+                control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_NONE;
+
+            } else {
+                control->expire = (ngx_msec_t) expire;
             }
         }
 

@@ -209,9 +209,7 @@ ngx_rbtree_node_t *
 ngx_http_vhost_traffic_status_find_lru_node_cmp(ngx_http_request_t *r,
     ngx_rbtree_node_t *a, ngx_rbtree_node_t *b)
 {
-    ngx_int_t                                         ai, bi;
-    ngx_http_vhost_traffic_status_node_t             *avtsn, *bvtsn;
-    ngx_http_vhost_traffic_status_node_time_queue_t  *aq, *bq;
+    ngx_http_vhost_traffic_status_node_t  *avtsn, *bvtsn;
 
     if (a == NULL) {
         return b;
@@ -220,21 +218,13 @@ ngx_http_vhost_traffic_status_find_lru_node_cmp(ngx_http_request_t *r,
     avtsn = (ngx_http_vhost_traffic_status_node_t *) &a->color;
     bvtsn = (ngx_http_vhost_traffic_status_node_t *) &b->color;
 
-    aq = &avtsn->stat_request_times;
-    bq = &bvtsn->stat_request_times;
+    /*
+     * This used to read the last entry of the time queue, which a zone whose
+     * statuses ignore_status excludes never fills, so such a zone was always
+     * the one chosen to go however much traffic it was carrying.
+     */
 
-    if (aq->front == aq->rear) {
-        return a;
-    }
-
-    if (bq->front == bq->rear) {
-        return b;
-    }
-
-    ai = ngx_http_vhost_traffic_status_node_time_queue_rear(aq);
-    bi = ngx_http_vhost_traffic_status_node_time_queue_rear(bq);
-
-    return (aq->times[ai].time < bq->times[bi].time) ? a : b;
+    return (avtsn->stat_last_seen < bvtsn->stat_last_seen) ? a : b;
 }
 
 
@@ -292,7 +282,7 @@ ngx_http_vhost_traffic_status_node_zero(ngx_http_vhost_traffic_status_node_t *vt
     vtsn->stat_5xx_counter = 0;
 
     vtsn->stat_request_time_counter = 0;
-    vtsn->stat_request_time = 0;
+    vtsn->stat_last_seen = 0;
     vtsn->stat_upstream.response_time_counter = 0;
     vtsn->stat_upstream.response_time = 0;
 
@@ -336,7 +326,6 @@ ngx_http_vhost_traffic_status_node_zero(ngx_http_vhost_traffic_status_node_t *vt
 
 /*
    Initialize the node and update it with the first request.
-   Set the `stat_request_time` to the time of the first request.
 */
 void
 ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
@@ -359,7 +348,6 @@ ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
 
     /* set serverZone */
     ms = ngx_http_vhost_traffic_status_request_time(r);
-    vtsn->stat_request_time = (ngx_msec_t) ms;
 
     ngx_http_vhost_traffic_status_node_update(r, vtsn, ms, status_code_slot);
 }
@@ -400,6 +388,14 @@ ngx_http_vhost_traffic_status_node_update(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_t *vtsn, ngx_msec_int_t ms, ngx_int_t status_code_slot)
 {
     ngx_uint_t status = r->headers_out.status;
+
+    /*
+     * Before the check below: a request whose status is not counted was
+     * served all the same, and what tells the node apart from an abandoned
+     * one is that it was reached, not that it was counted.
+     */
+
+    vtsn->stat_last_seen = ngx_http_vhost_traffic_status_current_msec();
 
     if (ngx_http_vhost_traffic_status_ignore_status(vtsn->ignore_status, status)) {
         return;

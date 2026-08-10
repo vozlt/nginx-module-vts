@@ -42,6 +42,7 @@ typedef struct {
     ngx_str_t                   *arg_zone;
     ngx_str_t                   *arg_name;
     ngx_uint_t                   range;
+    ngx_msec_t                   expire;
     ngx_uint_t                   count;
     u_char                     **buf;
 } ngx_http_vhost_traffic_status_control_t;
