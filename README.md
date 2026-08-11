@@ -2,6 +2,7 @@ Nginx virtual host traffic status module
 ==========
 
 [![CI](https://github.com/vozlt/nginx-module-vts/actions/workflows/ci.yml/badge.svg)](https://github.com/vozlt/nginx-module-vts/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/vozlt/nginx-module-vts/badges/coverage.json)](https://github.com/vozlt/nginx-module-vts/actions/workflows/ci.yml)
 [![License](http://img.shields.io/badge/license-BSD-brightgreen.svg)](https://github.com/vozlt/nginx-module-vts/blob/master/LICENSE)
 
 Nginx virtual host traffic status module
