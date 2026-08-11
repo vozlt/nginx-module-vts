@@ -458,8 +458,19 @@ ngx_http_vhost_traffic_status_init_zone(ngx_shm_zone_t *shm_zone, void *data)
     shpool = (ngx_slab_pool_t *) shm_zone->shm.addr;
 
     if (shm_zone->shm.exists) {
-        ctx->shm = shpool->data;
-        ctx->rbtree = &ctx->shm->rbtree;
+
+        /*
+         * A segment that outlived the binary that made it, which only
+         * happens on win32. shpool->data may have been allocated by a build
+         * that put nothing after the tree, so the room for the count is not
+         * there to use - reading it would be past the end of that
+         * allocation, and writing it would be past the end of what the slab
+         * handed out. Take the tree and leave the count alone; find_lru()
+         * counts by walking when there is nowhere to keep it.
+         */
+
+        ctx->rbtree = shpool->data;
+        ctx->shm = NULL;
         return NGX_OK;
     }
 

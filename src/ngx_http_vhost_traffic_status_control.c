@@ -580,11 +580,7 @@ ngx_http_vhost_traffic_status_node_delete_all(
     while (node != sentinel) {
         vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
 
-        if (ngx_http_vhost_traffic_status_node_filter_counted(control->r, vtsn)
-            == NGX_OK)
-        {
-            ctx->shm->filter_nodes--;
-        }
+        ngx_http_vhost_traffic_status_node_filter_account(ctx, vtsn, -1);
 
         ngx_rbtree_delete(ctx->rbtree, node);
         ngx_slab_free_locked(shpool, node);
@@ -640,11 +636,7 @@ ngx_http_vhost_traffic_status_node_delete_group(
 
         vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
 
-        if (ngx_http_vhost_traffic_status_node_filter_counted(control->r, vtsn)
-            == NGX_OK)
-        {
-            ctx->shm->filter_nodes--;
-        }
+        ngx_http_vhost_traffic_status_node_filter_account(ctx, vtsn, -1);
 
         ngx_rbtree_delete(ctx->rbtree, node);
         ngx_slab_free_locked(shpool, node);
@@ -688,12 +680,7 @@ ngx_http_vhost_traffic_status_node_delete_zone(
         if (ngx_http_vhost_traffic_status_node_expire_match(control, vtsn)
             == NGX_OK)
         {
-            if (ngx_http_vhost_traffic_status_node_filter_counted(control->r,
-                                                                 vtsn)
-                == NGX_OK)
-            {
-                ctx->shm->filter_nodes--;
-            }
+            ngx_http_vhost_traffic_status_node_filter_account(ctx, vtsn, -1);
 
             ngx_rbtree_delete(ctx->rbtree, node);
             ngx_slab_free_locked(shpool, node);

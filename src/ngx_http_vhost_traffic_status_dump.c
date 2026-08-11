@@ -324,6 +324,10 @@ ngx_http_vhost_traffic_status_dump_restore_add_node(ngx_event_t *ev,
         ngx_memcpy(vtsn->data, key->data, key->len);
 
         ngx_rbtree_insert(ctx->rbtree, node);
+
+        /* a node put back from the file counts like any other */
+
+        ngx_http_vhost_traffic_status_node_filter_account(ctx, vtsn, 1);
     }
 
     ngx_shmtx_unlock(&shpool->mutex);

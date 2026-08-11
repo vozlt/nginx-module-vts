@@ -47,8 +47,6 @@ ngx_int_t ngx_http_vhost_traffic_status_filter_get_keys(
 ngx_int_t ngx_http_vhost_traffic_status_filter_get_nodes(
     ngx_http_request_t *r, ngx_array_t **filter_nodes,
     ngx_str_t *name, ngx_rbtree_node_t *node);
-uint32_t ngx_http_vhost_traffic_status_filter_max_node_signature(
-    ngx_http_vhost_traffic_status_ctx_t *ctx);
 ngx_int_t ngx_http_vhost_traffic_status_filter_max_node_match(
     ngx_http_request_t *r, ngx_str_t *filter);
 

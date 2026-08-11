@@ -390,6 +390,18 @@ typedef struct {
 } ngx_http_vhost_traffic_status_loc_conf_t;
 
 
+/* these take the ctx, which is declared above, so they live here */
+ngx_int_t ngx_http_vhost_traffic_status_node_filter_counted(
+    ngx_http_vhost_traffic_status_ctx_t *ctx,
+    ngx_http_vhost_traffic_status_node_t *vtsn);
+void ngx_http_vhost_traffic_status_node_filter_account(
+    ngx_http_vhost_traffic_status_ctx_t *ctx,
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t delta);
+ngx_int_t ngx_http_vhost_traffic_status_filter_max_node_match_ctx(
+    ngx_http_vhost_traffic_status_ctx_t *ctx, ngx_str_t *filter);
+uint32_t ngx_http_vhost_traffic_status_filter_max_node_signature(
+    ngx_http_vhost_traffic_status_ctx_t *ctx);
+
 ngx_msec_t ngx_http_vhost_traffic_status_current_msec(void);
 ngx_msec_int_t ngx_http_vhost_traffic_status_request_time(ngx_http_request_t *r);
 ngx_msec_int_t ngx_http_vhost_traffic_status_upstream_response_time(ngx_http_request_t *r);

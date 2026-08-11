@@ -120,7 +120,8 @@ ngx_http_vhost_traffic_status_find_node(ngx_http_request_t *r,
 /* whether this node is one of the ones the cap counts */
 
 ngx_int_t
-ngx_http_vhost_traffic_status_node_filter_counted(ngx_http_request_t *r,
+ngx_http_vhost_traffic_status_node_filter_counted(
+    ngx_http_vhost_traffic_status_ctx_t *ctx,
     ngx_http_vhost_traffic_status_node_t *vtsn)
 {
     ngx_str_t  filter;
@@ -136,13 +137,54 @@ ngx_http_vhost_traffic_status_node_filter_counted(ngx_http_request_t *r,
         return NGX_DECLINED;
     }
 
-    if (ngx_http_vhost_traffic_status_filter_max_node_match(r, &filter)
+    if (ngx_http_vhost_traffic_status_filter_max_node_match_ctx(ctx, &filter)
         != NGX_OK)
     {
         return NGX_DECLINED;
     }
 
     return NGX_OK;
+}
+
+
+/*
+ * Everything that puts a node into the tree or takes one out comes through
+ * here, with the mutex of the zone held.
+ *
+ * The signature is checked on the way in rather than only where the count is
+ * read. A reload is graceful: for a while the old workers and the new ones
+ * are both serving from this zone, and they do not agree on which nodes the
+ * cap counts. A worker that finds a count belonging to someone else's
+ * configuration must not add to it or take from it - it gives up on the
+ * count instead, and whoever reads it next builds a new one.
+ */
+
+void
+ngx_http_vhost_traffic_status_node_filter_account(
+    ngx_http_vhost_traffic_status_ctx_t *ctx,
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t delta)
+{
+    if (ctx->shm == NULL) {
+        return;
+    }
+
+    if (ctx->shm->signature != ctx->signature) {
+        ctx->shm->signature = 0;
+        return;
+    }
+
+    if (ngx_http_vhost_traffic_status_node_filter_counted(ctx, vtsn)
+        != NGX_OK)
+    {
+        return;
+    }
+
+    if (delta > 0) {
+        ctx->shm->filter_nodes++;
+
+    } else if (ctx->shm->filter_nodes > 0) {
+        ctx->shm->filter_nodes--;
+    }
 }
 
 
@@ -164,7 +206,7 @@ ngx_http_vhost_traffic_status_node_filter_count(ngx_http_request_t *r,
 
     vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
 
-    n = ngx_http_vhost_traffic_status_node_filter_counted(r, vtsn) == NGX_OK
+    n = ngx_http_vhost_traffic_status_node_filter_counted(ctx, vtsn) == NGX_OK
         ? 1 : 0;
 
     return n
@@ -178,6 +220,7 @@ ngx_http_vhost_traffic_status_find_lru(ngx_http_request_t *r, unsigned type,
     ngx_str_t *key)
 {
     ngx_str_t                                  filter;
+    ngx_uint_t                                 used;
     ngx_rbtree_node_t                         *node;
     ngx_http_vhost_traffic_status_ctx_t       *ctx;
 
@@ -218,17 +261,29 @@ ngx_http_vhost_traffic_status_find_lru(ngx_http_request_t *r, unsigned type,
      * zone now, under the mutex this is already called with.
      */
 
-    if (ctx->shm->signature != ctx->signature) {
+    if (ctx->shm == NULL) {
 
-        /* the configuration it was made under is not this one */
+        /* nowhere to keep it, so it is counted the way it always was */
 
-        ctx->shm->filter_nodes =
-            ngx_http_vhost_traffic_status_node_filter_count(r, ctx->rbtree->root);
-        ctx->shm->signature = ctx->signature;
+        used = ngx_http_vhost_traffic_status_node_filter_count(r,
+                   ctx->rbtree->root);
+
+    } else {
+        if (ctx->shm->signature != ctx->signature) {
+
+            /* the configuration it was made under is not this one */
+
+            ctx->shm->filter_nodes =
+                ngx_http_vhost_traffic_status_node_filter_count(r,
+                    ctx->rbtree->root);
+            ctx->shm->signature = ctx->signature;
+        }
+
+        used = ctx->shm->filter_nodes;
     }
 
     /* find */
-    if (ctx->shm->filter_nodes >= ctx->filter_max_node) {
+    if (used >= ctx->filter_max_node) {
         node = ngx_http_vhost_traffic_status_find_lru_node(r, NULL, ctx->rbtree->root);
     }
 
