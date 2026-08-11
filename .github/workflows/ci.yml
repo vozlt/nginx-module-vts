@@ -219,6 +219,99 @@ jobs:
         working-directory: nginx-module-vts
         run: sudo tail -n 100 t/servroot/logs/error.log || true
 
+  coverage:
+    name: 'coverage'
+    runs-on: ubuntu-24.04
+    permissions:
+      # the badge is a single file force pushed to the `badges` branch, and
+      # the summary is left on the pull request as one comment that later runs
+      # replace
+      contents: write
+      pull-requests: write
+    steps:
+      - name: 'checkout'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: nginx-module-vts
+      - name: 'checkout nginx'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: nginx/nginx
+          path: nginx
+          ref: '017cf98dcce217946572a896f0992370475e189f'
+      - name: 'prepare cpanm'
+        run: |
+          sudo apt install -y cpanminus gcovr
+          sudo cpanm --notest Test::Nginx::Socket > build.log 2>&1 || (cat build.log && exit 1)
+      - name: 'prepare promtool'
+        env:
+          # pinned, for the reason given in the job above
+          PROMETHEUS_VERSION: '3.13.2'
+        run: |
+          curl -fsSL -o prometheus.tar.gz \
+            "https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz"
+          tar xzf prometheus.tar.gz
+          sudo mv prometheus-*/promtool /usr/local/bin
+          promtool --version
+      - name: 'build nginx with coverage'
+        working-directory: nginx
+        run: |
+          # -O0 so that the arcs the counters are attached to still match the
+          # lines they were written for
+          ./auto/configure \
+            --prefix=/usr/local/nginx-cov \
+            --add-module=/home/runner/work/nginx-module-vts/nginx-module-vts/nginx-module-vts \
+            --with-cc-opt="--coverage -O0" \
+            --with-ld-opt="--coverage"
+          make -j$(nproc)
+          sudo make install
+          /usr/local/nginx-cov/sbin/nginx -V
+      - name: 'test'
+        working-directory: nginx-module-vts
+        run: |
+          # the lua tests need modules that are not part of this build
+          sudo PATH=/usr/local/nginx-cov/sbin:$PATH prove $(ls t/*.t | grep -v '_by_lua')
+      - name: 'collect'
+        run: |
+          # the workers run as root and leave their counters behind as root
+          sudo chown -R "$(id -u):$(id -g)" nginx/objs
+          gcovr --root "$GITHUB_WORKSPACE/nginx-module-vts" \
+                --filter "$GITHUB_WORKSPACE/nginx-module-vts/src/" \
+                --cobertura "$GITHUB_WORKSPACE/coverage.xml" \
+                --print-summary \
+                "$GITHUB_WORKSPACE/nginx/objs/addon/src"
+      - name: 'summarise'
+        uses: irongut/CodeCoverageSummary@51cc3a756ddcd398d447c044c02cb6aa83fdae95 # v1.3.0
+        with:
+          filename: coverage.xml
+          badge: true
+          format: markdown
+          hide_complexity: true
+          output: both
+          thresholds: '60 80'
+      - name: 'add the summary to the run'
+        run: cat code-coverage-results.md >> "$GITHUB_STEP_SUMMARY"
+      - name: 'comment on the pull request'
+        # a pull request from a fork is handed a read only token, so the
+        # comment cannot be written and the run summary is where to read it
+        if: >-
+          github.event_name == 'pull_request'
+          && github.event.pull_request.head.repo.full_name == github.repository
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
+        with:
+          header: coverage
+          recreate: true
+          path: code-coverage-results.md
+      - name: 'publish the badge'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: nginx-module-vts/util/coverage-badge.sh coverage.xml
+      - name: 'dump nginx error log'
+        if: failure()
+        working-directory: nginx-module-vts
+        run: sudo tail -n 100 t/servroot/logs/error.log || true
+
   build-variants:
     name: 'build (${{ matrix.variant.name }})'
     runs-on: ubuntu-24.04
