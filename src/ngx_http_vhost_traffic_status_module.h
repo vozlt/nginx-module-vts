@@ -277,6 +277,20 @@
 )
 
 
+/*
+   What lives in the zone. The tree is first: shpool->data has always pointed
+   at it, and keeping it there means the pointer still means the same thing
+   to a build that does not know about the rest - which is only reachable on
+   win32, where an existing segment can outlive the binary that made it. The
+   signature will not match there, and the count is made again.
+*/
+typedef struct {
+    ngx_rbtree_t                            rbtree;
+    ngx_atomic_t                            filter_nodes;
+    ngx_atomic_t                            signature;
+} ngx_http_vhost_traffic_status_shm_t;
+
+
 typedef struct {
     ngx_rbtree_t                           *rbtree;
 
@@ -293,6 +307,18 @@ typedef struct {
     ngx_array_t                            *filter_max_node_matches;
 
     ngx_uint_t                              filter_max_node;
+
+    /*
+       What the cap counts, in the zone rather than walked for. signature
+       says which configuration the count belongs to: a reload that changes
+       the cap or the groups it names leaves a count of the wrong population,
+       and the worker that notices counts again. Both are read and written
+       under the mutex of the zone.
+    */
+    ngx_http_vhost_traffic_status_shm_t    *shm;
+
+    /* the signature this configuration expects, settled while it is read */
+    uint32_t                                signature;
 
     ngx_flag_t                              enable;
     ngx_flag_t                              filter_check_duplicate;
@@ -363,6 +389,18 @@ typedef struct {
 
 } ngx_http_vhost_traffic_status_loc_conf_t;
 
+
+/* these take the ctx, which is declared above, so they live here */
+ngx_int_t ngx_http_vhost_traffic_status_node_filter_counted(
+    ngx_http_vhost_traffic_status_ctx_t *ctx,
+    ngx_http_vhost_traffic_status_node_t *vtsn);
+void ngx_http_vhost_traffic_status_node_filter_account(
+    ngx_http_vhost_traffic_status_ctx_t *ctx,
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t delta);
+ngx_int_t ngx_http_vhost_traffic_status_filter_max_node_match_ctx(
+    ngx_http_vhost_traffic_status_ctx_t *ctx, ngx_str_t *filter);
+uint32_t ngx_http_vhost_traffic_status_filter_max_node_signature(
+    ngx_http_vhost_traffic_status_ctx_t *ctx);
 
 ngx_msec_t ngx_http_vhost_traffic_status_current_msec(void);
 ngx_msec_int_t ngx_http_vhost_traffic_status_request_time(ngx_http_request_t *r);

@@ -266,15 +266,78 @@ next:
 }
 
 
+/*
+ * What the cap counts is settled by its own value and by the groups it names,
+ * and both come from the configuration. A reload can change either while the
+ * zone carries a count made under the old ones, so the count is stamped with
+ * this and made again when they do not agree.
+ */
+
+uint32_t
+ngx_http_vhost_traffic_status_filter_max_node_signature(
+    ngx_http_vhost_traffic_status_ctx_t *ctx)
+{
+    uint32_t                                       signature;
+    ngx_uint_t                                     i, n;
+    ngx_http_vhost_traffic_status_filter_match_t  *matches;
+
+    /*
+     * Framed rather than combined: the earlier version folded each group in
+     * with xor, which lets a group named twice cancel itself out, so
+     * "3 g:: g::" signed the same as "3" - and those match different things,
+     * the second one matching every filter there is. Each length goes in
+     * before its bytes so that the same bytes split differently do not sign
+     * alike either.
+     */
+
+    ngx_crc32_init(signature);
+
+    ngx_crc32_update(&signature, (u_char *) &ctx->filter_max_node,
+                     sizeof(ngx_uint_t));
+
+    n = ctx->filter_max_node_matches == NULL
+        ? 0 : ctx->filter_max_node_matches->nelts;
+
+    ngx_crc32_update(&signature, (u_char *) &n, sizeof(ngx_uint_t));
+
+    if (n) {
+        matches = ctx->filter_max_node_matches->elts;
+
+        for (i = 0; i < n; i++) {
+            ngx_crc32_update(&signature, (u_char *) &matches[i].match.len,
+                             sizeof(size_t));
+            ngx_crc32_update(&signature, matches[i].match.data,
+                             matches[i].match.len);
+        }
+    }
+
+    ngx_crc32_final(signature);
+
+    /* zero is kept for a count nobody has vouched for */
+
+    return signature == 0 ? 1 : signature;
+}
+
+
 ngx_int_t
 ngx_http_vhost_traffic_status_filter_max_node_match(ngx_http_request_t *r,
     ngx_str_t *filter)
 {
-    ngx_uint_t                                     i, n;
-    ngx_http_vhost_traffic_status_ctx_t           *ctx;
-    ngx_http_vhost_traffic_status_filter_match_t  *matches;
+    return ngx_http_vhost_traffic_status_filter_max_node_match_ctx(
+               ngx_http_get_module_main_conf(r,
+                   ngx_http_vhost_traffic_status_module),
+               filter);
+}
 
-    ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
+
+/* the dump restores nodes with no request in hand, so this takes the ctx */
+
+ngx_int_t
+ngx_http_vhost_traffic_status_filter_max_node_match_ctx(
+    ngx_http_vhost_traffic_status_ctx_t *ctx, ngx_str_t *filter)
+{
+    ngx_uint_t                                     i, n;
+    ngx_http_vhost_traffic_status_filter_match_t  *matches;
 
     if (ctx->filter_max_node_matches == NULL) {
         return NGX_OK;

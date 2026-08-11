@@ -451,22 +451,46 @@ ngx_http_vhost_traffic_status_init_zone(ngx_shm_zone_t *shm_zone, void *data)
 
     if (octx) {
         ctx->rbtree = octx->rbtree;
+        ctx->shm = octx->shm;
         return NGX_OK;
     }
 
     shpool = (ngx_slab_pool_t *) shm_zone->shm.addr;
 
     if (shm_zone->shm.exists) {
+
+        /*
+         * A segment that outlived the binary that made it, which only
+         * happens on win32. shpool->data may have been allocated by a build
+         * that put nothing after the tree, so the room for the count is not
+         * there to use - reading it would be past the end of that
+         * allocation, and writing it would be past the end of what the slab
+         * handed out. Take the tree and leave the count alone; find_lru()
+         * counts by walking when there is nowhere to keep it.
+         */
+
         ctx->rbtree = shpool->data;
+        ctx->shm = NULL;
         return NGX_OK;
     }
 
-    ctx->rbtree = ngx_slab_alloc(shpool, sizeof(ngx_rbtree_t));
-    if (ctx->rbtree == NULL) {
+    /*
+     * The tree is the first member, so shpool->data goes on pointing at it.
+     * Nothing here touches what the zone already holds: on a reload this runs
+     * in the master while the old workers are still serving from it.
+     */
+
+    ctx->shm = ngx_slab_alloc(shpool, sizeof(ngx_http_vhost_traffic_status_shm_t));
+    if (ctx->shm == NULL) {
         return NGX_ERROR;
     }
 
-    shpool->data = ctx->rbtree;
+    ctx->shm->filter_nodes = 0;
+    ctx->shm->signature = 0;
+
+    ctx->rbtree = &ctx->shm->rbtree;
+
+    shpool->data = ctx->shm;
 
     sentinel = ngx_slab_alloc(shpool, sizeof(ngx_rbtree_node_t));
     if (sentinel == NULL) {
@@ -944,6 +968,8 @@ ngx_http_vhost_traffic_status_init_main_conf(ngx_conf_t *cf, void *conf)
     }
 
     ngx_conf_init_uint_value(ctx->filter_max_node, 0);
+
+    ctx->signature = ngx_http_vhost_traffic_status_filter_max_node_signature(ctx);
     ngx_conf_init_value(ctx->enable, 0);
     ngx_conf_init_value(ctx->filter_check_duplicate, vtscf->filter_check_duplicate);
     ngx_conf_init_value(ctx->limit_check_duplicate, vtscf->limit_check_duplicate);

@@ -167,6 +167,12 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
         /* delete lru node */
         lrun = ngx_http_vhost_traffic_status_find_lru(r, type, key);
         if (lrun != NULL) {
+
+            /* while the node is still there to be read */
+
+            ngx_http_vhost_traffic_status_node_filter_account(ctx,
+                (ngx_http_vhost_traffic_status_node_t *) &lrun->color, -1);
+
             ngx_rbtree_delete(ctx->rbtree, lrun);
             ngx_slab_free_locked(shpool, lrun);
         }
@@ -230,6 +236,8 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
         ngx_memcpy(vtsn->data, key->data, key->len);
 
         ngx_rbtree_insert(ctx->rbtree, node);
+
+        ngx_http_vhost_traffic_status_node_filter_account(ctx, vtsn, 1);
 
     } else {
         init = NGX_HTTP_VHOST_TRAFFIC_STATUS_NODE_FIND;
