@@ -5,14 +5,17 @@
 # `switch` seconds have passed, so that the peers of an upstream group get
 # replaced while the test is running.
 #
-# usage: dns_server.pl <port> <switch> <first address> <second address>
+# Any address after the second one is added to every answer, for the tests that
+# need a name to stand for more peers than the server line that holds it.
+#
+# usage: dns_server.pl <port> <switch> <first address> <second address> [more]
 
 use strict;
 use warnings;
 
 use Socket;
 
-my ($port, $switch, $first, $second) = @ARGV;
+my ($port, $switch, $first, $second, @rest) = @ARGV;
 
 die "usage: $0 <port> <switch> <first address> <second address>\n"
     unless defined $second;
@@ -76,10 +79,12 @@ while (1) {
     if ($qtype == 1) {          # A
         my $address = (time() - $started) >= $switch ? $second : $first;
 
-        # name pointer, type A, class IN, ttl, rdlength, address
-        $answer = pack('n n n N n a4', 0xc00c, 1, 1, 1, 4,
-                       inet_aton($address));
-        $ancount = 1;
+        for my $a ($address, @rest) {
+            # name pointer, type A, class IN, ttl, rdlength, address
+            $answer .= pack('n n n N n a4', 0xc00c, 1, 1, 1, 4,
+                            inet_aton($a));
+            $ancount++;
+        }
     }
 
     # id, flags (response, recursion available), section counts

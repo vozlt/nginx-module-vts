@@ -14,6 +14,12 @@
 #endif
 
 
+#if (NGX_HTTP_UPSTREAM_ZONE)
+static ngx_int_t ngx_http_vhost_traffic_status_control_peer_lookup(
+    ngx_http_upstream_rr_peers_t *peers, ngx_str_t *name,
+    ngx_http_upstream_server_t *usn);
+#endif
+
 static void ngx_http_vhost_traffic_status_node_status_all(
     ngx_http_vhost_traffic_status_control_t *control);
 static void ngx_http_vhost_traffic_status_node_status_group(
@@ -44,6 +50,92 @@ static void ngx_http_vhost_traffic_status_node_reset_zone(
     ngx_http_vhost_traffic_status_control_t *control);
 
 
+#if (NGX_HTTP_UPSTREAM_ZONE)
+
+/*
+ * Fills in what the control interface answers with for the peer named `name`,
+ * looking through the peers the upstream group has right now rather than the
+ * server lines it was configured from.
+ *
+ * The backup peers are a list of their own hanging off peers->next and a
+ * `resolve` line makes peers in either of them, so both are walked. Which
+ * list the peer was found in is what says whether it is a backup - a name
+ * resolved at run time is not written down anywhere else.
+ */
+
+static ngx_int_t
+ngx_http_vhost_traffic_status_control_peer_lookup(
+    ngx_http_upstream_rr_peers_t *peers, ngx_str_t *name,
+    ngx_http_upstream_server_t *usn)
+{
+    ngx_int_t                     rc;
+    ngx_uint_t                    backup;
+    ngx_http_upstream_rr_peer_t  *peer;
+
+    rc = NGX_DECLINED;
+
+    for (backup = 0; peers && rc != NGX_OK; peers = peers->next, backup = 1) {
+
+        ngx_http_upstream_rr_peers_rlock(peers);
+
+        for (peer = peers->peer; peer; peer = peer->next) {
+
+            if (peer->name.len != name->len) {
+                continue;
+            }
+
+            if (ngx_strncmp(peer->name.data, name->data, name->len) != 0) {
+                continue;
+            }
+
+#if nginx_version > 1007001
+
+            /*
+             * name rather than peer->name: the name of a peer lives in the
+             * zone of the upstream and a re-resolve can hand it back to the
+             * slab as soon as the lock below is released, while the caller
+             * reads this afterwards to write its answer. The two were just
+             * compared byte for byte, and name belongs to the request.
+             */
+
+            usn->name = *name;
+#endif
+
+            usn->weight = peer->weight;
+            usn->max_fails = peer->max_fails;
+            usn->fail_timeout = peer->fail_timeout;
+            usn->backup = backup;
+
+#if (NGX_HTTP_UPSTREAM_CHECK)
+            usn->down = ngx_http_upstream_check_peer_down(peer->check_index)
+                        ? 1 : 0;
+#else
+
+            /*
+             * max_fails 0 turns the counting off, which nginx reads as never
+             * taking the peer out; without the guard the comparison holds
+             * from the first request and every such peer is called down
+             */
+
+            usn->down = (peer->down
+                         || (peer->max_fails
+                             && peer->fails >= peer->max_fails));
+#endif
+
+            rc = NGX_OK;
+
+            break;
+        }
+
+        ngx_http_upstream_rr_peers_unlock(peers);
+    }
+
+    return rc;
+}
+
+#endif
+
+
 void
 ngx_http_vhost_traffic_status_node_upstream_lookup(
     ngx_http_vhost_traffic_status_control_t *control,
@@ -53,10 +145,6 @@ ngx_http_vhost_traffic_status_node_upstream_lookup(
     ngx_str_t                       key, usg, ush;
     ngx_uint_t                      i, j, k;
     ngx_http_upstream_server_t     *us;
-#if (NGX_HTTP_UPSTREAM_ZONE)
-    ngx_http_upstream_rr_peer_t    *peer;
-    ngx_http_upstream_rr_peers_t   *peers;
-#endif
     ngx_http_upstream_srv_conf_t   *uscf, **uscfp;
     ngx_http_upstream_main_conf_t  *umcf;
 
@@ -118,66 +206,21 @@ ngx_http_vhost_traffic_status_node_upstream_lookup(
                  * set. The peers are made by the resolver and live in the
                  * zone, which is where the display reads them since #322.
                  *
-                 * Look there first, and fall back to the server lines, which
-                 * still carry the backup peers - the display splits them the
-                 * same way.
+                 * With a zone those peers are the whole group, backups
+                 * included, so they answer on their own; the server lines are
+                 * all there is to read when there is no zone. This is the
+                 * same source the display reads, which is what keeps the two
+                 * from disagreeing about a peer.
                  */
 
                 if (uscf->shm_zone != NULL) {
-                    peers = uscf->peer.data;
+                    rc = ngx_http_vhost_traffic_status_control_peer_lookup(
+                             uscf->peer.data, &ush, usn);
 
-                    ngx_http_upstream_rr_peers_rlock(peers);
-
-                    for (peer = peers->peer; peer; peer = peer->next) {
-
-                        if (peer->name.len != ush.len) {
-                            continue;
-                        }
-
-                        if (ngx_strncmp(peer->name.data, ush.data, ush.len)
-                            != 0)
-                        {
-                            continue;
-                        }
-
-#if nginx_version > 1007001
-
-                        /*
-                         * ush rather than peer->name: the name of a peer
-                         * lives in the zone of the upstream and a re-resolve
-                         * can hand it back to the slab as soon as the lock
-                         * below is released, while the caller reads this
-                         * afterwards to write its answer. The two were just
-                         * compared byte for byte, and ush belongs to the
-                         * request.
-                         */
-
-                        usn->name = ush;
-#endif
-
-                        usn->weight = peer->weight;
-                        usn->max_fails = peer->max_fails;
-                        usn->fail_timeout = peer->fail_timeout;
-                        usn->backup = 0;
-
-#if (NGX_HTTP_UPSTREAM_CHECK)
-                        usn->down = ngx_http_upstream_check_peer_down(
-                                        peer->check_index) ? 1 : 0;
-#else
-                        usn->down = (peer->down
-                                     || (peer->max_fails
-                                         && peer->fails >= peer->max_fails));
-#endif
-
+                    if (rc == NGX_OK) {
                         control->count++;
-
-                        break;
                     }
 
-                    ngx_http_upstream_rr_peers_unlock(peers);
-                }
-
-                if (control->count) {
                     break;
                 }
 

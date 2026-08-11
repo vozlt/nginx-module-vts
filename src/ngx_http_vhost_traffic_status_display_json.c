@@ -620,6 +620,7 @@ ngx_http_vhost_traffic_status_display_set_upstream_group(ngx_http_request_t *r,
     ngx_rbtree_node_t                     *node;
     ngx_http_upstream_server_t            *us, usn;
 #if (NGX_HTTP_UPSTREAM_ZONE)
+    ngx_uint_t                             backup;
     ngx_http_upstream_rr_peer_t           *peer;
     ngx_http_upstream_rr_peers_t          *peers;
 #endif
@@ -691,76 +692,85 @@ ngx_http_vhost_traffic_status_display_set_upstream_group(ngx_http_request_t *r,
 
             peers = uscf->peer.data;
 
-            ngx_http_upstream_rr_peers_rlock(peers);
+            /*
+             * A peer that a `resolve` line makes at run time is not named by
+             * any server line, and nginx builds a resolve list for the backup
+             * servers too. Both lists are walked, and the flag comes from the
+             * one the peer was found in - the server lines cannot say it here.
+             */
+            for (backup = 0; peers; peers = peers->next, backup = 1) {
 
-            for (peer = peers->peer; peer; peer = peer->next) {
-                dst.len = uscf->host.len + sizeof("@") - 1 + peer->name.len;
-                dst.data = ngx_pnalloc(r->pool, dst.len);
-                if (dst.data == NULL) {
-                    ngx_http_upstream_rr_peers_unlock(peers);
-                    return buf;
-                }
+                ngx_http_upstream_rr_peers_rlock(peers);
 
-                p = dst.data;
-                p = ngx_cpymem(p, uscf->host.data, uscf->host.len);
-                *p++ = NGX_HTTP_VHOST_TRAFFIC_STATUS_KEY_SEPARATOR;
-                p = ngx_cpymem(p, peer->name.data, peer->name.len);
+                for (peer = peers->peer; peer; peer = peer->next) {
+                    dst.len = uscf->host.len + sizeof("@") - 1 + peer->name.len;
+                    dst.data = ngx_pnalloc(r->pool, dst.len);
+                    if (dst.data == NULL) {
+                        ngx_http_upstream_rr_peers_unlock(peers);
+                        return buf;
+                    }
 
-                rc = ngx_http_vhost_traffic_status_node_generate_key(r->pool, &key, &dst, type);
-                if (rc != NGX_OK) {
-                    ngx_http_upstream_rr_peers_unlock(peers);
-                    return buf;
-                }
+                    p = dst.data;
+                    p = ngx_cpymem(p, uscf->host.data, uscf->host.len);
+                    *p++ = NGX_HTTP_VHOST_TRAFFIC_STATUS_KEY_SEPARATOR;
+                    p = ngx_cpymem(p, peer->name.data, peer->name.len);
 
-                hash = ngx_crc32_short(key.data, key.len);
-                node = ngx_http_vhost_traffic_status_node_lookup(ctx->rbtree, &key, hash);
+                    rc = ngx_http_vhost_traffic_status_node_generate_key(r->pool, &key, &dst, type);
+                    if (rc != NGX_OK) {
+                        ngx_http_upstream_rr_peers_unlock(peers);
+                        return buf;
+                    }
 
-                usn.weight = peer->weight;
-                usn.max_fails = peer->max_fails;
-                usn.fail_timeout = peer->fail_timeout;
-                usn.backup = 0;
+                    hash = ngx_crc32_short(key.data, key.len);
+                    node = ngx_http_vhost_traffic_status_node_lookup(ctx->rbtree, &key, hash);
+
+                    usn.weight = peer->weight;
+                    usn.max_fails = peer->max_fails;
+                    usn.fail_timeout = peer->fail_timeout;
+                    usn.backup = backup;
 #if (NGX_HTTP_UPSTREAM_CHECK)
-                if (ngx_http_upstream_check_peer_down(peer->check_index)) {
-                    usn.down = 1;
+                    if (ngx_http_upstream_check_peer_down(peer->check_index)) {
+                        usn.down = 1;
 
-                } else {
-                    usn.down = 0;
+                    } else {
+                        usn.down = 0;
+                    }
+#else
+                    /*
+                     * max_fails 0 turns the counting off, which nginx reads as
+                     * never taking the peer out; without the guard the comparison
+                     * holds from the first request and every such peer is called
+                     * down
+                     */
+                    usn.down = (peer->down
+                                || (peer->max_fails
+                                    && peer->fails >= peer->max_fails));
+#endif
+
+#if nginx_version > 1007001
+                    usn.name = peer->name;
+#endif
+
+                    if (node != NULL) {
+                        vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
+#if nginx_version > 1007001
+                        buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, vtsn);
+#else
+                        buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, vtsn, &peer->name);
+#endif
+
+                    } else {
+#if nginx_version > 1007001
+                        buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, NULL);
+#else
+                        buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, NULL, &peer->name);
+#endif
+                    }
+
                 }
-#else
-                /*
-                 * max_fails 0 turns the counting off, which nginx reads as
-                 * never taking the peer out; without the guard the comparison
-                 * holds from the first request and every such peer is called
-                 * down
-                 */
-                usn.down = (peer->down
-                            || (peer->max_fails
-                                && peer->fails >= peer->max_fails));
-#endif
 
-#if nginx_version > 1007001
-                usn.name = peer->name;
-#endif
-
-                if (node != NULL) {
-                    vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
-#if nginx_version > 1007001
-                    buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, vtsn);
-#else
-                    buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, vtsn, &peer->name);
-#endif
-
-                } else {
-#if nginx_version > 1007001
-                    buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, NULL);
-#else
-                    buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, NULL, &peer->name);
-#endif
-                }
-
+                ngx_http_upstream_rr_peers_unlock(peers);
             }
-
-            ngx_http_upstream_rr_peers_unlock(peers);
 
 #if (NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_RESOLVE)
             /*
@@ -784,12 +794,14 @@ not_supported:
 
 #endif
 
-            for (j = 0; j < uscf->servers->nelts; j++) {
+            /*
+             * The server lines are read only when there is no zone to read
+             * instead. They used to supply the backup peers, which is where
+             * a resolving line went missing: it leaves an address whose name
+             * was never set, so what came out was an empty server name.
+             */
+            for (j = 0; !zone && j < uscf->servers->nelts; j++) {
                 usn = us[j];
-
-                if (zone && usn.backup != 1) {
-                    continue;
-                }
 
                 /* for all A records */
                 for (k = 0; k < usn.naddrs; k++) {
@@ -1093,7 +1105,7 @@ ngx_http_vhost_traffic_status_display_resolves(ngx_http_request_t *r)
 {
     ngx_uint_t                                i;
     ngx_array_t                              *resolves;
-    ngx_http_upstream_rr_peers_t             *peers;
+    ngx_http_upstream_rr_peers_t             *peers, *rpeers;
     ngx_http_upstream_srv_conf_t             *uscf, **uscfp;
     ngx_http_upstream_main_conf_t            *umcf;
     ngx_http_vhost_traffic_status_resolve_t  *rs;
@@ -1111,9 +1123,24 @@ ngx_http_vhost_traffic_status_display_resolves(ngx_http_request_t *r)
             continue;
         }
 
+        /*
+         * Either list can be the one that resolves: nginx builds a resolve
+         * list for the backup servers as well, so a group whose only
+         * resolving line is a backup has peers->resolve == NULL and a
+         * peers->next->resolve. Reading the primary list alone skips such a
+         * group, and what a replaced backup served stays in the tree with
+         * nothing pointing at it.
+         */
+
         peers = uscf->peer.data;
 
-        if (peers->resolve == NULL) {
+        for (rpeers = peers; rpeers; rpeers = rpeers->next) {
+            if (rpeers->resolve != NULL) {
+                break;
+            }
+        }
+
+        if (rpeers == NULL) {
             continue;
         }
 
