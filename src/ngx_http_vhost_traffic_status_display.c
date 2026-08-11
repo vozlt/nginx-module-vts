@@ -596,15 +596,29 @@ ngx_http_vhost_traffic_status_display_get_upstream_nelts(ngx_http_request_t *r)
                 goto not_supported;
             }
 
-            peers = uscf->peer.data;
+            /*
+             * Both lists, and the server lines are not read at all: this has
+             * to count what display_set_upstream_group() writes. Counting the
+             * primary peers and then every server line was slack while the
+             * backups came from the lines, and it stopped being slack when
+             * they started coming from peers->next. A name that resolves to
+             * more addresses than the one placeholder its line leaves behind
+             * is then written without having been counted, and the entries
+             * that do not fit are dropped by display_buffer_check().
+             */
 
-            ngx_http_upstream_rr_peers_rlock(peers);
+            for (peers = uscf->peer.data; peers; peers = peers->next) {
 
-            for (peer = peers->peer; peer; peer = peer->next) {
-                n++;
+                ngx_http_upstream_rr_peers_rlock(peers);
+
+                for (peer = peers->peer; peer; peer = peer->next) {
+                    n++;
+                }
+
+                ngx_http_upstream_rr_peers_unlock(peers);
             }
 
-            ngx_http_upstream_rr_peers_unlock(peers);
+            continue;
 
 not_supported:
 

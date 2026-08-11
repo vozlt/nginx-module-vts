@@ -31,17 +31,23 @@ plan skip_all => "upstream resolve is not supported by: $version"
 # the test resolver
 
 my $DNSPort    = 18656;
+my $WidePort   = 18658;   # a resolver whose answers carry many addresses
 my $FirstAddr  = '127.0.0.1';   # port 1984 of the test server answers here
 my $SecondAddr = '127.0.0.1';   # the name keeps one address for these tests
 my $SwitchIn   = 3600;
 
 # Sends a query and tells whether the test resolver answers it.
+# The addresses the wide name stands for. One server line, many peers.
+my @Wide = map { sprintf('127.0.%d.%d', int($_ / 250) + 1, $_ % 250 + 1) }
+           0 .. 119;
+
 sub dns_ready {
+    my ($port) = @_;
     my $sock;
 
     socket($sock, PF_INET, SOCK_DGRAM, getprotobyname('udp')) or return 0;
 
-    my $to = sockaddr_in($DNSPort, inet_aton('127.0.0.1'));
+    my $to = sockaddr_in($port, inet_aton('127.0.0.1'));
     my $query = pack('n n n n n n', 0x2a2a, 0x0100, 1, 0, 0, 0)
                 . join('', map { chr(length $_) . $_ } qw(vts-test example))
                 . "\0" . pack('n n', 1, 1);
@@ -65,33 +71,42 @@ sub dns_ready {
     return 0;
 }
 
-# The resolver runs as its own process: a plain fork of the test is not safe
-# on every platform.
-my $dns_pid = fork();
+# The resolvers run as their own processes: a plain fork of the test is not
+# safe on every platform.
+my @dns_pids;
 
-defined $dns_pid or plan skip_all => "fork() failed: $!";
+for my $r ([$DNSPort, $FirstAddr, $SecondAddr], [$WidePort, $Wide[0], $Wide[0], @Wide[1 .. $#Wide]]) {
+    my $pid = fork();
 
-if ($dns_pid == 0) {
-    my $server = __FILE__;
-    $server =~ s{[^/]+$}{dns_server.pl};
+    defined $pid or plan skip_all => "fork() failed: $!";
 
-    exec($^X, $server, $DNSPort, $SwitchIn, $FirstAddr, $SecondAddr)
-        or POSIX::_exit(1);
+    if ($pid == 0) {
+        my $server = __FILE__;
+        $server =~ s{[^/]+$}{dns_server.pl};
+
+        my ($port, @addrs) = @$r;
+
+        exec($^X, $server, $port, $SwitchIn, @addrs) or POSIX::_exit(1);
+    }
+
+    push @dns_pids, $pid;
 }
 
 END {
-    if ($dns_pid) {
-        local $?;
+    local $?;
 
-        kill 'TERM', $dns_pid;
-        waitpid($dns_pid, 0);
+    for my $pid (@dns_pids) {
+        kill 'TERM', $pid;
+        waitpid($pid, 0);
     }
 }
 
-plan skip_all => "the test resolver does not answer on 127.0.0.1:$DNSPort"
-    unless dns_ready();
+for my $port ($DNSPort, $WidePort) {
+    plan skip_all => "the test resolver does not answer on 127.0.0.1:$port"
+        unless dns_ready($port);
+}
 
-plan tests => repeat_each() * 26;
+plan tests => repeat_each() * 28;
 no_shuffle();
 run_tests();
 
@@ -270,4 +285,31 @@ __DATA__
     'OK',
     qr/"server":"127\.0\.0\.1:1984"(?:(?!"server":).)*"backup":false/s,
     qr/"server":"127\.0\.0\.1:1984".*"backup":false/s,
+]
+
+=== TEST 6: every peer a wide name stands for is written, none dropped
+--- http_config
+    vhost_traffic_status_zone;
+
+    resolver 127.0.0.1:18658 valid=1s ipv6=off;
+    resolver_timeout 2s;
+
+    upstream wide {
+        zone wide 1m;
+        server 127.0.0.1:1984;
+        server wide.example:1984 resolve backup;
+    }
+--- config
+    location /status {
+        vhost_traffic_status_display;
+        vhost_traffic_status_display_format json;
+        access_log off;
+    }
+--- request eval
+[
+    'GET /status/format/json',
+]
+--- response_body_like eval
+[
+    qr/"server":"127\.0\.1\.120:1984"/s,
 ]
