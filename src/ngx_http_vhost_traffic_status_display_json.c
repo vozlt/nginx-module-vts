@@ -1105,7 +1105,7 @@ ngx_http_vhost_traffic_status_display_resolves(ngx_http_request_t *r)
 {
     ngx_uint_t                                i;
     ngx_array_t                              *resolves;
-    ngx_http_upstream_rr_peers_t             *peers;
+    ngx_http_upstream_rr_peers_t             *peers, *rpeers;
     ngx_http_upstream_srv_conf_t             *uscf, **uscfp;
     ngx_http_upstream_main_conf_t            *umcf;
     ngx_http_vhost_traffic_status_resolve_t  *rs;
@@ -1123,9 +1123,24 @@ ngx_http_vhost_traffic_status_display_resolves(ngx_http_request_t *r)
             continue;
         }
 
+        /*
+         * Either list can be the one that resolves: nginx builds a resolve
+         * list for the backup servers as well, so a group whose only
+         * resolving line is a backup has peers->resolve == NULL and a
+         * peers->next->resolve. Reading the primary list alone skips such a
+         * group, and what a replaced backup served stays in the tree with
+         * nothing pointing at it.
+         */
+
         peers = uscf->peer.data;
 
-        if (peers->resolve == NULL) {
+        for (rpeers = peers; rpeers; rpeers = rpeers->next) {
+            if (rpeers->resolve != NULL) {
+                break;
+            }
+        }
+
+        if (rpeers == NULL) {
             continue;
         }
 
