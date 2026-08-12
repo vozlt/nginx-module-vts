@@ -124,6 +124,10 @@ __DATA__
 
 
 === TEST 2: a peer replaced by a re-resolve keeps its statistics
+# The peer that is gone is the one with weight 0: nothing is known about a peer
+# the group does not hold any more, and that is what the zeros say. It used to
+# be marked with down, which reads as a statement about a peer that a balancer
+# may in fact be using right now.
 --- http_config
     vhost_traffic_status_zone;
 
@@ -150,4 +154,4 @@ __DATA__
 --- request eval
 ['GET /up', 'GET /status/format/json']
 --- response_body_like eval
-['OK', qr/(?=.*"server":"127\.0\.0\.2:1984")(?=.*\{"server":"127\.0\.0\.1:1984","requestCounter":[1-9])(?=.*"127\.0\.0\.1:1984".*?"down":true)/s]
+['OK', qr/(?=.*"server":"127\.0\.0\.2:1984")(?=.*\{"server":"127\.0\.0\.1:1984","requestCounter":[1-9])(?=.*"127\.0\.0\.1:1984".*?"weight":0)/s]
