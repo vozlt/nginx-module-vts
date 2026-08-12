@@ -36,10 +36,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+/*
+ * Weak, because configure links a trivial program with the ld options it is
+ * given to see whether they work, and this object goes with them. The linker
+ * defines __real_* only where --wrap has something to wrap, so in that test
+ * link they resolve to nothing and the test passes. In the real one they are
+ * the functions the calls were going to.
+ */
+
 extern void *__real_ngx_http_vhost_traffic_status_find_node(void *r, void *key,
-    unsigned type, unsigned flag);
-extern void  __real_ngx_shmtx_lock(void *mtx);
-extern void  __real_ngx_shmtx_unlock(void *mtx);
+    unsigned type, unsigned flag) __attribute__((weak));
+extern void  __real_ngx_shmtx_lock(void *mtx) __attribute__((weak));
+extern void  __real_ngx_shmtx_unlock(void *mtx) __attribute__((weak));
 
 /* one per process: the workers do not share it, and neither do they need to */
 static unsigned  vts_lc_depth;
@@ -73,6 +81,10 @@ vts_lc_report(const char *what)
 void
 __wrap_ngx_shmtx_lock(void *mtx)
 {
+    if (__real_ngx_shmtx_lock == NULL) {
+        return;
+    }
+
     __real_ngx_shmtx_lock(mtx);
 
     vts_lc_depth++;
@@ -82,6 +94,10 @@ __wrap_ngx_shmtx_lock(void *mtx)
 void
 __wrap_ngx_shmtx_unlock(void *mtx)
 {
+    if (__real_ngx_shmtx_unlock == NULL) {
+        return;
+    }
+
     if (vts_lc_depth) {
         vts_lc_depth--;
     }
@@ -94,6 +110,10 @@ void *
 __wrap_ngx_http_vhost_traffic_status_find_node(void *r, void *key,
     unsigned type, unsigned flag)
 {
+    if (__real_ngx_http_vhost_traffic_status_find_node == NULL) {
+        return NULL;
+    }
+
     if (vts_lc_depth == 0) {
         vts_lc_report("find_node was entered with no mutex held");
     }
