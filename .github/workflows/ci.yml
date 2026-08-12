@@ -366,10 +366,13 @@ jobs:
           # the lock is replaced rather than deleted: dropping both lines
           # leaves shpool set and never read, and -Werror stops the build
           # before the check gets a chance to say anything
-          sed -i 's|ngx_shmtx_lock(&shpool->mutex);|(void) shpool;|; \
-                  s|ngx_shmtx_unlock(&shpool->mutex);||' \
-              src/ngx_http_vhost_traffic_status_set.c
+          # one call each: a backslash before a newline inside single quotes
+          # is not a continuation, it is a backslash, and sed reads it as the
+          # start of an address it never finds the end of
+          sed -i 's|ngx_shmtx_lock(&shpool->mutex);|(void) shpool;|' src/ngx_http_vhost_traffic_status_set.c
+          sed -i 's|ngx_shmtx_unlock(&shpool->mutex);||' src/ngx_http_vhost_traffic_status_set.c
           grep -q '(void) shpool;' src/ngx_http_vhost_traffic_status_set.c
+          ! grep -q 'ngx_shmtx_' src/ngx_http_vhost_traffic_status_set.c
           ( cd ../nginx && make -j$(nproc) > /dev/null && sudo make install > /dev/null )
           sudo rm -f /tmp/vts-lockcheck.log
           sudo PATH=/usr/local/nginx-lc/sbin:$PATH prove t/021.set_by_filter.t > /dev/null 2>&1 || true
