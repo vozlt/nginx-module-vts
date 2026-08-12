@@ -1087,10 +1087,13 @@ ngx_http_vhost_traffic_status_display_upstream_group_cmp(const void *one,
 
 
 /*
- * Returns the upstream groups that resolve their names at run time together
- * with the peers they have right now, sorted by host so that a node can be
- * matched to its group with a binary search. NULL when there is none, which
- * is the usual case.
+ * Returns every upstream group of the configuration together with the peers it
+ * holds right now, sorted by host so that a node can be matched to its group
+ * with a binary search.
+ *
+ * NULL when the configuration has no group at all, and also when an allocation
+ * on the way failed: the caller then writes the peers the groups do hold and
+ * loses only the ones they do not, which is what it wrote before this existed.
  */
 static ngx_array_t *
 ngx_http_vhost_traffic_status_display_upstream_groups(ngx_http_request_t *r)
@@ -1389,7 +1392,9 @@ ngx_http_vhost_traffic_status_display_set_upstream_gone(ngx_http_request_t *r,
 
         ngx_memzero(&usn, sizeof(ngx_http_upstream_server_t));
 
+#if nginx_version > 1007001
         usn.name = peers[i].name;
+#endif
 
         /*
          * Everything else is left at zero. Whether such a peer is down is not
@@ -1399,8 +1404,13 @@ ngx_http_vhost_traffic_status_display_set_upstream_gone(ngx_http_request_t *r,
          * reason, and false is what that means for a flag.
          */
 
+#if nginx_version > 1007001
         buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf,
                   &usn, peers[i].node);
+#else
+        buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf,
+                  &usn, peers[i].node, &peers[i].name);
+#endif
     }
 
     return buf;
