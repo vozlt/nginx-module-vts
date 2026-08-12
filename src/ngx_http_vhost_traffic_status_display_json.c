@@ -16,20 +16,26 @@
 
 
 /*
- * The `resolve` parameter of the upstream server directive is available since
- * nginx 1.27.3 and needs an upstream zone. It came with the peers `resolve`
- * list and with NGX_HTTP_UPSTREAM_MODIFY, freenginx has neither of them.
+ * An upstream group is written out of its `server` lines and, where there is a
+ * zone, out of the peers the group holds. A node keyed under the group whose
+ * peer is in neither is never reached, and its statistics sit in the tree with
+ * nothing pointing at them. Three things put a peer there:
+ *
+ *   - a balancer_by_lua block picks an address of its own (#155)
+ *   - a re-resolve replaces the peers of a resolving group (#357)
+ *   - a server line is taken out of the configuration
+ *
+ * They are one case, and the peers of every group are collected in one pass
+ * over the tree: walking it once per group would cost as many passes as there
+ * are groups.
  */
-#if (NGX_HTTP_UPSTREAM_ZONE) && (nginx_version >= 1027003)                     \
-    && defined(NGX_HTTP_UPSTREAM_MODIFY) && !(defined freenginx)
-#define NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_RESOLVE  1
 
-/* an upstream group whose names are resolved at run time */
+/* an upstream group, and the peers of it that no longer exist */
 typedef struct {
     ngx_str_t     host;
     ngx_array_t  *names;  /* ngx_str_t, the peers the group has right now */
     ngx_array_t  *gone;   /* ngx_http_vhost_traffic_status_gone_peer_t */
-} ngx_http_vhost_traffic_status_resolve_t;
+} ngx_http_vhost_traffic_status_upstream_group_t;
 
 
 /* a node whose peer does not belong to its upstream group any more */
@@ -39,20 +45,19 @@ typedef struct {
 } ngx_http_vhost_traffic_status_gone_peer_t;
 
 
-static ngx_array_t *ngx_http_vhost_traffic_status_display_resolves(
+static ngx_array_t *ngx_http_vhost_traffic_status_display_upstream_groups(
     ngx_http_request_t *r);
 static ngx_array_t *ngx_http_vhost_traffic_status_display_upstream_peer_names(
-    ngx_http_request_t *r, ngx_http_upstream_rr_peers_t *peers);
+    ngx_http_request_t *r, ngx_http_upstream_srv_conf_t *uscf);
 static ngx_uint_t ngx_http_vhost_traffic_status_display_upstream_peer_exists(
     ngx_array_t *names, ngx_str_t *name);
-static ngx_http_vhost_traffic_status_resolve_t *
-    ngx_http_vhost_traffic_status_display_resolve_lookup(ngx_array_t *resolves,
-    ngx_str_t *host);
+static ngx_http_vhost_traffic_status_upstream_group_t *
+    ngx_http_vhost_traffic_status_display_upstream_group_lookup(
+    ngx_array_t *groups, ngx_str_t *host);
 static void ngx_http_vhost_traffic_status_display_collect_gone_peers(
-    ngx_http_request_t *r, ngx_rbtree_node_t *node, ngx_array_t *resolves);
+    ngx_http_request_t *r, ngx_rbtree_node_t *node, ngx_array_t *groups);
 static u_char *ngx_http_vhost_traffic_status_display_set_upstream_gone(
     ngx_http_request_t *r, u_char *buf, ngx_array_t *gone);
-#endif
 
 u_char *
 ngx_http_vhost_traffic_status_display_set_main(ngx_http_request_t *r,
@@ -624,10 +629,8 @@ ngx_http_vhost_traffic_status_display_set_upstream_group(ngx_http_request_t *r,
     ngx_http_upstream_rr_peer_t           *peer;
     ngx_http_upstream_rr_peers_t          *peers;
 #endif
-#if (NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_RESOLVE)
-    ngx_array_t                             *resolves;
-    ngx_http_vhost_traffic_status_resolve_t *rs;
-#endif
+    ngx_array_t                           *groups;
+    ngx_http_vhost_traffic_status_upstream_group_t  *ug;
     ngx_http_upstream_srv_conf_t          *uscf, **uscfp;
     ngx_http_upstream_main_conf_t         *umcf;
     ngx_http_vhost_traffic_status_ctx_t   *ctx;
@@ -651,19 +654,12 @@ ngx_http_vhost_traffic_status_display_set_upstream_group(ngx_http_request_t *r,
      * Each key is now given the room it needs where it is built.
      */
 
-#if (NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_RESOLVE)
-    /*
-     * The nodes of the peers that a re-resolve took out of their upstream
-     * group are collected in one pass over the tree, walking it once per
-     * group would cost as many passes as there are groups.
-     */
-    resolves = ngx_http_vhost_traffic_status_display_resolves(r);
+    groups = ngx_http_vhost_traffic_status_display_upstream_groups(r);
 
-    if (resolves != NULL) {
+    if (groups != NULL) {
         ngx_http_vhost_traffic_status_display_collect_gone_peers(r,
-            ctx->rbtree->root, resolves);
+            ctx->rbtree->root, groups);
     }
-#endif
 
     for (i = 0; i < umcf->upstreams.nelts; i++) {
 
@@ -772,24 +768,6 @@ ngx_http_vhost_traffic_status_display_set_upstream_group(ngx_http_request_t *r,
                 ngx_http_upstream_rr_peers_unlock(peers);
             }
 
-#if (NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_RESOLVE)
-            /*
-             * The peers of an upstream that resolves the names at run time are
-             * replaced whenever the names are re-resolved. The nodes of the
-             * peers that are not part of the group any more still hold their
-             * statistics, add them after the current peers.
-             */
-            if (resolves != NULL) {
-                rs = ngx_http_vhost_traffic_status_display_resolve_lookup(
-                         resolves, &uscf->host);
-
-                if (rs != NULL && rs->gone != NULL) {
-                    buf = ngx_http_vhost_traffic_status_display_set_upstream_gone(
-                              r, buf, rs->gone);
-                }
-            }
-#endif
-
 not_supported:
 
 #endif
@@ -845,6 +823,22 @@ not_supported:
 #endif
                     }
 
+                }
+            }
+
+            /*
+             * The nodes of the peers the group holds no longer, after the ones
+             * it does. Written here rather than beside the peer lists so that
+             * a group with no zone is covered as well.
+             */
+
+            if (groups != NULL) {
+                ug = ngx_http_vhost_traffic_status_display_upstream_group_lookup(
+                         groups, &uscf->host);
+
+                if (ug != NULL && ug->gone != NULL) {
+                    buf = ngx_http_vhost_traffic_status_display_set_upstream_gone(
+                              r, buf, ug->gone);
                 }
             }
 
@@ -1078,16 +1072,14 @@ ngx_http_vhost_traffic_status_display_set(ngx_http_request_t *r,
     return buf;
 }
 
-#if (NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_RESOLVE)
-
 static int ngx_libc_cdecl
-ngx_http_vhost_traffic_status_display_resolve_cmp(const void *one,
+ngx_http_vhost_traffic_status_display_upstream_group_cmp(const void *one,
     const void *two)
 {
-    ngx_http_vhost_traffic_status_resolve_t  *first, *second;
+    ngx_http_vhost_traffic_status_upstream_group_t  *first, *second;
 
-    first = (ngx_http_vhost_traffic_status_resolve_t *) one;
-    second = (ngx_http_vhost_traffic_status_resolve_t *) two;
+    first = (ngx_http_vhost_traffic_status_upstream_group_t *) one;
+    second = (ngx_http_vhost_traffic_status_upstream_group_t *) two;
 
     return (int) ngx_memn2cmp(first->host.data, second->host.data,
                               first->host.len, second->host.len);
@@ -1101,132 +1093,151 @@ ngx_http_vhost_traffic_status_display_resolve_cmp(const void *one,
  * is the usual case.
  */
 static ngx_array_t *
-ngx_http_vhost_traffic_status_display_resolves(ngx_http_request_t *r)
+ngx_http_vhost_traffic_status_display_upstream_groups(ngx_http_request_t *r)
 {
-    ngx_uint_t                                i;
-    ngx_array_t                              *resolves;
-    ngx_http_upstream_rr_peers_t             *peers, *rpeers;
-    ngx_http_upstream_srv_conf_t             *uscf, **uscfp;
-    ngx_http_upstream_main_conf_t            *umcf;
-    ngx_http_vhost_traffic_status_resolve_t  *rs;
+    ngx_uint_t                                       i;
+    ngx_array_t                                     *groups;
+    ngx_http_upstream_srv_conf_t                    *uscf, **uscfp;
+    ngx_http_upstream_main_conf_t                   *umcf;
+    ngx_http_vhost_traffic_status_upstream_group_t  *ug;
 
     umcf = ngx_http_get_module_main_conf(r, ngx_http_upstream_module);
     uscfp = umcf->upstreams.elts;
 
-    resolves = NULL;
+    groups = NULL;
 
     for (i = 0; i < umcf->upstreams.nelts; i++) {
 
         uscf = uscfp[i];
 
-        if (uscf->servers == NULL || uscf->port || uscf->shm_zone == NULL) {
+        /* an upstream that carries a port rather than servers is not a group */
+        if (uscf->servers == NULL || uscf->port) {
             continue;
         }
 
-        /*
-         * Either list can be the one that resolves: nginx builds a resolve
-         * list for the backup servers as well, so a group whose only
-         * resolving line is a backup has peers->resolve == NULL and a
-         * peers->next->resolve. Reading the primary list alone skips such a
-         * group, and what a replaced backup served stays in the tree with
-         * nothing pointing at it.
-         */
-
-        peers = uscf->peer.data;
-
-        for (rpeers = peers; rpeers; rpeers = rpeers->next) {
-            if (rpeers->resolve != NULL) {
-                break;
-            }
-        }
-
-        if (rpeers == NULL) {
-            continue;
-        }
-
-        if (resolves == NULL) {
-            resolves = ngx_array_create(r->pool, 2,
-                           sizeof(ngx_http_vhost_traffic_status_resolve_t));
-            if (resolves == NULL) {
+        if (groups == NULL) {
+            groups = ngx_array_create(r->pool, 2,
+                       sizeof(ngx_http_vhost_traffic_status_upstream_group_t));
+            if (groups == NULL) {
                 ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                              "display_resolves::ngx_array_create() failed");
+                              "display_upstream_groups::ngx_array_create() failed");
                 return NULL;
             }
         }
 
-        rs = ngx_array_push(resolves);
-        if (rs == NULL) {
+        ug = ngx_array_push(groups);
+        if (ug == NULL) {
             ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                          "display_resolves::ngx_array_push() failed");
+                          "display_upstream_groups::ngx_array_push() failed");
             return NULL;
         }
 
-        rs->host = uscf->host;
-        rs->gone = NULL;
-        rs->names = ngx_http_vhost_traffic_status_display_upstream_peer_names(r,
-                        peers);
+        ug->host = uscf->host;
+        ug->gone = NULL;
+        ug->names = ngx_http_vhost_traffic_status_display_upstream_peer_names(r,
+                        uscf);
 
-        if (rs->names == NULL) {
+        if (ug->names == NULL) {
             ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                          "display_resolves::upstream_peer_names() failed");
+                          "display_upstream_groups::upstream_peer_names() failed");
             return NULL;
         }
     }
 
-    if (resolves != NULL && resolves->nelts > 1) {
-        ngx_qsort(resolves->elts, (size_t) resolves->nelts,
-                  sizeof(ngx_http_vhost_traffic_status_resolve_t),
-                  ngx_http_vhost_traffic_status_display_resolve_cmp);
+    if (groups != NULL && groups->nelts > 1) {
+        ngx_qsort(groups->elts, (size_t) groups->nelts,
+                  sizeof(ngx_http_vhost_traffic_status_upstream_group_t),
+                  ngx_http_vhost_traffic_status_display_upstream_group_cmp);
     }
 
-    return resolves;
+    return groups;
 }
 
 
 /*
- * Returns the names of the peers that currently belong to the upstream group,
- * backup peers included. The names are copied because the peers themselves may
- * be replaced by a re-resolve as soon as the lock is released.
+ * Returns the names of the peers that belong to the upstream group now, from
+ * the same place the group is written out of: the peer lists where there is a
+ * zone, backups included, and the server lines where there is not.
  */
 static ngx_array_t *
 ngx_http_vhost_traffic_status_display_upstream_peer_names(ngx_http_request_t *r,
-    ngx_http_upstream_rr_peers_t *peers)
+    ngx_http_upstream_srv_conf_t *uscf)
 {
-    u_char                       *p;
     ngx_str_t                    *name;
+    ngx_uint_t                    i, j;
     ngx_array_t                  *names;
+    ngx_http_upstream_server_t   *us;
+#if (NGX_HTTP_UPSTREAM_ZONE)
+    u_char                       *p;
     ngx_http_upstream_rr_peer_t  *peer;
+    ngx_http_upstream_rr_peers_t *peers;
+#endif
 
     names = ngx_array_create(r->pool, 4, sizeof(ngx_str_t));
     if (names == NULL) {
         return NULL;
     }
 
-    for ( /* void */ ; peers; peers = peers->next) {
+#if (NGX_HTTP_UPSTREAM_ZONE)
 
-        ngx_http_upstream_rr_peers_rlock(peers);
+    if (uscf->shm_zone != NULL) {
 
-        for (peer = peers->peer; peer; peer = peer->next) {
+        for (peers = uscf->peer.data; peers; peers = peers->next) {
+
+            ngx_http_upstream_rr_peers_rlock(peers);
+
+            for (peer = peers->peer; peer; peer = peer->next) {
+
+                name = ngx_array_push(names);
+                if (name == NULL) {
+                    ngx_http_upstream_rr_peers_unlock(peers);
+                    return NULL;
+                }
+
+                /*
+                 * The names are copied because the peers themselves may be
+                 * replaced by a re-resolve as soon as the lock is released.
+                 */
+
+                p = ngx_pnalloc(r->pool, peer->name.len);
+                if (p == NULL) {
+                    ngx_http_upstream_rr_peers_unlock(peers);
+                    return NULL;
+                }
+
+                ngx_memcpy(p, peer->name.data, peer->name.len);
+
+                name->data = p;
+                name->len = peer->name.len;
+            }
+
+            ngx_http_upstream_rr_peers_unlock(peers);
+        }
+
+        return names;
+    }
+
+#endif
+
+    /* the server lines, which is what is written when there is no zone */
+
+    us = uscf->servers->elts;
+
+    for (i = 0; i < uscf->servers->nelts; i++) {
+
+        /* a server gives one peer per address its name resolves to */
+
+        for (j = 0; j < us[i].naddrs; j++) {
 
             name = ngx_array_push(names);
             if (name == NULL) {
-                ngx_http_upstream_rr_peers_unlock(peers);
                 return NULL;
             }
 
-            p = ngx_pnalloc(r->pool, peer->name.len);
-            if (p == NULL) {
-                ngx_http_upstream_rr_peers_unlock(peers);
-                return NULL;
-            }
+            /* these are in the configuration pool and outlive the request */
 
-            ngx_memcpy(p, peer->name.data, peer->name.len);
-
-            name->data = p;
-            name->len = peer->name.len;
+            *name = us[i].addrs[j].name;
         }
-
-        ngx_http_upstream_rr_peers_unlock(peers);
     }
 
     return names;
@@ -1254,12 +1265,12 @@ ngx_http_vhost_traffic_status_display_upstream_peer_exists(ngx_array_t *names,
 }
 
 
-static ngx_http_vhost_traffic_status_resolve_t *
-ngx_http_vhost_traffic_status_display_resolve_lookup(ngx_array_t *resolves,
+static ngx_http_vhost_traffic_status_upstream_group_t *
+ngx_http_vhost_traffic_status_display_upstream_group_lookup(ngx_array_t *resolves,
     ngx_str_t *host)
 {
     ngx_int_t                                 rc, l, m, h;
-    ngx_http_vhost_traffic_status_resolve_t  *rs;
+    ngx_http_vhost_traffic_status_upstream_group_t  *rs;
 
     rs = resolves->elts;
 
@@ -1300,7 +1311,7 @@ ngx_http_vhost_traffic_status_display_collect_gone_peers(ngx_http_request_t *r,
     ngx_str_t                                  host, name;
     ngx_http_vhost_traffic_status_ctx_t       *ctx;
     ngx_http_vhost_traffic_status_node_t      *vtsn;
-    ngx_http_vhost_traffic_status_resolve_t   *rs;
+    ngx_http_vhost_traffic_status_upstream_group_t   *rs;
     ngx_http_vhost_traffic_status_gone_peer_t *gone;
 
     ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
@@ -1328,7 +1339,7 @@ ngx_http_vhost_traffic_status_display_collect_gone_peers(ngx_http_request_t *r,
             name.data = p + 1;
             name.len = last - name.data;
 
-            rs = ngx_http_vhost_traffic_status_display_resolve_lookup(resolves,
+            rs = ngx_http_vhost_traffic_status_display_upstream_group_lookup(resolves,
                      &host);
 
             if (rs != NULL
@@ -1380,8 +1391,13 @@ ngx_http_vhost_traffic_status_display_set_upstream_gone(ngx_http_request_t *r,
 
         usn.name = peers[i].name;
 
-        /* the peer does not take any request any more */
-        usn.down = 1;
+        /*
+         * Everything else is left at zero. Whether such a peer is down is not
+         * knowable here: one a re-resolve took out cannot take a request, one
+         * a balancer picked is taking them right now, and the node says the
+         * same thing about both. `weight` and `max_fails` read 0 for the same
+         * reason, and false is what that means for a flag.
+         */
 
         buf = ngx_http_vhost_traffic_status_display_set_upstream_node(r, buf,
                   &usn, peers[i].node);
@@ -1389,7 +1405,5 @@ ngx_http_vhost_traffic_status_display_set_upstream_gone(ngx_http_request_t *r,
 
     return buf;
 }
-
-#endif
 
 /* vi:set ft=c ts=4 sw=4 et fdm=marker: */

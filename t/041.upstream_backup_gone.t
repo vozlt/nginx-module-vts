@@ -134,4 +134,4 @@ __DATA__
 --- request eval
 ['GET /up', 'GET /status/format/json']
 --- response_body_like eval
-['OK', qr/(?=.*"server":"127\.0\.0\.2:1984")(?=.*\{"server":"127\.0\.0\.1:1984","requestCounter":[1-9])(?=.*"127\.0\.0\.1:1984".*?"down":true)/s]
+['OK', qr/(?=.*"server":"127\.0\.0\.2:1984")(?=.*\{"server":"127\.0\.0\.1:1984","requestCounter":[1-9])(?=.*"127\.0\.0\.1:1984".*?"weight":0)/s]

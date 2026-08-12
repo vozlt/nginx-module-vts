@@ -20,6 +20,10 @@ static ngx_int_t ngx_http_vhost_traffic_status_control_peer_lookup(
     ngx_http_upstream_server_t *usn);
 #endif
 
+static ngx_int_t ngx_http_vhost_traffic_status_control_server_lookup(
+    ngx_http_upstream_srv_conf_t *uscf, ngx_str_t *name,
+    ngx_http_upstream_server_t *usn);
+
 static void ngx_http_vhost_traffic_status_node_status_all(
     ngx_http_vhost_traffic_status_control_t *control);
 static void ngx_http_vhost_traffic_status_node_status_group(
@@ -136,6 +140,51 @@ ngx_http_vhost_traffic_status_control_peer_lookup(
 #endif
 
 
+/*
+ * The same, from the server lines of the group, which is what the display
+ * reads when the group has no zone to read instead.
+ */
+
+static ngx_int_t
+ngx_http_vhost_traffic_status_control_server_lookup(
+    ngx_http_upstream_srv_conf_t *uscf, ngx_str_t *name,
+    ngx_http_upstream_server_t *usn)
+{
+    ngx_uint_t                   i, j;
+    ngx_http_upstream_server_t  *us;
+
+    us = uscf->servers->elts;
+
+    for (i = 0; i < uscf->servers->nelts; i++) {
+
+        /* a server gives one peer per address its name resolves to */
+
+        for (j = 0; j < us[i].naddrs; j++) {
+
+            if (us[i].addrs[j].name.len != name->len) {
+                continue;
+            }
+
+            if (ngx_strncmp(us[i].addrs[j].name.data, name->data, name->len)
+                != 0)
+            {
+                continue;
+            }
+
+            *usn = us[i];
+
+#if nginx_version > 1007001
+            usn->name = us[i].addrs[j].name;
+#endif
+
+            return NGX_OK;
+        }
+    }
+
+    return NGX_DECLINED;
+}
+
+
 void
 ngx_http_vhost_traffic_status_node_upstream_lookup(
     ngx_http_vhost_traffic_status_control_t *control,
@@ -143,8 +192,7 @@ ngx_http_vhost_traffic_status_node_upstream_lookup(
 {
     ngx_int_t                       rc;
     ngx_str_t                       key, usg, ush;
-    ngx_uint_t                      i, j, k;
-    ngx_http_upstream_server_t     *us;
+    ngx_uint_t                      i;
     ngx_http_upstream_srv_conf_t   *uscf, **uscfp;
     ngx_http_upstream_main_conf_t  *umcf;
 
@@ -192,71 +240,54 @@ ngx_http_vhost_traffic_status_node_upstream_lookup(
             continue;
         }
 
-        us = uscf->servers->elts;
-
         if (uscf->host.len == usg.len) {
             if (ngx_strncmp(uscf->host.data, usg.data, usg.len) == 0) {
 
-#if (NGX_HTTP_UPSTREAM_ZONE)
-
                 /*
-                 * A server line that resolves its name at run time leaves
-                 * nothing to match on: ngx_http_upstream_server() keeps a
-                 * placeholder holding the port, and addrs[0].name is never
-                 * set. The peers are made by the resolver and live in the
-                 * zone, which is where the display reads them since #322.
+                 * The peers of the group where it has a zone, backups
+                 * included, and the server lines where it has not - the two
+                 * sources the display is written out of, so that the two
+                 * cannot disagree about a peer.
                  *
-                 * With a zone those peers are the whole group, backups
-                 * included, so they answer on their own; the server lines are
-                 * all there is to read when there is no zone. This is the
-                 * same source the display reads, which is what keeps the two
-                 * from disagreeing about a peer.
+                 * A server line that resolves its name at run time is why the
+                 * peers come first: ngx_http_upstream_server() leaves a
+                 * placeholder holding the port and addrs[0].name is never set,
+                 * so there is nothing there to match on.
                  */
 
+#if (NGX_HTTP_UPSTREAM_ZONE)
                 if (uscf->shm_zone != NULL) {
                     rc = ngx_http_vhost_traffic_status_control_peer_lookup(
                              uscf->peer.data, &ush, usn);
 
-                    if (rc == NGX_OK) {
-                        control->count++;
-                    }
-
-                    break;
+                } else {
+                    rc = ngx_http_vhost_traffic_status_control_server_lookup(
+                             uscf, &ush, usn);
                 }
-
+#else
+                rc = ngx_http_vhost_traffic_status_control_server_lookup(uscf,
+                         &ush, usn);
 #endif
 
-                for (j = 0; j < uscf->servers->nelts; j++) {
+                if (rc != NGX_OK) {
 
-                    /* a server gives one peer per address its name resolves to */
+                    /*
+                     * A peer the group does not hold: one a balancer_by_lua
+                     * block picked, one a re-resolve or a change of the
+                     * configuration took out. Its node is in the tree - the
+                     * caller looked it up before asking - and nothing here
+                     * knows anything else about it, so nothing else is
+                     * claimed. The display writes the same zeros.
+                     */
 
-                    for (k = 0; k < us[j].naddrs; k++) {
-                        if (us[j].addrs[k].name.len != ush.len) {
-                            continue;
-                        }
-
-                        if (ngx_strncmp(us[j].addrs[k].name.data, ush.data,
-                                        ush.len)
-                            != 0)
-                        {
-                            continue;
-                        }
-
-                        *usn = us[j];
+                    ngx_memzero(usn, sizeof(ngx_http_upstream_server_t));
 
 #if nginx_version > 1007001
-                        usn->name = us[j].addrs[k].name;
+                    usn->name = ush;
 #endif
-
-                        control->count++;
-
-                        break;
-                    }
-
-                    if (control->count) {
-                        break;
-                    }
                 }
+
+                control->count++;
 
                 break;
             }
