@@ -71,6 +71,10 @@ ngx_http_vhost_traffic_status_shm_info(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_shm_info_t *shm_info)
 {
     ngx_slab_pool_t                           *shpool;
+#if nginx_version < 1011007
+    ngx_uint_t                                 pfree;
+    ngx_slab_page_t                           *page;
+#endif
     ngx_http_vhost_traffic_status_ctx_t       *ctx;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
 
@@ -93,7 +97,29 @@ ngx_http_vhost_traffic_status_shm_info(ngx_http_request_t *r,
 
     if (vtscf->shm_zone != NULL) {
         shpool = (ngx_slab_pool_t *) vtscf->shm_zone->shm.addr;
+
+#if nginx_version >= 1011007
         shm_info->free_size = shpool->pfree * ngx_pagesize;
+#else
+
+        /*
+         * pfree arrived with the slab statistics in 1.11.7. Before that the
+         * same number is the sum over the free page blocks, which is the list
+         * ngx_slab_alloc_pages() itself looks in for room. The caller holds
+         * the mutex of the zone, so the list does not move under the walk.
+         */
+
+        pfree = 0;
+
+        for (page = shpool->free.next;
+             page != &shpool->free;
+             page = page->next)
+        {
+            pfree += page->slab;
+        }
+
+        shm_info->free_size = pfree * ngx_pagesize;
+#endif
     }
 
     ngx_http_vhost_traffic_status_shm_info_node(r, shm_info, ctx->rbtree->root);
