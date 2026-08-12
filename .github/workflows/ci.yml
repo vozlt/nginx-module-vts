@@ -363,8 +363,13 @@ jobs:
           # taking the mutex. Put that back, and the check has to say so - a
           # detector that has never detected anything is not evidence.
           cp src/ngx_http_vhost_traffic_status_set.c /tmp/set.c.orig
-          sed -i '/ngx_shmtx_lock(&shpool->mutex);/d;/ngx_shmtx_unlock(&shpool->mutex);/d' \
+          # the lock is replaced rather than deleted: dropping both lines
+          # leaves shpool set and never read, and -Werror stops the build
+          # before the check gets a chance to say anything
+          sed -i 's|ngx_shmtx_lock(&shpool->mutex);|(void) shpool;|; \
+                  s|ngx_shmtx_unlock(&shpool->mutex);||' \
               src/ngx_http_vhost_traffic_status_set.c
+          grep -q '(void) shpool;' src/ngx_http_vhost_traffic_status_set.c
           ( cd ../nginx && make -j$(nproc) > /dev/null && sudo make install > /dev/null )
           sudo rm -f /tmp/vts-lockcheck.log
           sudo PATH=/usr/local/nginx-lc/sbin:$PATH prove t/021.set_by_filter.t > /dev/null 2>&1 || true
