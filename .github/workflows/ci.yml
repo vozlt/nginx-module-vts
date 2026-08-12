@@ -312,6 +312,97 @@ jobs:
         working-directory: nginx-module-vts
         run: sudo tail -n 100 t/servroot/logs/error.log || true
 
+  lockcheck:
+    name: 'lock discipline'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 'checkout'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: nginx-module-vts
+      - name: 'checkout nginx'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: nginx/nginx
+          path: nginx
+          ref: '017cf98dcce217946572a896f0992370475e189f'
+      - name: 'prepare cpanm'
+        run: |
+          sudo apt install -y cpanminus
+          sudo cpanm --notest Test::Nginx::Socket > build.log 2>&1 || (cat build.log && exit 1)
+      - name: 'prepare promtool'
+        env:
+          # pinned, for the reason given in the job above
+          PROMETHEUS_VERSION: '3.13.2'
+        run: |
+          curl -fsSL -o prometheus.tar.gz \
+            "https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz"
+          tar xzf prometheus.tar.gz
+          sudo mv prometheus-*/promtool /usr/local/bin
+          promtool --version
+      - name: 'build nginx with the lock check linked in'
+        working-directory: nginx
+        run: |
+          cc -c -o "$GITHUB_WORKSPACE/lockcheck.o" \
+             "$GITHUB_WORKSPACE/nginx-module-vts/util/lockcheck.c"
+          ./auto/configure \
+            --prefix=/usr/local/nginx-lc \
+            --add-module="$GITHUB_WORKSPACE/nginx-module-vts" \
+            --with-ld-opt="-Wl,--wrap=ngx_shmtx_lock \
+                           -Wl,--wrap=ngx_shmtx_unlock \
+                           -Wl,--wrap=ngx_http_vhost_traffic_status_find_node \
+                           $GITHUB_WORKSPACE/lockcheck.o"
+          make -j$(nproc)
+          sudo make install
+          # the wrapper is only useful if the linker actually redirected
+          nm /usr/local/nginx-lc/sbin/nginx | grep -q '__wrap_ngx_http_vhost_traffic_status_find_node'
+      - name: 'prove the check can fail'
+        working-directory: nginx-module-vts
+        run: |
+          # #355 is what this is for: set_by_filter walked the tree without
+          # taking the mutex. Put that back, and the check has to say so - a
+          # detector that has never detected anything is not evidence.
+          cp src/ngx_http_vhost_traffic_status_set.c /tmp/set.c.orig
+          # the lock is replaced rather than deleted: dropping both lines
+          # leaves shpool set and never read, and -Werror stops the build
+          # before the check gets a chance to say anything
+          # one call each: a backslash before a newline inside single quotes
+          # is not a continuation, it is a backslash, and sed reads it as the
+          # start of an address it never finds the end of
+          sed -i 's|ngx_shmtx_lock(&shpool->mutex);|(void) shpool;|' src/ngx_http_vhost_traffic_status_set.c
+          sed -i 's|ngx_shmtx_unlock(&shpool->mutex);||' src/ngx_http_vhost_traffic_status_set.c
+          grep -q '(void) shpool;' src/ngx_http_vhost_traffic_status_set.c
+          ! grep -q 'ngx_shmtx_' src/ngx_http_vhost_traffic_status_set.c
+          ( cd ../nginx && make -j$(nproc) > /dev/null && sudo make install > /dev/null )
+          sudo rm -f /tmp/vts-lockcheck.log
+          sudo PATH=/usr/local/nginx-lc/sbin:$PATH prove t/021.set_by_filter.t > /dev/null 2>&1 || true
+          if [ ! -s /tmp/vts-lockcheck.log ]; then
+            echo '::error::the lock check did not report the violation it was given'
+            exit 1
+          fi
+          echo "detected $(wc -l < /tmp/vts-lockcheck.log) violation(s), as it should"
+          cp /tmp/set.c.orig src/ngx_http_vhost_traffic_status_set.c
+          ( cd ../nginx && make -j$(nproc) > /dev/null && sudo make install > /dev/null )
+      - name: 'run the suite under it'
+        working-directory: nginx-module-vts
+        run: |
+          sudo rm -f /tmp/vts-lockcheck.log
+          # the lua tests need modules that are not part of this build
+          sudo PATH=/usr/local/nginx-lc/sbin:$PATH prove $(ls t/*.t | grep -v '_by_lua')
+      - name: 'check the report'
+        if: always()
+        run: |
+          if [ -s /tmp/vts-lockcheck.log ]; then
+            echo '::error::the tree was walked without the mutex'
+            sort /tmp/vts-lockcheck.log | uniq -c
+            exit 1
+          fi
+          echo 'no violations'
+      - name: 'dump nginx error log'
+        if: failure()
+        working-directory: nginx-module-vts
+        run: sudo tail -n 100 t/servroot/logs/error.log || true
+
   build-variants:
     name: 'build (${{ matrix.variant.name }})'
     runs-on: ubuntu-24.04
