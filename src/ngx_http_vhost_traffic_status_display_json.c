@@ -1269,25 +1269,25 @@ ngx_http_vhost_traffic_status_display_upstream_peer_exists(ngx_array_t *names,
 
 
 static ngx_http_vhost_traffic_status_upstream_group_t *
-ngx_http_vhost_traffic_status_display_upstream_group_lookup(ngx_array_t *resolves,
+ngx_http_vhost_traffic_status_display_upstream_group_lookup(ngx_array_t *groups,
     ngx_str_t *host)
 {
     ngx_int_t                                 rc, l, m, h;
-    ngx_http_vhost_traffic_status_upstream_group_t  *rs;
+    ngx_http_vhost_traffic_status_upstream_group_t  *ug;
 
-    rs = resolves->elts;
+    ug = groups->elts;
 
     l = 0;
-    h = (ngx_int_t) resolves->nelts - 1;
+    h = (ngx_int_t) groups->nelts - 1;
 
     while (l <= h) {
         m = l + (h - l) / 2;
 
-        rc = ngx_memn2cmp(host->data, rs[m].host.data,
-                          host->len, rs[m].host.len);
+        rc = ngx_memn2cmp(host->data, ug[m].host.data,
+                          host->len, ug[m].host.len);
 
         if (rc == 0) {
-            return &rs[m];
+            return &ug[m];
         }
 
         if (rc < 0) {
@@ -1308,13 +1308,13 @@ ngx_http_vhost_traffic_status_display_upstream_group_lookup(ngx_array_t *resolve
  */
 static void
 ngx_http_vhost_traffic_status_display_collect_gone_peers(ngx_http_request_t *r,
-    ngx_rbtree_node_t *node, ngx_array_t *resolves)
+    ngx_rbtree_node_t *node, ngx_array_t *groups)
 {
     u_char                                    *p, *last;
     ngx_str_t                                  host, name;
     ngx_http_vhost_traffic_status_ctx_t       *ctx;
     ngx_http_vhost_traffic_status_node_t      *vtsn;
-    ngx_http_vhost_traffic_status_upstream_group_t   *rs;
+    ngx_http_vhost_traffic_status_upstream_group_t   *ug;
     ngx_http_vhost_traffic_status_gone_peer_t *gone;
 
     ctx = ngx_http_get_module_main_conf(r, ngx_http_vhost_traffic_status_module);
@@ -1342,20 +1342,20 @@ ngx_http_vhost_traffic_status_display_collect_gone_peers(ngx_http_request_t *r,
             name.data = p + 1;
             name.len = last - name.data;
 
-            rs = ngx_http_vhost_traffic_status_display_upstream_group_lookup(resolves,
+            ug = ngx_http_vhost_traffic_status_display_upstream_group_lookup(groups,
                      &host);
 
-            if (rs != NULL
+            if (ug != NULL
                 && !ngx_http_vhost_traffic_status_display_upstream_peer_exists(
-                        rs->names, &name))
+                        ug->names, &name))
             {
-                if (rs->gone == NULL) {
-                    rs->gone = ngx_array_create(r->pool, 1,
+                if (ug->gone == NULL) {
+                    ug->gone = ngx_array_create(r->pool, 1,
                           sizeof(ngx_http_vhost_traffic_status_gone_peer_t));
                 }
 
-                if (rs->gone != NULL) {
-                    gone = ngx_array_push(rs->gone);
+                if (ug->gone != NULL) {
+                    gone = ngx_array_push(ug->gone);
 
                     if (gone != NULL) {
                         gone->name = name;
@@ -1372,9 +1372,9 @@ ngx_http_vhost_traffic_status_display_collect_gone_peers(ngx_http_request_t *r,
     }
 
     ngx_http_vhost_traffic_status_display_collect_gone_peers(r, node->left,
-        resolves);
+        groups);
     ngx_http_vhost_traffic_status_display_collect_gone_peers(r, node->right,
-        resolves);
+        groups);
 }
 
 

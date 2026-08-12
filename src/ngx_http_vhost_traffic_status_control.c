@@ -249,10 +249,12 @@ ngx_http_vhost_traffic_status_node_upstream_lookup(
                  * sources the display is written out of, so that the two
                  * cannot disagree about a peer.
                  *
-                 * A server line that resolves its name at run time is why the
-                 * peers come first: ngx_http_upstream_server() leaves a
-                 * placeholder holding the port and addrs[0].name is never set,
-                 * so there is nothing there to match on.
+                 * The two are exclusive rather than one falling back to the
+                 * other, and a server line that resolves its name at run time
+                 * is why: ngx_http_upstream_server() leaves a placeholder
+                 * holding the port and addrs[0].name is never set, so reading
+                 * the lines of a group that has a zone would answer for peers
+                 * that are not there and miss the ones that are.
                  */
 
 #if (NGX_HTTP_UPSTREAM_ZONE)
