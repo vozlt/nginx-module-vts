@@ -366,33 +366,35 @@ ngx_http_vhost_traffic_status_request_time(ngx_http_request_t *r)
 
 
 ngx_msec_int_t
-ngx_http_vhost_traffic_status_upstream_response_time(ngx_http_request_t *r)
+ngx_http_vhost_traffic_status_upstream_state_response_time(
+    ngx_http_upstream_state_t *state)
 {
-    ngx_uint_t                  i;
-    ngx_msec_int_t              ms;
-    ngx_http_upstream_state_t  *state;
+    ngx_msec_int_t  ms;
 
-    state = r->upstream_states->elts;
+    /*
+     * A state with no status never got a response, and there is no attempt at
+     * all where the caller had nothing to give.
+     */
 
-    i = 0;
-    ms = 0;
-    for ( ;; ) {
-        if (state[i].status) {
+    if (state == NULL || state->status == 0) {
+        return 0;
+    }
 
 #if !defined(nginx_version) || nginx_version < 1009001
-            ms += (ngx_msec_int_t)
-                  (state[i].response_sec * 1000 + state[i].response_msec);
+    ms = (ngx_msec_int_t) (state->response_sec * 1000 + state->response_msec);
 #else
-            ms += state[i].response_time;
+    ms = (ngx_msec_int_t) state->response_time;
 #endif
 
-        }
-        if (++i == r->upstream_states->nelts) {
-            break;
-        }
-    }
     return ngx_max(ms, 0);
 }
+
+
+/*
+ * The sum over every attempt of a request used to be what an upstream node
+ * recorded, given to whichever peer answered. Each attempt now carries its
+ * own time to its own peer, so nothing wants the sum any more.
+ */
 
 
 static void
