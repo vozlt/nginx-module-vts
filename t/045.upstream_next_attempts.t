@@ -16,7 +16,7 @@
 
 use Test::Nginx::Socket;
 
-plan tests => repeat_each() * 24;
+plan tests => repeat_each() * 26;
 no_shuffle();
 run_tests();
 
@@ -163,3 +163,50 @@ __DATA__
     qr/\Aonly\z/,
     qr/"server":"127\.0\.0\.1:1985","requestCounter":2,"inBytes":[1-9]\d*,"outBytes":[1-9]\d*,"responses":\{"1xx":0,"2xx":2,"3xx":0,"4xx":0,"5xx":0\}/,
 ]
+
+=== TEST 5: an internal redirect to another upstream keeps its peers apart
+--- http_config
+    vhost_traffic_status_zone;
+
+    server {
+        listen 1985;
+
+        location / {
+            return 200 "fallback";
+        }
+    }
+
+    upstream first {
+        server 127.0.0.1:1981;
+    }
+
+    upstream second {
+        server 127.0.0.1:1985;
+    }
+--- config
+    location /up {
+        proxy_intercept_errors on;
+        error_page 502 = @fb;
+        proxy_pass http://first/;
+    }
+    location @fb {
+        proxy_pass http://second;
+    }
+    location /status {
+        vhost_traffic_status_display;
+        vhost_traffic_status_display_format json;
+        access_log off;
+    }
+--- request eval
+['GET /up', 'GET /status/format/json']
+--- response_body_like eval
+[
+    qr/\Afallback\z/,
+    qr/"second":\[\{"server":"127\.0\.0\.1:1985"[^\]]*\}\]/,
+]
+
+# r->upstream_states is request-wide. Where an internal redirect starts a
+# second upstream, nginx keeps the states of the first and pushes a zeroed one
+# between them, so a walk from index 0 files the peers of `first` under
+# `second` - the group the current request ended up in. The assertion is that
+# the array for `second` holds one entry and it is its own server.
