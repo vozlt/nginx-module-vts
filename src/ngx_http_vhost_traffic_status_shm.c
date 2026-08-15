@@ -164,7 +164,7 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
     status_code_slot = 0;
     if (ctx->measure_all_status_codes) {
         if (status >= 100 && status < 600) {
-            // slot 0 is reserved to other status codes <100 and >600
+            // slot 0 is reserved to other status codes <100 and >=600
             status_code_slot = status - 99;
         }
     } else if (ctx->measure_status_codes != NULL) {

@@ -532,6 +532,23 @@ ngx_http_vhost_traffic_status_node_update(ngx_http_request_t *r,
 
     vtsn->stat_request_counter++;
 
+    if (state != NULL && (status < 100 || status >= 600)) {
+
+        /*
+         * An attempt carries no status of its own where it produced no
+         * response, and nginx leaves that 0. add_rc() puts anything below 200
+         * in the 1xx bucket, so it must not be handed one - the attempt would
+         * be reported as an informational response. The two other places that
+         * read this status already say the same thing: shm_add_node() takes no
+         * status code slot outside 100..599, and the response time helper
+         * gives 0 for a state with no status.
+         *
+         * It was still an attempt on this peer, so the counter above stands.
+         */
+
+        return;
+    }
+
     ngx_http_vhost_traffic_status_add_rc(status, vtsn);
 
     if (status_code_slot != -1 && vtsn->stat_status_code_counter != NULL ) {
