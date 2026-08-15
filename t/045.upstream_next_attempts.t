@@ -16,7 +16,7 @@
 
 use Test::Nginx::Socket;
 
-plan tests => repeat_each() * 26;
+plan tests => repeat_each() * 28;
 no_shuffle();
 run_tests();
 
@@ -202,7 +202,7 @@ __DATA__
 --- response_body_like eval
 [
     qr/\Afallback\z/,
-    qr/"second":\[\{"server":"127\.0\.0\.1:1985"[^\]]*\}\]/,
+    qr/(?=.*"second":\[\{"server":"127\.0\.0\.1:1985")(?!.*,\{"server":"127\.0\.0\.1:1981")/s,
 ]
 
 # r->upstream_states is request-wide. Where an internal redirect starts a

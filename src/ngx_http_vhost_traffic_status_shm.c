@@ -591,7 +591,7 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r)
     unsigned                        type;
     ngx_int_t                       rc;
     ngx_str_t                      *host, key, dst;
-    ngx_uint_t                      i;
+    ngx_uint_t                      i, n;
     ngx_http_upstream_t            *u;
     ngx_http_upstream_state_t      *state, *states;
     ngx_http_upstream_srv_conf_t   *uscf, **uscfp;
@@ -641,21 +641,17 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r)
 found:
 
     /*
-     * This reads as though a last attempt with no peer would throw away the
-     * attempts before it, which have one. It cannot: nginx leaves peer unset
-     * on one path only.
+     * An attempt that connected always has this. ngx_http_upstream_connect()
+     * assigns it for every return of ngx_event_connect_peer() except
+     * NGX_ERROR, which finalizes the request at once - NGX_BUSY, the "no live
+     * upstreams" case one would expect to leave it unset, does not, since
+     * ngx_http_upstream_get_round_robin_peer() assigns pc->name = peers->name
+     * before returning it.
      *
-     *   ngx_http_upstream_connect()
-     *       rc = ngx_event_connect_peer(&u->peer);
-     *       if (rc == NGX_ERROR) { finalize(500); return; }   <- unset here
-     *       u->state->peer = u->peer.name;                    <- every other rc
-     *
-     * NGX_BUSY, the "no live upstreams" case one would expect to leave it
-     * unset, does not: ngx_http_upstream_get_round_robin_peer() assigns
-     * pc->name = peers->name, the name of the group, before returning it.
-     * What is left is ngx_event_connect_peer() failing outright - a socket
-     * that could not be made, a connection that could not be taken - which no
-     * configuration can ask for.
+     * What has none is the zeroed state that ngx_http_upstream_init_request()
+     * pushes between two rounds - see the walk below. u->state is that one
+     * where a second round was set up and never connected, and there is
+     * nothing to record for it.
      */
 
     if (u->state->peer == NULL) {
@@ -674,15 +670,38 @@ found:
      * client requests, which is what $upstream_addr has always reported.
      */
 
-    states = r->upstream_states->elts;
+    /*
+     * Only the attempts of the upstream this request ended in.
+     *
+     * r->upstream_states is request-wide rather than per-upstream. Where an
+     * internal redirect starts another one - proxy_intercept_errors with an
+     * error_page, X-Accel-Redirect - ngx_http_upstream_init_request() keeps
+     * the states of the earlier round and pushes a zeroed state between them.
+     * $upstream_addr shows the same thing: a colon between the rounds where a
+     * retry gets a comma.
+     *
+     * uscf here is the group of the round that finished, so an attempt from
+     * an earlier round would be filed under the wrong group. The zeroed state
+     * is the boundary, and its peer is what makes it recognisable.
+     */
 
-    for (i = 0; i < r->upstream_states->nelts; i++) {
+    states = r->upstream_states->elts;
+    n = 0;
+
+    for (i = r->upstream_states->nelts; i > 0; i--) {
+        if (states[i - 1].peer == NULL) {
+            n = i;
+            break;
+        }
+    }
+
+    for (i = n; i < r->upstream_states->nelts; i++) {
 
         state = &states[i];
 
         if (state->peer == NULL) {
 
-            /* nothing to key on. See the note above: no traffic gets here */
+            /* nothing to key on. The walk starts past the last of these */
 
             continue;
         }
