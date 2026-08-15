@@ -518,9 +518,10 @@ ngx_http_vhost_traffic_status_node_update(ngx_http_request_t *r,
     ngx_uint_t status = (state != NULL) ? state->status : r->headers_out.status;
 
     /*
-     * Before the check below: a request whose status is not counted was
-     * served all the same, and what tells the node apart from an abandoned
-     * one is that it was reached, not that it was counted.
+     * Before the check below: a status that is not counted still leaves the
+     * node reached - the client request was served, or the attempt on this
+     * peer was made - and being reached is what tells it apart from one
+     * nothing has used in a long time. Being counted is not.
      */
 
     vtsn->stat_last_seen = ngx_http_vhost_traffic_status_current_msec();

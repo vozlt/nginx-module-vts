@@ -640,6 +640,24 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r)
 
 found:
 
+    /*
+     * This reads as though a last attempt with no peer would throw away the
+     * attempts before it, which have one. It cannot: nginx leaves peer unset
+     * on one path only.
+     *
+     *   ngx_http_upstream_connect()
+     *       rc = ngx_event_connect_peer(&u->peer);
+     *       if (rc == NGX_ERROR) { finalize(500); return; }   <- unset here
+     *       u->state->peer = u->peer.name;                    <- every other rc
+     *
+     * NGX_BUSY, the "no live upstreams" case one would expect to leave it
+     * unset, does not: ngx_http_upstream_get_round_robin_peer() assigns
+     * pc->name = peers->name, the name of the group, before returning it.
+     * What is left is ngx_event_connect_peer() failing outright - a socket
+     * that could not be made, a connection that could not be taken - which no
+     * configuration can ask for.
+     */
+
     if (u->state->peer == NULL) {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                       "shm_add_upstream::peer failed");
@@ -664,10 +682,7 @@ found:
 
         if (state->peer == NULL) {
 
-            /*
-             * An attempt that never reached a peer - no address was left to
-             * try, or the resolver had nothing. There is nothing to key on.
-             */
+            /* nothing to key on. See the note above: no traffic gets here */
 
             continue;
         }
