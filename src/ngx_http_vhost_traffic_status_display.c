@@ -11,6 +11,7 @@
 #include "ngx_http_vhost_traffic_status_display_json.h"
 #include "ngx_http_vhost_traffic_status_display.h"
 #include "ngx_http_vhost_traffic_status_control.h"
+#include "ngx_http_vhost_traffic_status_upstream.h"
 
 
 static ngx_int_t ngx_http_vhost_traffic_status_display_handler(ngx_http_request_t *r);
@@ -568,65 +569,49 @@ ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r)
 }
 
 
+static ngx_int_t
+ngx_http_vhost_traffic_status_display_count_upstream_peer(
+    ngx_http_request_t *r, ngx_http_upstream_srv_conf_t *uscf,
+    ngx_str_t *name, ngx_http_upstream_server_t *usn, void *data)
+{
+    (*(ngx_uint_t *) data)++;
+
+    return NGX_OK;
+}
+
+
+/*
+ * How many upstream peers the display writes, which is what the buffer has to
+ * be sized for. The count comes from the same walk the writer uses: counting
+ * the primary peers and then every server line was slack while the backups
+ * came from the lines, and it stopped being slack when they started coming
+ * from peers->next. A name that resolves to more addresses than the one
+ * placeholder its line leaves behind is then written without having been
+ * counted, and display_buffer_check() drops the entries that do not fit -
+ * valid JSON, missing peers.
+ */
+
 ngx_int_t
 ngx_http_vhost_traffic_status_display_get_upstream_nelts(ngx_http_request_t *r)
 {
-    ngx_uint_t                      i, j, n;
-    ngx_http_upstream_server_t     *us;
-#if (NGX_HTTP_UPSTREAM_ZONE)
-    ngx_http_upstream_rr_peer_t    *peer;
-    ngx_http_upstream_rr_peers_t   *peers;
-#endif
+    ngx_uint_t                      i, n;
     ngx_http_upstream_srv_conf_t   *uscf, **uscfp;
     ngx_http_upstream_main_conf_t  *umcf;
 
     umcf = ngx_http_get_module_main_conf(r, ngx_http_upstream_module);
     uscfp = umcf->upstreams.elts;
 
-    for (i = 0, j = 0, n = 0; i < umcf->upstreams.nelts; i++) {
+    n = 0;
+
+    for (i = 0; i < umcf->upstreams.nelts; i++) {
 
         uscf = uscfp[i];
 
         /* groups */
         if (uscf->servers && !uscf->port) {
-            us = uscf->servers->elts;
-
-#if (NGX_HTTP_UPSTREAM_ZONE)
-            if (uscf->shm_zone == NULL) {
-                goto not_supported;
-            }
-
-            /*
-             * Both lists, and the server lines are not read at all: this has
-             * to count what display_set_upstream_group() writes. Counting the
-             * primary peers and then every server line was slack while the
-             * backups came from the lines, and it stopped being slack when
-             * they started coming from peers->next. A name that resolves to
-             * more addresses than the one placeholder its line leaves behind
-             * is then written without having been counted, and the entries
-             * that do not fit are dropped by display_buffer_check().
-             */
-
-            for (peers = uscf->peer.data; peers; peers = peers->next) {
-
-                ngx_http_upstream_rr_peers_rlock(peers);
-
-                for (peer = peers->peer; peer; peer = peer->next) {
-                    n++;
-                }
-
-                ngx_http_upstream_rr_peers_unlock(peers);
-            }
-
-            continue;
-
-not_supported:
-
-#endif
-
-            for (j = 0; j < uscf->servers->nelts; j++) {
-                n += us[j].naddrs;
-            }
+            (void) ngx_http_vhost_traffic_status_upstream_peers_walk(r, uscf,
+                       ngx_http_vhost_traffic_status_display_count_upstream_peer,
+                       &n);
         }
     }
 

@@ -8,21 +8,19 @@
 #include "ngx_http_vhost_traffic_status_control.h"
 #include "ngx_http_vhost_traffic_status_display_json.h"
 #include "ngx_http_vhost_traffic_status_display.h"
-
-#if (NGX_HTTP_UPSTREAM_CHECK)
-#include "ngx_http_upstream_check_module.h"
-#endif
+#include "ngx_http_vhost_traffic_status_upstream.h"
 
 
-#if (NGX_HTTP_UPSTREAM_ZONE)
-static ngx_int_t ngx_http_vhost_traffic_status_control_peer_lookup(
-    ngx_http_upstream_rr_peers_t *peers, ngx_str_t *name,
-    ngx_http_upstream_server_t *usn);
-#endif
+/* the peer node_upstream_lookup() is after, and where the answer goes */
+typedef struct {
+    ngx_str_t                   *name;
+    ngx_http_upstream_server_t  *usn;
+} ngx_http_vhost_traffic_status_control_peer_t;
 
-static ngx_int_t ngx_http_vhost_traffic_status_control_server_lookup(
-    ngx_http_upstream_srv_conf_t *uscf, ngx_str_t *name,
-    ngx_http_upstream_server_t *usn);
+
+static ngx_int_t ngx_http_vhost_traffic_status_control_peer_match(
+    ngx_http_request_t *r, ngx_http_upstream_srv_conf_t *uscf, ngx_str_t *name,
+    ngx_http_upstream_server_t *usn, void *data);
 
 static void ngx_http_vhost_traffic_status_node_status_all(
     ngx_http_vhost_traffic_status_control_t *control);
@@ -54,134 +52,43 @@ static void ngx_http_vhost_traffic_status_node_reset_zone(
     ngx_http_vhost_traffic_status_control_t *control);
 
 
-#if (NGX_HTTP_UPSTREAM_ZONE)
-
 /*
- * Fills in what the control interface answers with for the peer named `name`,
- * looking through the peers the upstream group has right now rather than the
- * server lines it was configured from.
- *
- * The backup peers are a list of their own hanging off peers->next and a
- * `resolve` line makes peers in either of them, so both are walked. Which
- * list the peer was found in is what says whether it is a backup - a name
- * resolved at run time is not written down anywhere else.
+ * Fills in what the control interface answers with for the peer it is looking
+ * for, from the walk the display is written out of, so that the two cannot
+ * say different things about the same peer.
  */
 
 static ngx_int_t
-ngx_http_vhost_traffic_status_control_peer_lookup(
-    ngx_http_upstream_rr_peers_t *peers, ngx_str_t *name,
-    ngx_http_upstream_server_t *usn)
-{
-    ngx_int_t                     rc;
-    ngx_uint_t                    backup;
-    ngx_http_upstream_rr_peer_t  *peer;
-
-    rc = NGX_DECLINED;
-
-    for (backup = 0; peers && rc != NGX_OK; peers = peers->next, backup = 1) {
-
-        ngx_http_upstream_rr_peers_rlock(peers);
-
-        for (peer = peers->peer; peer; peer = peer->next) {
-
-            if (peer->name.len != name->len) {
-                continue;
-            }
-
-            if (ngx_strncmp(peer->name.data, name->data, name->len) != 0) {
-                continue;
-            }
-
-#if nginx_version > 1007001
-
-            /*
-             * name rather than peer->name: the name of a peer lives in the
-             * zone of the upstream and a re-resolve can hand it back to the
-             * slab as soon as the lock below is released, while the caller
-             * reads this afterwards to write its answer. The two were just
-             * compared byte for byte, and name belongs to the request.
-             */
-
-            usn->name = *name;
-#endif
-
-            usn->weight = peer->weight;
-            usn->max_fails = peer->max_fails;
-            usn->fail_timeout = peer->fail_timeout;
-            usn->backup = backup;
-
-#if (NGX_HTTP_UPSTREAM_CHECK)
-            usn->down = ngx_http_upstream_check_peer_down(peer->check_index)
-                        ? 1 : 0;
-#else
-
-            /*
-             * max_fails 0 turns the counting off, which nginx reads as never
-             * taking the peer out; without the guard the comparison holds
-             * from the first request and every such peer is called down
-             */
-
-            usn->down = (peer->down
-                         || (peer->max_fails
-                             && peer->fails >= peer->max_fails));
-#endif
-
-            rc = NGX_OK;
-
-            break;
-        }
-
-        ngx_http_upstream_rr_peers_unlock(peers);
-    }
-
-    return rc;
-}
-
-#endif
-
-
-/*
- * The same, from the server lines of the group, which is what the display
- * reads when the group has no zone to read instead.
- */
-
-static ngx_int_t
-ngx_http_vhost_traffic_status_control_server_lookup(
+ngx_http_vhost_traffic_status_control_peer_match(ngx_http_request_t *r,
     ngx_http_upstream_srv_conf_t *uscf, ngx_str_t *name,
-    ngx_http_upstream_server_t *usn)
+    ngx_http_upstream_server_t *usn, void *data)
 {
-    ngx_uint_t                   i, j;
-    ngx_http_upstream_server_t  *us;
+    ngx_http_vhost_traffic_status_control_peer_t  *cp = data;
 
-    us = uscf->servers->elts;
-
-    for (i = 0; i < uscf->servers->nelts; i++) {
-
-        /* a server gives one peer per address its name resolves to */
-
-        for (j = 0; j < us[i].naddrs; j++) {
-
-            if (us[i].addrs[j].name.len != name->len) {
-                continue;
-            }
-
-            if (ngx_strncmp(us[i].addrs[j].name.data, name->data, name->len)
-                != 0)
-            {
-                continue;
-            }
-
-            *usn = us[i];
-
-#if nginx_version > 1007001
-            usn->name = us[i].addrs[j].name;
-#endif
-
-            return NGX_OK;
-        }
+    if (name->len != cp->name->len
+        || ngx_strncmp(name->data, cp->name->data, name->len) != 0)
+    {
+        return NGX_OK;
     }
 
-    return NGX_DECLINED;
+    *cp->usn = *usn;
+
+#if nginx_version > 1007001
+
+    /*
+     * cp->name rather than the name of the peer: the name of a peer lives in
+     * the zone of the upstream and a re-resolve can hand it back to the slab
+     * as soon as the walk releases its lock, while the caller reads this
+     * afterwards to write its answer. The two were just compared byte for
+     * byte, and cp->name belongs to the request.
+     */
+
+    cp->usn->name = *cp->name;
+#endif
+
+    /* found, and there is no reason to look at the rest of the group */
+
+    return NGX_DONE;
 }
 
 
@@ -195,6 +102,7 @@ ngx_http_vhost_traffic_status_node_upstream_lookup(
     ngx_uint_t                      i;
     ngx_http_upstream_srv_conf_t   *uscf, **uscfp;
     ngx_http_upstream_main_conf_t  *umcf;
+    ngx_http_vhost_traffic_status_control_peer_t  cp;
 
     umcf = ngx_http_get_module_main_conf(control->r, ngx_http_upstream_module);
     uscfp = umcf->upstreams.elts;
@@ -243,35 +151,14 @@ ngx_http_vhost_traffic_status_node_upstream_lookup(
         if (uscf->host.len == usg.len) {
             if (ngx_strncmp(uscf->host.data, usg.data, usg.len) == 0) {
 
-                /*
-                 * The peers of the group where it has a zone, backups
-                 * included, and the server lines where it has not - the two
-                 * sources the display is written out of, so that the two
-                 * cannot disagree about a peer.
-                 *
-                 * The two are exclusive rather than one falling back to the
-                 * other, and a server line that resolves its name at run time
-                 * is why: ngx_http_upstream_server() leaves a placeholder
-                 * holding the port and addrs[0].name is never set, so reading
-                 * the lines of a group that has a zone would answer for peers
-                 * that are not there and miss the ones that are.
-                 */
+                cp.name = &ush;
+                cp.usn = usn;
 
-#if (NGX_HTTP_UPSTREAM_ZONE)
-                if (uscf->shm_zone != NULL) {
-                    rc = ngx_http_vhost_traffic_status_control_peer_lookup(
-                             uscf->peer.data, &ush, usn);
+                rc = ngx_http_vhost_traffic_status_upstream_peers_walk(
+                         control->r, uscf,
+                         ngx_http_vhost_traffic_status_control_peer_match, &cp);
 
-                } else {
-                    rc = ngx_http_vhost_traffic_status_control_server_lookup(
-                             uscf, &ush, usn);
-                }
-#else
-                rc = ngx_http_vhost_traffic_status_control_server_lookup(uscf,
-                         &ush, usn);
-#endif
-
-                if (rc != NGX_OK) {
+                if (rc != NGX_DONE) {
 
                     /*
                      * A peer the group does not hold: one a balancer_by_lua
