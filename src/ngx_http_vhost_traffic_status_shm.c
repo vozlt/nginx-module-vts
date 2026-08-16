@@ -26,6 +26,35 @@ static ngx_int_t ngx_http_vhost_traffic_status_shm_add_filter_node(ngx_http_requ
     ngx_array_t *filter_keys);
 
 
+/*
+ * Reports a node the zone had no room for, together with what the zone holds
+ * at the time, which is the figure that says whether it is worth enlarging.
+ *
+ * The caller holds the mutex of the zone, as shm_info() walks the tree. There
+ * is nothing to say where the report itself cannot be allocated, and the
+ * caller returns the same failure either way.
+ */
+
+static void
+ngx_http_vhost_traffic_status_shm_alloc_failed(ngx_http_request_t *r)
+{
+    ngx_http_vhost_traffic_status_shm_info_t  *shm_info;
+
+    shm_info = ngx_pcalloc(r->pool,
+                           sizeof(ngx_http_vhost_traffic_status_shm_info_t));
+    if (shm_info == NULL) {
+        return;
+    }
+
+    ngx_http_vhost_traffic_status_shm_info(r, shm_info);
+
+    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                  "shm_add_node::ngx_slab_alloc_locked() failed: "
+                  "used_size[%ui], used_node[%ui]",
+                  shm_info->used_size, shm_info->used_node);
+}
+
+
 void
 ngx_http_vhost_traffic_status_shm_info_node(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_shm_info_t *shm_info,
@@ -142,7 +171,6 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
     ngx_http_upstream_state_t                 *ustate;
     ngx_http_vhost_traffic_status_node_t      *vtsn;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
-    ngx_http_vhost_traffic_status_shm_info_t  *shm_info;
 #if (NGX_HTTP_CACHE)
     ngx_atomic_uint_t                          cache_max_size, cache_used_size;
 #endif
@@ -215,18 +243,7 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
 
         node = ngx_slab_alloc_locked(shpool, size);
         if (node == NULL) {
-            shm_info = ngx_pcalloc(r->pool, sizeof(ngx_http_vhost_traffic_status_shm_info_t));
-            if (shm_info == NULL) {
-                ngx_shmtx_unlock(&shpool->mutex);
-                return NGX_ERROR;
-            }
-
-            ngx_http_vhost_traffic_status_shm_info(r, shm_info);
-
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                          "shm_add_node::ngx_slab_alloc_locked() failed: "
-                          "used_size[%ui], used_node[%ui]",
-                          shm_info->used_size, shm_info->used_node);
+            ngx_http_vhost_traffic_status_shm_alloc_failed(r);
 
             ngx_shmtx_unlock(&shpool->mutex);
             return NGX_ERROR;
@@ -241,19 +258,7 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
         if (ctx->measure_status_codes != NULL) {
             vtsn->stat_status_code_counter = ngx_slab_alloc_locked(shpool, sizeof(ngx_atomic_t) * (ctx->measure_status_codes->nelts + 1));
             if (vtsn->stat_status_code_counter == NULL) {
-                shm_info = ngx_pcalloc(r->pool, sizeof(ngx_http_vhost_traffic_status_shm_info_t));
-                if (shm_info == NULL) {
-                    ngx_slab_free_locked(shpool, node);
-                    ngx_shmtx_unlock(&shpool->mutex);
-                    return NGX_ERROR;
-                }
-
-                ngx_http_vhost_traffic_status_shm_info(r, shm_info);
-
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                              "shm_add_node::ngx_slab_alloc_locked() failed: "
-                              "used_size[%ui], used_node[%ui]",
-                              shm_info->used_size, shm_info->used_node);
+                ngx_http_vhost_traffic_status_shm_alloc_failed(r);
 
                 ngx_slab_free_locked(shpool, node);
                 ngx_shmtx_unlock(&shpool->mutex);

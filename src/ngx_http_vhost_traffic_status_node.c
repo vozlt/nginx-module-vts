@@ -638,14 +638,6 @@ ngx_http_vhost_traffic_status_node_time_queue_pop(
 }
 
 
-ngx_int_t
-ngx_http_vhost_traffic_status_node_time_queue_rear(
-    ngx_http_vhost_traffic_status_node_time_queue_t *q)
-{
-    return (q->rear > 0) ? (q->rear - 1) : (NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_QUEUE_LEN - 1);
-}
-
-
 void
 ngx_http_vhost_traffic_status_node_time_queue_insert(
     ngx_http_vhost_traffic_status_node_time_queue_t *q,
