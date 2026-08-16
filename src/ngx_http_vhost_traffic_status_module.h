@@ -404,7 +404,8 @@ uint32_t ngx_http_vhost_traffic_status_filter_max_node_signature(
 
 ngx_msec_t ngx_http_vhost_traffic_status_current_msec(void);
 ngx_msec_int_t ngx_http_vhost_traffic_status_request_time(ngx_http_request_t *r);
-ngx_msec_int_t ngx_http_vhost_traffic_status_upstream_response_time(ngx_http_request_t *r);
+ngx_msec_int_t ngx_http_vhost_traffic_status_upstream_state_response_time(
+    ngx_http_upstream_state_t *state);
 
 extern ngx_module_t ngx_http_vhost_traffic_status_module;
 

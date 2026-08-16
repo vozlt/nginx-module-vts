@@ -400,6 +400,7 @@ Traffic calculation as follows:
 * UpstreamZones
   * in += requested_bytes via the ServerZones
   * out += sent_bytes via the ServerZones
+  * an attempt that `proxy_next_upstream` passed on adds neither, having served no client request. It is still counted in `requestCounter` and in `responses`, and its own time in `responseMsecCounter`.
 * cacheZones
   * in += requested_bytes via the ServerZones
   * out += sent_bytes via the ServerZones
@@ -760,14 +761,14 @@ The following status information is provided in the JSON format:
   * server
     * An address of the server.
   * requestCounter
-    * The total number of client connections forwarded to this server.
+    * The total number of client connections forwarded to this server. A request that `proxy_next_upstream` passes on is counted against every server it was tried on, so the counters of a group add up to attempts rather than to client requests. This is the same thing `$upstream_addr` reports, which lists one address per attempt.
   * inBytes
-    * The total number of bytes received from this server.
+    * The total number of bytes received from this server. An attempt that was passed on to another server adds nothing here: these are the bytes of the client request, and such an attempt served none.
   * outBytes
-    * The total number of bytes sent to this server.
+    * The total number of bytes sent to this server. An attempt that was passed on adds nothing, for the same reason as `inBytes`.
   * responses
     * 1xx, 2xx, 3xx, 4xx, 5xx
-      * The number of responses with status codes 1xx, 2xx, 3xx, 4xx, and 5xx.
+      * The number of responses with status codes 1xx, 2xx, 3xx, 4xx, and 5xx. For an attempt that was passed on to another server this is the status of that attempt - the value `$upstream_status` logs for it, which is 502 where the connection was refused and 504 where it timed out. For the attempt that answered the client it is the status the client was sent.
   * requestMsecCounter
     * The number of accumulated request processing time including upstream in milliseconds.
   * requestMsec
@@ -783,7 +784,7 @@ The following status information is provided in the JSON format:
     * counters
       * The cumulative values for the reason that each bucket value is greater than or equal to the request processing time including upstream.
   * responseMsecCounter
-    * The number of accumulated only upstream response processing time in milliseconds.
+    * The number of accumulated only upstream response processing time in milliseconds. Each attempt contributes its own time to the server it was made on. Earlier versions gave the sum over every attempt of a request to whichever server answered it, so that server was charged for the time spent failing on the ones before it.
   * responseMsec
     * The average of only upstream response processing times in milliseconds.
   * responseMsecs

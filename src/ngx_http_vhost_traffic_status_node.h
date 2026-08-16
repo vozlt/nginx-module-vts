@@ -158,12 +158,20 @@ ngx_rbtree_node_t *ngx_http_vhost_traffic_status_node_lookup(
     ngx_rbtree_t *rbtree, ngx_str_t *key, uint32_t hash);
 void ngx_http_vhost_traffic_status_node_zero(
     ngx_http_vhost_traffic_status_node_t *vtsn);
+/*
+ * state is the upstream attempt being counted, and it is set only for an
+ * attempt that proxy_next_upstream passed on to another peer. NULL counts the
+ * client request, which is what every other caller wants.
+ */
 void ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t status_code_slot);
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t status_code_slot,
+    ngx_http_upstream_state_t *state);
 void ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t status_code_slot);
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t status_code_slot,
+    ngx_http_upstream_state_t *state);
 void ngx_http_vhost_traffic_status_node_update(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_msec_int_t ms, ngx_int_t status_code_slot);
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_msec_int_t ms, ngx_int_t status_code_slot,
+    ngx_http_upstream_state_t *state);
 
 void ngx_http_vhost_traffic_status_node_time_queue_zero(
     ngx_http_vhost_traffic_status_node_time_queue_t *q);

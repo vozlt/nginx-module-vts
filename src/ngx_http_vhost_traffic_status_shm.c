@@ -10,9 +10,9 @@
 
 
 static ngx_int_t ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
-    ngx_str_t *key, unsigned type);
+    ngx_str_t *key, unsigned type, ngx_http_upstream_state_t *state);
 static ngx_int_t ngx_http_vhost_traffic_status_shm_add_node_upstream(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, unsigned init);
+    ngx_http_vhost_traffic_status_node_t *vtsn, unsigned init, ngx_msec_int_t ms);
 
 #if (NGX_HTTP_CACHE)
 static void ngx_http_vhost_traffic_status_shm_get_cache_size(ngx_http_request_t *r,
@@ -128,15 +128,18 @@ ngx_http_vhost_traffic_status_shm_info(ngx_http_request_t *r,
 
 static ngx_int_t
 ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
-    ngx_str_t *key, unsigned type)
+    ngx_str_t *key, unsigned type, ngx_http_upstream_state_t *state)
 {
     size_t                                     size;
     unsigned                                   init;
     uint32_t                                   hash;
+    ngx_uint_t                                 status;
+    ngx_msec_int_t                             ms;
     ngx_int_t                                  status_code_slot;
     ngx_slab_pool_t                           *shpool;
     ngx_rbtree_node_t                         *node, *lrun;
     ngx_http_vhost_traffic_status_ctx_t       *ctx;
+    ngx_http_upstream_state_t                 *ustate;
     ngx_http_vhost_traffic_status_node_t      *vtsn;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
     ngx_http_vhost_traffic_status_shm_info_t  *shm_info;
@@ -155,14 +158,17 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
     shpool = (ngx_slab_pool_t *) vtscf->shm_zone->shm.addr;
 
 
+    /* the status of the attempt where there is one, of the request otherwise */
+    status = (state != NULL) ? state->status : r->headers_out.status;
+
     status_code_slot = 0;
     if (ctx->measure_all_status_codes) {
-        if (r->headers_out.status >= 100 && r->headers_out.status < 600) {
-            // slot 0 is reserved to other status codes <100 and >600
-            status_code_slot = r->headers_out.status - 99;
+        if (status >= 100 && status < 600) {
+            // slot 0 is reserved to other status codes <100 and >=600
+            status_code_slot = status - 99;
         }
     } else if (ctx->measure_status_codes != NULL) {
-        status_code_slot = ngx_http_vhost_traffic_status_find_status_code_slot(r->headers_out.status,
+        status_code_slot = ngx_http_vhost_traffic_status_find_status_code_slot(status,
                                                                               ctx->measure_status_codes);
     }
 
@@ -256,7 +262,7 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
             vtsn->stat_status_code_length = ctx->measure_status_codes->nelts;
         }
 
-        ngx_http_vhost_traffic_status_node_init(r, vtsn, status_code_slot);
+        ngx_http_vhost_traffic_status_node_init(r, vtsn, status_code_slot, state);
 
         vtsn->stat_upstream.type = type;
         ngx_memcpy(vtsn->data, key->data, key->len);
@@ -268,7 +274,7 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
     } else {
         init = NGX_HTTP_VHOST_TRAFFIC_STATUS_NODE_FIND;
         vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
-        ngx_http_vhost_traffic_status_node_set(r, vtsn, status_code_slot);
+        ngx_http_vhost_traffic_status_node_set(r, vtsn, status_code_slot, state);
     }
 
     /* set addition */
@@ -278,7 +284,23 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
 
     case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UA:
     case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UG:
-        (void) ngx_http_vhost_traffic_status_shm_add_node_upstream(r, vtsn, init);
+
+        /*
+         * Each attempt gets its own response time. The one that served the
+         * client arrives here with state NULL, and r->upstream->state is the
+         * last element of r->upstream_states, which is that same attempt.
+         *
+         * This used to be the sum over every attempt, given to whichever peer
+         * answered, so a peer was charged for the time spent failing on the
+         * peers before it.
+         */
+
+        ustate = (state != NULL) ? state
+                 : (r->upstream != NULL ? r->upstream->state : NULL);
+
+        ms = ngx_http_vhost_traffic_status_upstream_state_response_time(ustate);
+
+        (void) ngx_http_vhost_traffic_status_shm_add_node_upstream(r, vtsn, init, ms);
         break;
 
 #if (NGX_HTTP_CACHE)
@@ -300,14 +322,12 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
 
 static ngx_int_t
 ngx_http_vhost_traffic_status_shm_add_node_upstream(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, unsigned init)
+    ngx_http_vhost_traffic_status_node_t *vtsn, unsigned init, ngx_msec_int_t ms)
 {
-    ngx_msec_int_t  ms;
     ngx_atomic_t    oresponse_time_counter;
 
     /* only the response time counter is compared below */
     oresponse_time_counter = vtsn->stat_upstream.response_time_counter;
-    ms = ngx_http_vhost_traffic_status_upstream_response_time(r);
 
     ngx_http_vhost_traffic_status_node_time_queue_insert(&vtsn->stat_upstream.response_times,
                                                          ms);
@@ -481,7 +501,7 @@ ngx_http_vhost_traffic_status_shm_add_filter_node(ngx_http_request_t *r,
             }
         }
 
-        rc = ngx_http_vhost_traffic_status_shm_add_node(r, &key, type);
+        rc = ngx_http_vhost_traffic_status_shm_add_node(r, &key, type, NULL);
         if (rc != NGX_OK) {
             ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                           "shm_add_filter_node::shm_add_node(\"%V\") failed", &key);
@@ -525,7 +545,7 @@ ngx_http_vhost_traffic_status_shm_add_server(ngx_http_request_t *r)
         return NGX_ERROR;
     }
 
-    return ngx_http_vhost_traffic_status_shm_add_node(r, &key, type);
+    return ngx_http_vhost_traffic_status_shm_add_node(r, &key, type, NULL);
 }
 
 
@@ -571,9 +591,9 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r)
     unsigned                        type;
     ngx_int_t                       rc;
     ngx_str_t                      *host, key, dst;
-    ngx_uint_t                      i;
+    ngx_uint_t                      i, n;
     ngx_http_upstream_t            *u;
-    ngx_http_upstream_state_t      *state;
+    ngx_http_upstream_state_t      *state, *states;
     ngx_http_upstream_srv_conf_t   *uscf, **uscfp;
     ngx_http_upstream_main_conf_t  *umcf;
 
@@ -620,40 +640,109 @@ ngx_http_vhost_traffic_status_shm_add_upstream(ngx_http_request_t *r)
 
 found:
 
-    state = u->state;
-    if (state->peer == NULL) {
+    /*
+     * An attempt that connected always has this. ngx_http_upstream_connect()
+     * assigns it for every return of ngx_event_connect_peer() except
+     * NGX_ERROR, which finalizes the request at once - NGX_BUSY, the "no live
+     * upstreams" case one would expect to leave it unset, does not, since
+     * ngx_http_upstream_get_round_robin_peer() assigns pc->name = peers->name
+     * before returning it.
+     *
+     * What has none is the zeroed state that ngx_http_upstream_init_request()
+     * pushes between two rounds - see the walk below. u->state is that one
+     * where a second round was set up and never connected, and there is
+     * nothing to record for it.
+     */
+
+    if (u->state->peer == NULL) {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                       "shm_add_upstream::peer failed");
         return NGX_ERROR;
     }
 
-    dst.len = (uscf->port ? 0 : uscf->host.len + sizeof("@") - 1) + state->peer->len;
-    dst.data = ngx_pnalloc(r->pool, dst.len);
-    if (dst.data == NULL) {
-        return NGX_ERROR;
+    /*
+     * Every attempt, not only the one that answered. A request that
+     * proxy_next_upstream passed on used to record nothing at all against the
+     * peer it was passed on from, which is the peer an operator looks for
+     * first (#388).
+     *
+     * The counters of a group therefore add up to attempts rather than to
+     * client requests, which is what $upstream_addr has always reported.
+     */
+
+    /*
+     * Only the attempts of the upstream this request ended in.
+     *
+     * r->upstream_states is request-wide rather than per-upstream. Where an
+     * internal redirect starts another one - proxy_intercept_errors with an
+     * error_page, X-Accel-Redirect - ngx_http_upstream_init_request() keeps
+     * the states of the earlier round and pushes a zeroed state between them.
+     * $upstream_addr shows the same thing: a colon between the rounds where a
+     * retry gets a comma.
+     *
+     * uscf here is the group of the round that finished, so an attempt from
+     * an earlier round would be filed under the wrong group. The zeroed state
+     * is the boundary, and its peer is what makes it recognisable.
+     */
+
+    states = r->upstream_states->elts;
+    n = 0;
+
+    for (i = r->upstream_states->nelts; i > 0; i--) {
+        if (states[i - 1].peer == NULL) {
+            n = i;
+            break;
+        }
     }
 
-    p = dst.data;
-    if (uscf->port) {
-        p = ngx_cpymem(p, state->peer->data, state->peer->len);
-        type = NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UA;
+    for (i = n; i < r->upstream_states->nelts; i++) {
 
-    } else {
-        p = ngx_cpymem(p, uscf->host.data, uscf->host.len);
-        *p++ = NGX_HTTP_VHOST_TRAFFIC_STATUS_KEY_SEPARATOR;
-        p = ngx_cpymem(p, state->peer->data, state->peer->len);
-        type = NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UG;
-    }
+        state = &states[i];
 
-    rc = ngx_http_vhost_traffic_status_node_generate_key(r->pool, &key, &dst, type);
-    if (rc != NGX_OK) {
-        return NGX_ERROR;
-    }
+        if (state->peer == NULL) {
 
-    rc = ngx_http_vhost_traffic_status_shm_add_node(r, &key, type);
-    if (rc != NGX_OK) {
-        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                      "shm_add_upstream::shm_add_node(\"%V\") failed", &key);
+            /* nothing to key on. The walk starts past the last of these */
+
+            continue;
+        }
+
+        dst.len = (uscf->port ? 0 : uscf->host.len + sizeof("@") - 1)
+                  + state->peer->len;
+        dst.data = ngx_pnalloc(r->pool, dst.len);
+        if (dst.data == NULL) {
+            return NGX_ERROR;
+        }
+
+        p = dst.data;
+        if (uscf->port) {
+            p = ngx_cpymem(p, state->peer->data, state->peer->len);
+            type = NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UA;
+
+        } else {
+            p = ngx_cpymem(p, uscf->host.data, uscf->host.len);
+            *p++ = NGX_HTTP_VHOST_TRAFFIC_STATUS_KEY_SEPARATOR;
+            p = ngx_cpymem(p, state->peer->data, state->peer->len);
+            type = NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UG;
+        }
+
+        rc = ngx_http_vhost_traffic_status_node_generate_key(r->pool, &key, &dst,
+                                                             type);
+        if (rc != NGX_OK) {
+            return NGX_ERROR;
+        }
+
+        /*
+         * The attempt that served the client is counted as the client
+         * request, as it always was. The others are counted as themselves.
+         */
+
+        rc = ngx_http_vhost_traffic_status_shm_add_node(r, &key, type,
+                 (state == u->state) ? NULL : state);
+
+        if (rc != NGX_OK) {
+            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                          "shm_add_upstream::shm_add_node(\"%V\") failed", &key);
+        }
     }
 
     return NGX_OK;
@@ -711,7 +800,7 @@ ngx_http_vhost_traffic_status_shm_add_cache(ngx_http_request_t *r)
         return NGX_ERROR;
     }
 
-    rc = ngx_http_vhost_traffic_status_shm_add_node(r, &key, type);
+    rc = ngx_http_vhost_traffic_status_shm_add_node(r, &key, type, NULL);
     if (rc != NGX_OK) {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                       "shm_add_cache::shm_add_node(\"%V\") failed", &key);

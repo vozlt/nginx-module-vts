@@ -447,7 +447,8 @@ ngx_http_vhost_traffic_status_node_zero(ngx_http_vhost_traffic_status_node_t *vt
 */
 void
 ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t status_code_slot)
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t status_code_slot,
+    ngx_http_upstream_state_t *state)
 {
     ngx_msec_int_t  ms;
 
@@ -467,7 +468,7 @@ ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
     /* set serverZone */
     ms = ngx_http_vhost_traffic_status_request_time(r);
 
-    ngx_http_vhost_traffic_status_node_update(r, vtsn, ms, status_code_slot);
+    ngx_http_vhost_traffic_status_node_update(r, vtsn, ms, status_code_slot, state);
 }
 
 
@@ -477,7 +478,8 @@ ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
 */
 void
 ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t status_code_slot)
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t status_code_slot,
+    ngx_http_upstream_state_t *state)
 {
     ngx_msec_int_t                             ms;
     ngx_http_vhost_traffic_status_node_oc_t    ovtsn;
@@ -489,7 +491,7 @@ ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
 
     vtsn->ignore_status = vtscf->ignore_status;
     ms = ngx_http_vhost_traffic_status_request_time(r);
-    ngx_http_vhost_traffic_status_node_update(r, vtsn, ms, status_code_slot);
+    ngx_http_vhost_traffic_status_node_update(r, vtsn, ms, status_code_slot, state);
 
     /*
      * stat_request_time is not kept up to date here: averaging the queue on
@@ -503,14 +505,23 @@ ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
 
 void
 ngx_http_vhost_traffic_status_node_update(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_msec_int_t ms, ngx_int_t status_code_slot)
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_msec_int_t ms, ngx_int_t status_code_slot,
+    ngx_http_upstream_state_t *state)
 {
-    ngx_uint_t status = r->headers_out.status;
+    /*
+     * state is the attempt this call is counting, and it is set only where
+     * proxy_next_upstream passed that attempt on to another peer. Everything
+     * else - every server, filter and cache zone, and the attempt that did
+     * serve the client - counts the client request and leaves it NULL.
+     */
+
+    ngx_uint_t status = (state != NULL) ? state->status : r->headers_out.status;
 
     /*
-     * Before the check below: a request whose status is not counted was
-     * served all the same, and what tells the node apart from an abandoned
-     * one is that it was reached, not that it was counted.
+     * Before the check below: a status that is not counted still leaves the
+     * node reached - the client request was served, or the attempt on this
+     * peer was made - and being reached is what tells it apart from one
+     * nothing has used in a long time. Being counted is not.
      */
 
     vtsn->stat_last_seen = ngx_http_vhost_traffic_status_current_msec();
@@ -520,14 +531,45 @@ ngx_http_vhost_traffic_status_node_update(ngx_http_request_t *r,
     }
 
     vtsn->stat_request_counter++;
-    vtsn->stat_in_bytes += (ngx_atomic_uint_t) r->request_length;
-    vtsn->stat_out_bytes += (ngx_atomic_uint_t) r->connection->sent;
+
+    if (state != NULL && (status < 100 || status >= 600)) {
+
+        /*
+         * An attempt carries no status of its own where it produced no
+         * response, and nginx leaves that 0. add_rc() puts anything below 200
+         * in the 1xx bucket, so it must not be handed one - the attempt would
+         * be reported as an informational response. The two other places that
+         * read this status already say the same thing: shm_add_node() takes no
+         * status code slot outside 100..599, and the response time helper
+         * gives 0 for a state with no status.
+         *
+         * It was still an attempt on this peer, so the counter above stands.
+         */
+
+        return;
+    }
 
     ngx_http_vhost_traffic_status_add_rc(status, vtsn);
 
     if (status_code_slot != -1 && vtsn->stat_status_code_counter != NULL ) {
         vtsn->stat_status_code_counter[status_code_slot]++;
     }
+
+    if (state != NULL) {
+
+        /*
+         * The rest of this describes the client request: the bytes either
+         * way, how long it took, what the cache did with it. An attempt that
+         * was passed on served no client, so it has none of them to add. Its
+         * own response time goes to the upstream queue in
+         * ngx_http_vhost_traffic_status_shm_add_node_upstream().
+         */
+
+        return;
+    }
+
+    vtsn->stat_in_bytes += (ngx_atomic_uint_t) r->request_length;
+    vtsn->stat_out_bytes += (ngx_atomic_uint_t) r->connection->sent;
 
     vtsn->stat_request_time_counter += (ngx_atomic_uint_t) ms;
 
