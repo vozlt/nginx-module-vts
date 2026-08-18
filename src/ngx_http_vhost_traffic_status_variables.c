@@ -8,105 +8,6 @@
 #include "ngx_http_vhost_traffic_status_variables.h"
 
 
-static ngx_http_variable_t  ngx_http_vhost_traffic_status_vars[] = {
-
-    { ngx_string("vts_request_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_request_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_in_bytes"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_in_bytes),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_out_bytes"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_out_bytes),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_1xx_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_1xx_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_2xx_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_2xx_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_3xx_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_3xx_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_4xx_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_4xx_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_5xx_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_5xx_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_request_time_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_request_time_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    /* the offset names the queue this averages, it is not read through */
-    { ngx_string("vts_request_time"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_request_times),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-#if (NGX_HTTP_CACHE)
-    { ngx_string("vts_cache_miss_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_cache_miss_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_cache_bypass_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_cache_bypass_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_cache_expired_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_cache_expired_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_cache_stale_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_cache_stale_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_cache_updating_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_cache_updating_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_cache_revalidated_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_cache_revalidated_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_cache_hit_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_cache_hit_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-
-    { ngx_string("vts_cache_scarce_counter"), NULL,
-      ngx_http_vhost_traffic_status_node_variable,
-      offsetof(ngx_http_vhost_traffic_status_node_t, stat_cache_scarce_counter),
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },
-#endif
-
-    { ngx_null_string, NULL, NULL, 0, 0, 0 }
-};
-
-
 ngx_int_t
 ngx_http_vhost_traffic_status_node_variable(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
@@ -186,19 +87,37 @@ done:
 }
 
 
+/*
+ * The variables are the members of a node that carry a `variable` name in the
+ * table in node.h, which is also where the offset each of them reads comes
+ * from. They used to be a list of their own, so a field could be given a
+ * variable here and a set_by_filter name there without the two ever meeting.
+ */
+
 ngx_int_t
 ngx_http_vhost_traffic_status_add_variables(ngx_conf_t *cf)
 {
-    ngx_http_variable_t  *var, *v;
+    ngx_http_variable_t                     *var;
+    ngx_http_vhost_traffic_status_member_t  *m;
 
-    for (v = ngx_http_vhost_traffic_status_vars; v->name.len; v++) {
-        var = ngx_http_add_variable(cf, &v->name, v->flags);
+    for (m = ngx_http_vhost_traffic_status_members;
+         m->limit.len || m->filter.len || m->variable.len;
+         m++)
+    {
+        /* a field with no variable to read it by */
+
+        if (m->variable.len == 0) {
+            continue;
+        }
+
+        var = ngx_http_add_variable(cf, &m->variable,
+                                    NGX_HTTP_VAR_NOCACHEABLE);
         if (var == NULL) {
             return NGX_ERROR;
         }
 
-        var->get_handler = v->get_handler;
-        var->data = v->data;
+        var->get_handler = ngx_http_vhost_traffic_status_node_variable;
+        var->data = (uintptr_t) m->offset;
     }
 
     return NGX_OK;

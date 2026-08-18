@@ -40,7 +40,7 @@ __DATA__
 --- http_config
     vhost_traffic_status_zone;
 --- config
-    location /v {
+    location /big.txt {
         add_header X-Request-Counter    $vts_request_counter;
         add_header X-In-Bytes           $vts_in_bytes;
         add_header X-Out-Bytes          $vts_out_bytes;
@@ -51,16 +51,17 @@ __DATA__
         add_header X-5xx                $vts_5xx_counter;
         add_header X-Request-Time-Ctr   $vts_request_time_counter;
         add_header X-Request-Time       $vts_request_time;
-        return 200 "OK";
     }
+--- user_files eval
+">>> big.txt\n" . ("x" x 4096)
 --- request eval
-['GET /v', 'GET /v']
+['GET /big.txt', 'GET /big.txt']
 --- response_body_like eval
-['OK', 'OK']
+['x{4096}', 'x{4096}']
 --- raw_response_headers_like eval
 [
     qr/\A(?!.*X-Request-Counter)/s,
-    qr/X-Request-Counter: 1\b.*X-In-Bytes: [1-9]\d*.*X-Out-Bytes: [1-9]\d*.*X-1xx: 0\b.*X-2xx: 1\b.*X-3xx: 0\b.*X-4xx: 0\b.*X-5xx: 0\b.*X-Request-Time-Ctr: \d+\b.*X-Request-Time: \d+\b/s,
+    qr/X-Request-Counter: 1\b.*X-In-Bytes: \d{1,3}\b.*X-Out-Bytes: [1-9]\d{3,}\b.*X-1xx: 0\b.*X-2xx: 1\b.*X-3xx: 0\b.*X-4xx: 0\b.*X-5xx: 0\b.*X-Request-Time-Ctr: \d+\b.*X-Request-Time: \d+\b/s,
 ]
 
 === TEST 2: the set_by_filter members of a server zone

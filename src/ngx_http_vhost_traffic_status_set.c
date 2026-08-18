@@ -82,109 +82,43 @@ ngx_http_vhost_traffic_status_set_by_filter_node_member(
     ngx_http_upstream_server_t *us)
 {
     ngx_str_t                                 *member;
+    ngx_http_vhost_traffic_status_member_t    *m;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
 
     member = control->arg_name;
     vtscf = ngx_http_get_module_loc_conf(control->r,
                                          ngx_http_vhost_traffic_status_module);
 
-    if (ngx_http_vhost_traffic_status_node_member_cmp(member, "requestCounter") == 0)
-    {
-        return vtsn->stat_request_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "requestMsecCounter") == 0)
-    {
-        return vtsn->stat_request_time_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "requestMsec") == 0)
-    {
-        return (ngx_atomic_uint_t)
-                   ngx_http_vhost_traffic_status_node_time_queue_average_ro(
-                       &vtsn->stat_request_times, vtscf->average_method,
-                       vtscf->average_period);
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "responseMsecCounter") == 0)
-    {
-        return vtsn->stat_upstream.response_time_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "responseMsec") == 0)
-    {
-        return (ngx_atomic_uint_t)
-                   ngx_http_vhost_traffic_status_node_time_queue_average_ro(
-                       &vtsn->stat_upstream.response_times, vtscf->average_method,
-                       vtscf->average_period);
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "inBytes") == 0)
-    {
-        return vtsn->stat_in_bytes;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "outBytes") == 0)
-    {
-        return vtsn->stat_out_bytes;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "1xx") == 0)
-    {
-        return vtsn->stat_1xx_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "2xx") == 0)
-    {
-        return vtsn->stat_2xx_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "3xx") == 0)
-    {
-        return vtsn->stat_3xx_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "4xx") == 0)
-    {
-        return vtsn->stat_4xx_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "5xx") == 0)
-    {
-        return vtsn->stat_5xx_counter;
+    /* the fields of the node, named the same way in one table (node.h) */
+
+    m = ngx_http_vhost_traffic_status_member_lookup(member,
+            NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_FILTER);
+
+    if (m != NULL) {
+
+        if (m->kind == NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_QUEUE) {
+
+            /*
+             * the read-only average, as this runs while the display may be
+             * reading the same queue
+             */
+
+            return (ngx_atomic_uint_t)
+                       ngx_http_vhost_traffic_status_node_time_queue_average_ro(
+                           (ngx_http_vhost_traffic_status_node_time_queue_t *)
+                               ((char *) vtsn + m->offset),
+                           vtscf->average_method, vtscf->average_period);
+        }
+
+        return *((ngx_atomic_t *) ((char *) vtsn + m->offset));
     }
 
-#if (NGX_HTTP_CACHE)
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "cacheMaxSize") == 0)
-    {
-        return vtsn->stat_cache_max_size;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "cacheUsedSize") == 0)
-    {
-        return vtsn->stat_cache_used_size;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "cacheMiss") == 0)
-    {
-        return vtsn->stat_cache_miss_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "cacheBypass") == 0)
-    {
-        return vtsn->stat_cache_bypass_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "cacheExpired") == 0)
-    {
-        return vtsn->stat_cache_expired_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "cacheStale") == 0)
-    {
-        return vtsn->stat_cache_stale_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "cacheUpdating") == 0)
-    {
-        return vtsn->stat_cache_updating_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "cacheRevalidated") == 0)
-    {
-        return vtsn->stat_cache_revalidated_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "cacheHit") == 0)
-    {
-        return vtsn->stat_cache_hit_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "cacheScarce") == 0)
-    {
-        return vtsn->stat_cache_scarce_counter;
-    }
-#endif
+    /*
+     * What is left belongs to the peer rather than to the node, and is only
+     * there to be asked for when the zone names one: these are fields of
+     * ngx_http_upstream_server_t, and `backup` is a bit field, so they cannot
+     * be reached through an offset the way the table reaches a node.
+     */
 
     switch (control->group) {
 
