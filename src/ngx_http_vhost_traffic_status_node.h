@@ -231,6 +231,48 @@ ngx_atomic_uint_t ngx_http_vhost_traffic_status_node_member(
     ngx_str_t *member);
 
 
+/*
+ * One field of a node is asked for by three different names, one per way in
+ * of asking, and the three used to be written out separately - a ladder in
+ * node.c for the limit, a ladder in set.c for set_by_filter, and a table in
+ * variables.c. Sixteen fields appear in all three, so adding a counter meant
+ * finding three places, and a name could be dropped from one of them without
+ * anything else noticing.
+ *
+ * The names are here instead, beside the offset they all mean. An empty name
+ * is a field that way in cannot ask for.
+ *
+ * `variable` carries the whole public name rather than what follows vts_, so
+ * that every string in this table is one a configuration can be grepped for.
+ *
+ * The peers of an upstream group are not here: weight, maxFails, failTimeout,
+ * backup and down are fields of ngx_http_upstream_server_t rather than of a
+ * node, and `backup` is a bit field, which has no offset to take. set.c reads
+ * those five itself.
+ */
+
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER  0
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_QUEUE    1
+
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_LIMIT    0
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_FILTER   1
+
+typedef struct {
+    ngx_str_t   limit;      /* vhost_traffic_status_limit_traffic */
+    ngx_str_t   filter;     /* vhost_traffic_status_set_by_filter */
+    ngx_str_t   variable;   /* the $vts_ variable, whole */
+    ngx_uint_t  kind;
+    size_t      offset;     /* into ngx_http_vhost_traffic_status_node_t */
+} ngx_http_vhost_traffic_status_member_t;
+
+extern ngx_http_vhost_traffic_status_member_t
+    ngx_http_vhost_traffic_status_members[];
+
+ngx_http_vhost_traffic_status_member_t *
+    ngx_http_vhost_traffic_status_member_lookup(ngx_str_t *name,
+    ngx_uint_t vocabulary);
+
+
 #endif /* _NGX_HTTP_VTS_NODE_H_INCLUDED_ */
 
 /* vi:set ft=c ts=4 sw=4 et fdm=marker: */

@@ -859,79 +859,171 @@ ngx_http_vhost_traffic_status_node_member_cmp(ngx_str_t *member, const char *nam
 }
 
 
+/* the whole of what a node member is called, see node.h */
+
+#define ngx_vts_member(f)  offsetof(ngx_http_vhost_traffic_status_node_t, f)
+
+ngx_http_vhost_traffic_status_member_t
+    ngx_http_vhost_traffic_status_members[] = {
+
+    { ngx_string("request"), ngx_string("requestCounter"),
+      ngx_string("vts_request_counter"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_request_counter) },
+
+    { ngx_string("in"), ngx_string("inBytes"), ngx_string("vts_in_bytes"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_in_bytes) },
+
+    { ngx_string("out"), ngx_string("outBytes"), ngx_string("vts_out_bytes"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_out_bytes) },
+
+    { ngx_string("1xx"), ngx_string("1xx"), ngx_string("vts_1xx_counter"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_1xx_counter) },
+
+    { ngx_string("2xx"), ngx_string("2xx"), ngx_string("vts_2xx_counter"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_2xx_counter) },
+
+    { ngx_string("3xx"), ngx_string("3xx"), ngx_string("vts_3xx_counter"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_3xx_counter) },
+
+    { ngx_string("4xx"), ngx_string("4xx"), ngx_string("vts_4xx_counter"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_4xx_counter) },
+
+    { ngx_string("5xx"), ngx_string("5xx"), ngx_string("vts_5xx_counter"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_5xx_counter) },
+
+    { ngx_null_string, ngx_string("requestMsecCounter"),
+      ngx_string("vts_request_time_counter"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_request_time_counter) },
+
+    { ngx_null_string, ngx_string("requestMsec"),
+      ngx_string("vts_request_time"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_QUEUE,
+      ngx_vts_member(stat_request_times) },
+
+    { ngx_null_string, ngx_string("responseMsecCounter"), ngx_null_string,
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_upstream.response_time_counter) },
+
+    { ngx_null_string, ngx_string("responseMsec"), ngx_null_string,
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_QUEUE,
+      ngx_vts_member(stat_upstream.response_times) },
+
+#if (NGX_HTTP_CACHE)
+
+    { ngx_null_string, ngx_string("cacheMaxSize"), ngx_null_string,
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_max_size) },
+
+    { ngx_null_string, ngx_string("cacheUsedSize"), ngx_null_string,
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_used_size) },
+
+    { ngx_string("cache_miss"), ngx_string("cacheMiss"),
+      ngx_string("vts_cache_miss_counter"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_miss_counter) },
+
+    { ngx_string("cache_bypass"), ngx_string("cacheBypass"),
+      ngx_string("vts_cache_bypass_counter"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_bypass_counter) },
+
+    { ngx_string("cache_expired"), ngx_string("cacheExpired"),
+      ngx_string("vts_cache_expired_counter"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_expired_counter) },
+
+    { ngx_string("cache_stale"), ngx_string("cacheStale"),
+      ngx_string("vts_cache_stale_counter"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_stale_counter) },
+
+    { ngx_string("cache_updating"), ngx_string("cacheUpdating"),
+      ngx_string("vts_cache_updating_counter"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_updating_counter) },
+
+    { ngx_string("cache_revalidated"), ngx_string("cacheRevalidated"),
+      ngx_string("vts_cache_revalidated_counter"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_revalidated_counter) },
+
+    { ngx_string("cache_hit"), ngx_string("cacheHit"),
+      ngx_string("vts_cache_hit_counter"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_hit_counter) },
+
+    { ngx_string("cache_scarce"), ngx_string("cacheScarce"),
+      ngx_string("vts_cache_scarce_counter"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_scarce_counter) },
+
+#endif
+
+    { ngx_null_string, ngx_null_string, ngx_null_string, 0, 0 }
+};
+
+
+ngx_http_vhost_traffic_status_member_t *
+ngx_http_vhost_traffic_status_member_lookup(ngx_str_t *name,
+    ngx_uint_t vocabulary)
+{
+    ngx_str_t                               *n;
+    ngx_http_vhost_traffic_status_member_t  *m;
+
+    for (m = ngx_http_vhost_traffic_status_members;
+         m->limit.len || m->filter.len || m->variable.len;
+         m++)
+    {
+        n = (vocabulary == NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_LIMIT)
+            ? &m->limit : &m->filter;
+
+        /* a field this way in cannot ask for */
+
+        if (n->len == 0) {
+            continue;
+        }
+
+        if (n->len == name->len
+            && ngx_strncmp(n->data, name->data, name->len) == 0)
+        {
+            return m;
+        }
+    }
+
+    return NULL;
+}
+
+
 ngx_atomic_uint_t
 ngx_http_vhost_traffic_status_node_member(ngx_http_vhost_traffic_status_node_t *vtsn,
     ngx_str_t *member)
 {
-    if (ngx_http_vhost_traffic_status_node_member_cmp(member, "request") == 0)
-    {
-        return vtsn->stat_request_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "in") == 0)
-    {
-        return vtsn->stat_in_bytes;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "out") == 0)
-    {
-        return vtsn->stat_out_bytes;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "1xx") == 0)
-    {
-        return vtsn->stat_1xx_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "2xx") == 0)
-    {
-        return vtsn->stat_2xx_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "3xx") == 0)
-    {
-        return vtsn->stat_3xx_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "4xx") == 0)
-    {
-        return vtsn->stat_4xx_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "5xx") == 0)
-    {
-        return vtsn->stat_5xx_counter;
+    ngx_http_vhost_traffic_status_member_t  *m;
+
+    m = ngx_http_vhost_traffic_status_member_lookup(member,
+            NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_LIMIT);
+
+    /*
+     * A name the limit cannot be given reads 0, which is what it read before
+     * this was a table. It is the same answer an untouched counter gives, so
+     * a limit named after nothing is never reached rather than always.
+     */
+
+    if (m == NULL || m->kind != NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER) {
+        return 0;
     }
 
-#if (NGX_HTTP_CACHE)
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "cache_miss") == 0)
-    {
-        return vtsn->stat_cache_miss_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "cache_bypass") == 0)
-    {
-        return vtsn->stat_cache_bypass_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "cache_expired") == 0)
-    {
-        return vtsn->stat_cache_expired_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "cache_stale") == 0)
-    {
-        return vtsn->stat_cache_stale_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "cache_updating") == 0)
-    {
-        return vtsn->stat_cache_updating_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "cache_revalidated") == 0)
-    {
-        return vtsn->stat_cache_revalidated_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "cache_hit") == 0)
-    {
-        return vtsn->stat_cache_hit_counter;
-    }
-    else if (ngx_http_vhost_traffic_status_node_member_cmp(member, "cache_scarce") == 0)
-    {
-        return vtsn->stat_cache_scarce_counter;
-    }
-#endif
-
-    return 0;
+    return *((ngx_atomic_t *) ((char *) vtsn + m->offset));
 }
 
 /* vi:set ft=c ts=4 sw=4 et fdm=marker: */
