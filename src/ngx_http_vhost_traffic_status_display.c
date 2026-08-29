@@ -650,12 +650,14 @@ ngx_http_vhost_traffic_status_display_node_name_repeat(ngx_http_request_t *r,
      * name of the node at most once (the label pairs of the filterZones and
      * upstreamZones lines are disjoint substrings of the same key):
      *
-     *     serverZone   : 9 + 8 (cache) + status codes + (histogram + 3)
-     *     filterZone   : 9 + 8 (cache) + (histogram + 3)
+     *     serverZone   : 9 + 8 (cache) + 16 (cache status bytes)
+     *                    + status codes + (histogram + 3)
+     *     filterZone   : 9 + 8 (cache) + 16 (cache status bytes)
+     *                    + (histogram + 3)
      *     upstreamZone : 11 + 2 * (histogram + 3)
-     *     cacheZone    : 12
+     *     cacheZone    : 12 + 16 (cache status bytes)
      */
-    n = 17 + nsc;
+    n = 33 + nsc;
 
     if (nb) {
         n += 2 * (nb + 3);
@@ -691,9 +693,9 @@ ngx_http_vhost_traffic_status_display_node_fixed_size(ngx_http_request_t *r,
     return 4 * NGX_HTTP_VHOST_TRAFFIC_STATUS_DEFAULT_QUEUE_LEN
              * (NGX_ATOMIC_T_LEN + 1)                    /* time queues       */
            + 4 * nb * (NGX_ATOMIC_T_LEN + 1)             /* histogram buckets */
-           + 64 * (NGX_ATOMIC_T_LEN + 1)                 /* counters          */
+           + 128 * (NGX_ATOMIC_T_LEN + 1)                /* counters          */
            + nsc * (NGX_ATOMIC_T_LEN + sizeof(",\"999\":") - 1)  /* statusCodes */
-           + 1024;                                       /* literal text      */
+           + 4096;                                       /* literal text      */
 }
 
 

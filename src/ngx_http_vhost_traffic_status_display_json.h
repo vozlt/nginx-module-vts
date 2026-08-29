@@ -63,6 +63,26 @@
     "\"hit\":%uA,"                                                             \
     "\"scarce\":%uA"                                                           \
     "},"                                                                       \
+    "\"downstreamOutBytes\":{"                                                \
+    "\"miss\":%uA,"                                                            \
+    "\"bypass\":%uA,"                                                          \
+    "\"expired\":%uA,"                                                         \
+    "\"stale\":%uA,"                                                           \
+    "\"updating\":%uA,"                                                        \
+    "\"revalidated\":%uA,"                                                     \
+    "\"hit\":%uA,"                                                             \
+    "\"scarce\":%uA"                                                           \
+    "},"                                                                       \
+    "\"upstreamInBytes\":{"                                                   \
+    "\"miss\":%uA,"                                                            \
+    "\"bypass\":%uA,"                                                          \
+    "\"expired\":%uA,"                                                         \
+    "\"stale\":%uA,"                                                           \
+    "\"updating\":%uA,"                                                        \
+    "\"revalidated\":%uA,"                                                     \
+    "\"hit\":%uA,"                                                             \
+    "\"scarce\":%uA"                                                           \
+    "},"                                                                       \
     "\"requestMsecCounter\":%uA,"                                              \
     "\"requestMsec\":%M,"                                                      \
     "\"requestMsecs\":{"                                                       \
@@ -91,6 +111,22 @@
     "\"revalidated\":%uA,"                                                     \
     "\"hit\":%uA,"                                                             \
     "\"scarce\":%uA,"                                                          \
+    "\"missDownstreamOutBytes\":%uA,"                                          \
+    "\"bypassDownstreamOutBytes\":%uA,"                                        \
+    "\"expiredDownstreamOutBytes\":%uA,"                                       \
+    "\"staleDownstreamOutBytes\":%uA,"                                         \
+    "\"updatingDownstreamOutBytes\":%uA,"                                      \
+    "\"revalidatedDownstreamOutBytes\":%uA,"                                   \
+    "\"hitDownstreamOutBytes\":%uA,"                                           \
+    "\"scarceDownstreamOutBytes\":%uA,"                                        \
+    "\"missUpstreamInBytes\":%uA,"                                             \
+    "\"bypassUpstreamInBytes\":%uA,"                                           \
+    "\"expiredUpstreamInBytes\":%uA,"                                          \
+    "\"staleUpstreamInBytes\":%uA,"                                            \
+    "\"updatingUpstreamInBytes\":%uA,"                                         \
+    "\"revalidatedUpstreamInBytes\":%uA,"                                      \
+    "\"hitUpstreamInBytes\":%uA,"                                              \
+    "\"scarceUpstreamInBytes\":%uA,"                                           \
     "\"requestMsecCounter\":%uA"                                               \
     "}"                                                                        \
     "},"
@@ -202,6 +238,26 @@
     "\"hit\":%uA,"                                                             \
     "\"scarce\":%uA"                                                           \
     "},"                                                                       \
+    "\"downstreamOutBytes\":{"                                                \
+    "\"miss\":%uA,"                                                            \
+    "\"bypass\":%uA,"                                                          \
+    "\"expired\":%uA,"                                                         \
+    "\"stale\":%uA,"                                                           \
+    "\"updating\":%uA,"                                                        \
+    "\"revalidated\":%uA,"                                                     \
+    "\"hit\":%uA,"                                                             \
+    "\"scarce\":%uA"                                                           \
+    "},"                                                                       \
+    "\"upstreamInBytes\":{"                                                   \
+    "\"miss\":%uA,"                                                            \
+    "\"bypass\":%uA,"                                                          \
+    "\"expired\":%uA,"                                                         \
+    "\"stale\":%uA,"                                                           \
+    "\"updating\":%uA,"                                                        \
+    "\"revalidated\":%uA,"                                                     \
+    "\"hit\":%uA,"                                                             \
+    "\"scarce\":%uA"                                                           \
+    "},"                                                                       \
     "\"overCounts\":{"                                                         \
     "\"maxIntegerSize\":%s,"                                                   \
     "\"inBytes\":%uA,"                                                         \
@@ -213,7 +269,23 @@
     "\"updating\":%uA,"                                                        \
     "\"revalidated\":%uA,"                                                     \
     "\"hit\":%uA,"                                                             \
-    "\"scarce\":%uA"                                                           \
+    "\"scarce\":%uA,"                                                          \
+    "\"missDownstreamOutBytes\":%uA,"                                          \
+    "\"bypassDownstreamOutBytes\":%uA,"                                        \
+    "\"expiredDownstreamOutBytes\":%uA,"                                       \
+    "\"staleDownstreamOutBytes\":%uA,"                                         \
+    "\"updatingDownstreamOutBytes\":%uA,"                                      \
+    "\"revalidatedDownstreamOutBytes\":%uA,"                                   \
+    "\"hitDownstreamOutBytes\":%uA,"                                           \
+    "\"scarceDownstreamOutBytes\":%uA,"                                        \
+    "\"missUpstreamInBytes\":%uA,"                                             \
+    "\"bypassUpstreamInBytes\":%uA,"                                           \
+    "\"expiredUpstreamInBytes\":%uA,"                                          \
+    "\"staleUpstreamInBytes\":%uA,"                                            \
+    "\"updatingUpstreamInBytes\":%uA,"                                         \
+    "\"revalidatedUpstreamInBytes\":%uA,"                                      \
+    "\"hitUpstreamInBytes\":%uA,"                                              \
+    "\"scarceUpstreamInBytes\":%uA"                                            \
     "}"                                                                        \
     "},"
 #endif

@@ -70,7 +70,7 @@ dump_restore::dump_header_read() version:1031004 failed
     binmode $out;
     my $uint_fmt = $Config::Config{ptrsize} == 8 ? 'Q' : 'L!';
     print {$out} pack("a128 $uint_fmt $uint_fmt $uint_fmt",
-                      'ngx_http_vhost_traffic_status', 0, 2, 0);
+                      'ngx_http_vhost_traffic_status', 0, 3, 0);
     print {$out} "\0" x 64;
     close $out;
 --- http_config
@@ -86,7 +86,7 @@ dump_restore::dump_header_read() version:1031004 failed
 GET /status/format/json
 --- response_body_like: "serverZones"
 --- error_log
-dump_restore::dump_header_read() version:2 failed
+dump_restore::dump_header_read() version:3 failed
 
 === TEST 4: a dump with the wrong node size is rejected
 --- post_setup_server_root
@@ -95,7 +95,7 @@ dump_restore::dump_header_read() version:2 failed
     binmode $out;
     my $uint_fmt = $Config::Config{ptrsize} == 8 ? 'Q' : 'L!';
     print {$out} pack("a128 $uint_fmt $uint_fmt $uint_fmt",
-                      'ngx_http_vhost_traffic_status', 0, 1, 1);
+                      'ngx_http_vhost_traffic_status', 0, 2, 1);
     print {$out} "\0" x 64;
     close $out;
 --- http_config
