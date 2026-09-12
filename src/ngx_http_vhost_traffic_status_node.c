@@ -909,6 +909,17 @@ ngx_http_vhost_traffic_status_member_t
       NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_QUEUE,
       ngx_vts_member(stat_request_times) },
 
+    /*
+     * These two have no variable because there is nothing for one to read.
+     * A variable is answered from the server zone of the request, and the
+     * upstream times are written to the node of the peer that served it, in
+     * shm.c. On a server zone they are the zeroes the node was created with,
+     * so a variable named here would report 0 for every request forever.
+     *
+     * set_by_filter can name them because it is given the zone to read, and
+     * an upstream zone is one of the zones it can be given.
+     */
+
     { ngx_null_string, ngx_string("responseMsecCounter"), ngx_null_string,
       NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
       ngx_vts_member(stat_upstream.response_time_counter) },

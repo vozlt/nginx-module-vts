@@ -20,7 +20,10 @@ ngx_http_vhost_traffic_status_node_variable(ngx_http_request_t *r,
     ngx_slab_pool_t                           *shpool;
     ngx_rbtree_node_t                         *node;
     ngx_http_vhost_traffic_status_node_t      *vtsn;
+    ngx_http_vhost_traffic_status_member_t    *m;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
+
+    m = (ngx_http_vhost_traffic_status_member_t *) data;
 
     vtscf = ngx_http_get_module_loc_conf(r, ngx_http_vhost_traffic_status_module);
 
@@ -54,16 +57,17 @@ ngx_http_vhost_traffic_status_node_variable(ngx_http_request_t *r,
 
     vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
 
-    if (data == offsetof(ngx_http_vhost_traffic_status_node_t, stat_request_times)) {
+    if (m->kind == NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_QUEUE) {
 
         /* the queue is the value, there is no counter kept for it */
 
         value = (ngx_atomic_t) ngx_http_vhost_traffic_status_node_time_queue_average(
-                                   &vtsn->stat_request_times, vtscf->average_method,
-                                   vtscf->average_period);
+                                   (ngx_http_vhost_traffic_status_node_time_queue_t *)
+                                       ((char *) vtsn + m->offset),
+                                   vtscf->average_method, vtscf->average_period);
 
     } else {
-        value = *((ngx_atomic_t *) ((char *) vtsn + data));
+        value = *((ngx_atomic_t *) ((char *) vtsn + m->offset));
     }
 
     v->len = ngx_sprintf(p, "%uA", value) - p;
@@ -117,7 +121,7 @@ ngx_http_vhost_traffic_status_add_variables(ngx_conf_t *cf)
         }
 
         var->get_handler = ngx_http_vhost_traffic_status_node_variable;
-        var->data = (uintptr_t) m->offset;
+        var->data = (uintptr_t) m;
     }
 
     return NGX_OK;
