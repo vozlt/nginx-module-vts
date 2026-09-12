@@ -429,6 +429,23 @@ ngx_http_vhost_traffic_status_node_zero(ngx_http_vhost_traffic_status_node_t *vt
     vtsn->stat_cache_hit_counter = 0;
     vtsn->stat_cache_scarce_counter = 0;
 
+    vtsn->stat_cache_miss_downstream_out_bytes = 0;
+    vtsn->stat_cache_miss_upstream_in_bytes = 0;
+    vtsn->stat_cache_bypass_downstream_out_bytes = 0;
+    vtsn->stat_cache_bypass_upstream_in_bytes = 0;
+    vtsn->stat_cache_expired_downstream_out_bytes = 0;
+    vtsn->stat_cache_expired_upstream_in_bytes = 0;
+    vtsn->stat_cache_stale_downstream_out_bytes = 0;
+    vtsn->stat_cache_stale_upstream_in_bytes = 0;
+    vtsn->stat_cache_updating_downstream_out_bytes = 0;
+    vtsn->stat_cache_updating_upstream_in_bytes = 0;
+    vtsn->stat_cache_revalidated_downstream_out_bytes = 0;
+    vtsn->stat_cache_revalidated_upstream_in_bytes = 0;
+    vtsn->stat_cache_hit_downstream_out_bytes = 0;
+    vtsn->stat_cache_hit_upstream_in_bytes = 0;
+    vtsn->stat_cache_scarce_downstream_out_bytes = 0;
+    vtsn->stat_cache_scarce_upstream_in_bytes = 0;
+
     vtsn->stat_cache_miss_counter_oc = 0;
     vtsn->stat_cache_bypass_counter_oc = 0;
     vtsn->stat_cache_expired_counter_oc = 0;
@@ -437,6 +454,23 @@ ngx_http_vhost_traffic_status_node_zero(ngx_http_vhost_traffic_status_node_t *vt
     vtsn->stat_cache_revalidated_counter_oc = 0;
     vtsn->stat_cache_hit_counter_oc = 0;
     vtsn->stat_cache_scarce_counter_oc = 0;
+
+    vtsn->stat_cache_miss_downstream_out_bytes_oc = 0;
+    vtsn->stat_cache_miss_upstream_in_bytes_oc = 0;
+    vtsn->stat_cache_bypass_downstream_out_bytes_oc = 0;
+    vtsn->stat_cache_bypass_upstream_in_bytes_oc = 0;
+    vtsn->stat_cache_expired_downstream_out_bytes_oc = 0;
+    vtsn->stat_cache_expired_upstream_in_bytes_oc = 0;
+    vtsn->stat_cache_stale_downstream_out_bytes_oc = 0;
+    vtsn->stat_cache_stale_upstream_in_bytes_oc = 0;
+    vtsn->stat_cache_updating_downstream_out_bytes_oc = 0;
+    vtsn->stat_cache_updating_upstream_in_bytes_oc = 0;
+    vtsn->stat_cache_revalidated_downstream_out_bytes_oc = 0;
+    vtsn->stat_cache_revalidated_upstream_in_bytes_oc = 0;
+    vtsn->stat_cache_hit_downstream_out_bytes_oc = 0;
+    vtsn->stat_cache_hit_upstream_in_bytes_oc = 0;
+    vtsn->stat_cache_scarce_downstream_out_bytes_oc = 0;
+    vtsn->stat_cache_scarce_upstream_in_bytes_oc = 0;
 #endif
 
 }
@@ -582,6 +616,7 @@ ngx_http_vhost_traffic_status_node_update(ngx_http_request_t *r,
 #if (NGX_HTTP_CACHE)
     if (r->upstream != NULL && r->upstream->cache_status != 0) {
         ngx_http_vhost_traffic_status_add_cc(r->upstream->cache_status, vtsn);
+        ngx_http_vhost_traffic_status_add_cc_bytes(r, r->upstream->cache_status, vtsn);
     }
 #endif
 }
@@ -978,6 +1013,102 @@ ngx_http_vhost_traffic_status_member_t
       NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
       ngx_vts_member(stat_cache_scarce_counter) },
 
+    { ngx_string("cache_miss_downstream_out_bytes"),
+      ngx_string("cacheMissDownstreamOutBytes"),
+      ngx_string("vts_cache_miss_downstream_out_bytes"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_miss_downstream_out_bytes) },
+
+    { ngx_string("cache_miss_upstream_in_bytes"),
+      ngx_string("cacheMissUpstreamInBytes"),
+      ngx_string("vts_cache_miss_upstream_in_bytes"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_miss_upstream_in_bytes) },
+
+    { ngx_string("cache_bypass_downstream_out_bytes"),
+      ngx_string("cacheBypassDownstreamOutBytes"),
+      ngx_string("vts_cache_bypass_downstream_out_bytes"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_bypass_downstream_out_bytes) },
+
+    { ngx_string("cache_bypass_upstream_in_bytes"),
+      ngx_string("cacheBypassUpstreamInBytes"),
+      ngx_string("vts_cache_bypass_upstream_in_bytes"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_bypass_upstream_in_bytes) },
+
+    { ngx_string("cache_expired_downstream_out_bytes"),
+      ngx_string("cacheExpiredDownstreamOutBytes"),
+      ngx_string("vts_cache_expired_downstream_out_bytes"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_expired_downstream_out_bytes) },
+
+    { ngx_string("cache_expired_upstream_in_bytes"),
+      ngx_string("cacheExpiredUpstreamInBytes"),
+      ngx_string("vts_cache_expired_upstream_in_bytes"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_expired_upstream_in_bytes) },
+
+    { ngx_string("cache_stale_downstream_out_bytes"),
+      ngx_string("cacheStaleDownstreamOutBytes"),
+      ngx_string("vts_cache_stale_downstream_out_bytes"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_stale_downstream_out_bytes) },
+
+    { ngx_string("cache_stale_upstream_in_bytes"),
+      ngx_string("cacheStaleUpstreamInBytes"),
+      ngx_string("vts_cache_stale_upstream_in_bytes"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_stale_upstream_in_bytes) },
+
+    { ngx_string("cache_updating_downstream_out_bytes"),
+      ngx_string("cacheUpdatingDownstreamOutBytes"),
+      ngx_string("vts_cache_updating_downstream_out_bytes"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_updating_downstream_out_bytes) },
+
+    { ngx_string("cache_updating_upstream_in_bytes"),
+      ngx_string("cacheUpdatingUpstreamInBytes"),
+      ngx_string("vts_cache_updating_upstream_in_bytes"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_updating_upstream_in_bytes) },
+
+    { ngx_string("cache_revalidated_downstream_out_bytes"),
+      ngx_string("cacheRevalidatedDownstreamOutBytes"),
+      ngx_string("vts_cache_revalidated_downstream_out_bytes"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_revalidated_downstream_out_bytes) },
+
+    { ngx_string("cache_revalidated_upstream_in_bytes"),
+      ngx_string("cacheRevalidatedUpstreamInBytes"),
+      ngx_string("vts_cache_revalidated_upstream_in_bytes"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_revalidated_upstream_in_bytes) },
+
+    { ngx_string("cache_hit_downstream_out_bytes"),
+      ngx_string("cacheHitDownstreamOutBytes"),
+      ngx_string("vts_cache_hit_downstream_out_bytes"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_hit_downstream_out_bytes) },
+
+    { ngx_string("cache_hit_upstream_in_bytes"),
+      ngx_string("cacheHitUpstreamInBytes"),
+      ngx_string("vts_cache_hit_upstream_in_bytes"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_hit_upstream_in_bytes) },
+
+    { ngx_string("cache_scarce_downstream_out_bytes"),
+      ngx_string("cacheScarceDownstreamOutBytes"),
+      ngx_string("vts_cache_scarce_downstream_out_bytes"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_scarce_downstream_out_bytes) },
+
+    { ngx_string("cache_scarce_upstream_in_bytes"),
+      ngx_string("cacheScarceUpstreamInBytes"),
+      ngx_string("vts_cache_scarce_upstream_in_bytes"),
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_cache_scarce_upstream_in_bytes) },
+
 #endif
 
     { ngx_null_string, ngx_null_string, ngx_null_string, 0, 0 }
@@ -1034,7 +1165,6 @@ ngx_http_vhost_traffic_status_node_member(ngx_http_vhost_traffic_status_node_t *
         return 0;
     }
 
-    return *((ngx_atomic_t *) ((char *) vtsn + m->offset));
-}
+    return *((ngx_atomic_t *) ((char *) vtsn + m->offset));}
 
 /* vi:set ft=c ts=4 sw=4 et fdm=marker: */

@@ -119,7 +119,6 @@ ngx_http_vhost_traffic_status_set_by_filter_node_member(
      * ngx_http_upstream_server_t, and `backup` is a bit field, so they cannot
      * be reached through an offset the way the table reaches a node.
      */
-
     switch (control->group) {
 
     case NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UA:

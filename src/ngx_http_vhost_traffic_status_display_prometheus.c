@@ -10,6 +10,184 @@
 #include "ngx_http_vhost_traffic_status_display_prometheus.h"
 
 
+#if (NGX_HTTP_CACHE)
+
+typedef struct {
+    ngx_str_t  status;
+    size_t     downstream_out_bytes_offset;
+    size_t     upstream_in_bytes_offset;
+} ngx_http_vhost_traffic_status_cache_status_bytes_t;
+
+static ngx_str_t ngx_http_vhost_traffic_status_cache_direction_downstream =
+    ngx_string("downstream");
+static ngx_str_t ngx_http_vhost_traffic_status_cache_direction_upstream =
+    ngx_string("upstream");
+
+static ngx_http_vhost_traffic_status_cache_status_bytes_t
+ngx_http_vhost_traffic_status_cache_status_bytes[] = {
+    { ngx_string("miss"),
+      offsetof(ngx_http_vhost_traffic_status_node_t,
+               stat_cache_miss_downstream_out_bytes),
+      offsetof(ngx_http_vhost_traffic_status_node_t,
+               stat_cache_miss_upstream_in_bytes) },
+    { ngx_string("bypass"),
+      offsetof(ngx_http_vhost_traffic_status_node_t,
+               stat_cache_bypass_downstream_out_bytes),
+      offsetof(ngx_http_vhost_traffic_status_node_t,
+               stat_cache_bypass_upstream_in_bytes) },
+    { ngx_string("expired"),
+      offsetof(ngx_http_vhost_traffic_status_node_t,
+               stat_cache_expired_downstream_out_bytes),
+      offsetof(ngx_http_vhost_traffic_status_node_t,
+               stat_cache_expired_upstream_in_bytes) },
+    { ngx_string("stale"),
+      offsetof(ngx_http_vhost_traffic_status_node_t,
+               stat_cache_stale_downstream_out_bytes),
+      offsetof(ngx_http_vhost_traffic_status_node_t,
+               stat_cache_stale_upstream_in_bytes) },
+    { ngx_string("updating"),
+      offsetof(ngx_http_vhost_traffic_status_node_t,
+               stat_cache_updating_downstream_out_bytes),
+      offsetof(ngx_http_vhost_traffic_status_node_t,
+               stat_cache_updating_upstream_in_bytes) },
+    { ngx_string("revalidated"),
+      offsetof(ngx_http_vhost_traffic_status_node_t,
+               stat_cache_revalidated_downstream_out_bytes),
+      offsetof(ngx_http_vhost_traffic_status_node_t,
+               stat_cache_revalidated_upstream_in_bytes) },
+    { ngx_string("hit"),
+      offsetof(ngx_http_vhost_traffic_status_node_t,
+               stat_cache_hit_downstream_out_bytes),
+      offsetof(ngx_http_vhost_traffic_status_node_t,
+               stat_cache_hit_upstream_in_bytes) },
+    { ngx_string("scarce"),
+      offsetof(ngx_http_vhost_traffic_status_node_t,
+               stat_cache_scarce_downstream_out_bytes),
+      offsetof(ngx_http_vhost_traffic_status_node_t,
+               stat_cache_scarce_upstream_in_bytes) }
+};
+
+static ngx_atomic_uint_t
+ngx_http_vhost_traffic_status_cache_status_bytes_get(
+    ngx_http_vhost_traffic_status_node_t *vtsn, size_t offset)
+{
+    return *(ngx_atomic_t *) ((u_char *) vtsn + offset);
+}
+
+static void
+ngx_http_vhost_traffic_status_cache_status_bytes_merge(
+    ngx_http_vhost_traffic_status_node_t *dst,
+    ngx_http_vhost_traffic_status_node_t *src)
+{
+    ngx_uint_t     i;
+    ngx_atomic_t  *d;
+
+    for (i = 0; i < sizeof(ngx_http_vhost_traffic_status_cache_status_bytes)
+                    / sizeof(ngx_http_vhost_traffic_status_cache_status_bytes[0]); i++)
+    {
+        d = (ngx_atomic_t *) ((u_char *) dst
+            + ngx_http_vhost_traffic_status_cache_status_bytes[i].downstream_out_bytes_offset);
+        *d += ngx_http_vhost_traffic_status_cache_status_bytes_get(src,
+            ngx_http_vhost_traffic_status_cache_status_bytes[i].downstream_out_bytes_offset);
+
+        d = (ngx_atomic_t *) ((u_char *) dst
+            + ngx_http_vhost_traffic_status_cache_status_bytes[i].upstream_in_bytes_offset);
+        *d += ngx_http_vhost_traffic_status_cache_status_bytes_get(src,
+            ngx_http_vhost_traffic_status_cache_status_bytes[i].upstream_in_bytes_offset);
+    }
+}
+
+static u_char *
+ngx_http_vhost_traffic_status_display_prometheus_set_server_cache_bytes(
+    u_char *buf, ngx_str_t *server, ngx_http_vhost_traffic_status_node_t *vtsn)
+{
+    ngx_uint_t  i;
+
+    for (i = 0; i < sizeof(ngx_http_vhost_traffic_status_cache_status_bytes)
+                    / sizeof(ngx_http_vhost_traffic_status_cache_status_bytes[0]); i++)
+    {
+        buf = ngx_sprintf(buf,
+            NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_CACHE_BYTES,
+            server,
+            &ngx_http_vhost_traffic_status_cache_status_bytes[i].status,
+            &ngx_http_vhost_traffic_status_cache_direction_downstream,
+            ngx_http_vhost_traffic_status_cache_status_bytes_get(vtsn,
+                ngx_http_vhost_traffic_status_cache_status_bytes[i].downstream_out_bytes_offset));
+
+        buf = ngx_sprintf(buf,
+            NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_CACHE_BYTES,
+            server,
+            &ngx_http_vhost_traffic_status_cache_status_bytes[i].status,
+            &ngx_http_vhost_traffic_status_cache_direction_upstream,
+            ngx_http_vhost_traffic_status_cache_status_bytes_get(vtsn,
+                ngx_http_vhost_traffic_status_cache_status_bytes[i].upstream_in_bytes_offset));
+    }
+
+    return buf;
+}
+
+static u_char *
+ngx_http_vhost_traffic_status_display_prometheus_set_filter_cache_bytes(
+    u_char *buf, ngx_str_t *filter, ngx_str_t *filter_name,
+    ngx_http_vhost_traffic_status_node_t *vtsn)
+{
+    ngx_uint_t  i;
+
+    for (i = 0; i < sizeof(ngx_http_vhost_traffic_status_cache_status_bytes)
+                    / sizeof(ngx_http_vhost_traffic_status_cache_status_bytes[0]); i++)
+    {
+        buf = ngx_sprintf(buf,
+            NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_FILTER_CACHE_BYTES,
+            filter, filter_name,
+            &ngx_http_vhost_traffic_status_cache_status_bytes[i].status,
+            &ngx_http_vhost_traffic_status_cache_direction_downstream,
+            ngx_http_vhost_traffic_status_cache_status_bytes_get(vtsn,
+                ngx_http_vhost_traffic_status_cache_status_bytes[i].downstream_out_bytes_offset));
+
+        buf = ngx_sprintf(buf,
+            NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_FILTER_CACHE_BYTES,
+            filter, filter_name,
+            &ngx_http_vhost_traffic_status_cache_status_bytes[i].status,
+            &ngx_http_vhost_traffic_status_cache_direction_upstream,
+            ngx_http_vhost_traffic_status_cache_status_bytes_get(vtsn,
+                ngx_http_vhost_traffic_status_cache_status_bytes[i].upstream_in_bytes_offset));
+    }
+
+    return buf;
+}
+
+static u_char *
+ngx_http_vhost_traffic_status_display_prometheus_set_cache_status_bytes(
+    u_char *buf, ngx_str_t *cache, ngx_http_vhost_traffic_status_node_t *vtsn)
+{
+    ngx_uint_t  i;
+
+    for (i = 0; i < sizeof(ngx_http_vhost_traffic_status_cache_status_bytes)
+                    / sizeof(ngx_http_vhost_traffic_status_cache_status_bytes[0]); i++)
+    {
+        buf = ngx_sprintf(buf,
+            NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_CACHE_STATUS_BYTES,
+            cache,
+            &ngx_http_vhost_traffic_status_cache_status_bytes[i].status,
+            &ngx_http_vhost_traffic_status_cache_direction_downstream,
+            ngx_http_vhost_traffic_status_cache_status_bytes_get(vtsn,
+                ngx_http_vhost_traffic_status_cache_status_bytes[i].downstream_out_bytes_offset));
+
+        buf = ngx_sprintf(buf,
+            NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_CACHE_STATUS_BYTES,
+            cache,
+            &ngx_http_vhost_traffic_status_cache_status_bytes[i].status,
+            &ngx_http_vhost_traffic_status_cache_direction_upstream,
+            ngx_http_vhost_traffic_status_cache_status_bytes_get(vtsn,
+                ngx_http_vhost_traffic_status_cache_status_bytes[i].upstream_in_bytes_offset));
+    }
+
+    return buf;
+}
+
+#endif
+
+
 u_char *
 ngx_http_vhost_traffic_status_display_prometheus_set_main(ngx_http_request_t *r,
     u_char *buf)
@@ -141,6 +319,9 @@ ngx_http_vhost_traffic_status_display_prometheus_set_server_node(
                       &server, vtsn->stat_cache_revalidated_counter,
                       &server, vtsn->stat_cache_hit_counter,
                       &server, vtsn->stat_cache_scarce_counter);
+
+    buf = ngx_http_vhost_traffic_status_display_prometheus_set_server_cache_bytes(
+        buf, &server, vtsn);
 #endif
 
     return buf;
@@ -206,6 +387,9 @@ ngx_http_vhost_traffic_status_display_prometheus_set_server(ngx_http_request_t *
                                        vtsn->stat_cache_hit_counter;
             vtscf->stats.stat_cache_scarce_counter +=
                                        vtsn->stat_cache_scarce_counter;
+
+            ngx_http_vhost_traffic_status_cache_status_bytes_merge(
+                &vtscf->stats, vtsn);
 #endif
         }
 
@@ -295,6 +479,9 @@ ngx_http_vhost_traffic_status_display_prometheus_set_filter_node(
                       &filter, &filter_name, vtsn->stat_cache_revalidated_counter,
                       &filter, &filter_name, vtsn->stat_cache_hit_counter,
                       &filter, &filter_name, vtsn->stat_cache_scarce_counter);
+
+    buf = ngx_http_vhost_traffic_status_display_prometheus_set_filter_cache_bytes(
+        buf, &filter, &filter_name, vtsn);
 #endif
 
     return buf;
@@ -492,6 +679,9 @@ ngx_http_vhost_traffic_status_display_prometheus_set_cache_node(
                       &cache, vtsn->stat_cache_revalidated_counter,
                       &cache, vtsn->stat_cache_hit_counter,
                       &cache, vtsn->stat_cache_scarce_counter);
+
+    buf = ngx_http_vhost_traffic_status_display_prometheus_set_cache_status_bytes(
+        buf, &cache, vtsn);
 
     return buf;
 }
