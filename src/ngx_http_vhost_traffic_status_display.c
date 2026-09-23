@@ -18,6 +18,11 @@ static ngx_int_t ngx_http_vhost_traffic_status_display_handler(ngx_http_request_
 static ngx_int_t ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r);
 static ngx_int_t ngx_http_vhost_traffic_status_display_handler_default(ngx_http_request_t *r);
 
+static void ngx_http_vhost_traffic_status_display_control_args(
+    ngx_http_request_t *r, ngx_http_vhost_traffic_status_control_t *control);
+static void ngx_http_vhost_traffic_status_display_control_zone(
+    ngx_http_request_t *r, ngx_http_vhost_traffic_status_control_t *control);
+
 static ngx_uint_t ngx_http_vhost_traffic_status_display_node_name_repeat(
     ngx_http_request_t *r, ngx_int_t format);
 static size_t ngx_http_vhost_traffic_status_display_node_fixed_size(
@@ -25,6 +30,86 @@ static size_t ngx_http_vhost_traffic_status_display_node_fixed_size(
 static void ngx_http_vhost_traffic_status_display_get_size_node(
     ngx_http_request_t *r, ngx_rbtree_node_t *node, ngx_int_t format,
     size_t *size);
+
+
+/*
+ * The words the control arguments are read by, each beside what it means.
+ *
+ * A command is matched as it is written and a group in any case; t/048 holds
+ * both. A group is also found by the one percent-encoding a client is likely
+ * to send for it, since ngx_http_arg() hands the argument over undecoded.
+ *
+ * The zone escapes are applied in the order they are listed, and before an @
+ * is taken as the separator between a group and its name.
+ */
+
+typedef struct {
+    ngx_str_t   name;
+    ngx_int_t   value;
+} ngx_http_vhost_traffic_status_control_word_t;
+
+
+static ngx_http_vhost_traffic_status_control_word_t
+    ngx_http_vhost_traffic_status_control_commands[] = {
+
+    { ngx_string("status"), NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_STATUS },
+    { ngx_string("delete"), NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_DELETE },
+    { ngx_string("reset"),  NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_RESET },
+    { ngx_null_string, 0 }
+};
+
+
+static ngx_http_vhost_traffic_status_control_word_t
+    ngx_http_vhost_traffic_status_control_groups[] = {
+
+    { ngx_string("*"),                -1 },
+    { ngx_string("%2A"),              -1 },
+    { ngx_string("server"),           NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_NO },
+    { ngx_string("upstream@alone"),   NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UA },
+    { ngx_string("upstream%40alone"), NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UA },
+    { ngx_string("upstream@group"),   NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UG },
+    { ngx_string("upstream%40group"), NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UG },
+    { ngx_string("cache"),            NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_CC },
+    { ngx_string("filter"),           NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG },
+    { ngx_null_string, 0 }
+};
+
+
+static ngx_http_vhost_traffic_status_control_word_t
+    ngx_http_vhost_traffic_status_control_zone_escapes[] = {
+
+    { ngx_string("%2A"), '*' },
+    { ngx_string("%2a"), '*' },
+    { ngx_string("%3A"), ':' },
+    { ngx_string("%3a"), ':' },
+    { ngx_string("%40"), '@' },
+    { ngx_null_string, 0 }
+};
+
+
+static ngx_http_vhost_traffic_status_control_word_t *
+ngx_http_vhost_traffic_status_control_word(
+    ngx_http_vhost_traffic_status_control_word_t *words, ngx_str_t *name,
+    ngx_uint_t caseless)
+{
+    ngx_http_vhost_traffic_status_control_word_t  *w;
+
+    for (w = words; w->name.len; w++) {
+
+        if (w->name.len != name->len) {
+            continue;
+        }
+
+        if (caseless
+            ? ngx_strncasecmp(w->name.data, name->data, name->len) == 0
+            : ngx_strncmp(w->name.data, name->data, name->len) == 0)
+        {
+            return w;
+        }
+    }
+
+    return NULL;
+}
 
 
 static ngx_int_t
@@ -75,8 +160,8 @@ done:
 static ngx_int_t
 ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
 {
-    ngx_int_t                                  size, rc, expire;
-    ngx_str_t                                  type, alpha, encoded_ch, arg_cmd, arg_group, arg_zone, arg_expire;
+    ngx_int_t                                  size, rc;
+    ngx_str_t                                  type, arg_cmd, arg_group, arg_zone;
     ngx_buf_t                                 *b;
     ngx_chain_t                                out;
     ngx_slab_pool_t                           *shpool;
@@ -113,159 +198,7 @@ ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
     arg_zone.len = 0;
 
     if (r->args.len) {
-
-        if (ngx_http_arg(r, (u_char *) "cmd", 3, &arg_cmd) == NGX_OK) {
-
-            if (arg_cmd.len == 6 && ngx_strncmp(arg_cmd.data, "status", 6) == 0)
-            {
-                control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_STATUS;
-            }
-            else if (arg_cmd.len == 6 && ngx_strncmp(arg_cmd.data, "delete", 6) == 0)
-            {
-                control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_DELETE;
-            }
-            else if (arg_cmd.len == 5 && ngx_strncmp(arg_cmd.data, "reset", 5) == 0)
-            {
-                control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_RESET;
-            }
-            else
-            {
-                control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_NONE;
-            }
-        }
-
-        if (ngx_http_arg(r, (u_char *) "group", 5, &arg_group) == NGX_OK) {
-
-            if ((arg_group.len == 1 && ngx_strncmp(arg_group.data, "*", 1) == 0)
-                     || (arg_group.len == 3 && ngx_strncasecmp(arg_group.data, (u_char *) "%2A", 3) == 0))
-            {
-                control->group = -1;
-            }
-            else if (arg_group.len == 6
-                     && ngx_strncasecmp(arg_group.data, (u_char *) "server", 6) == 0)
-            {
-                control->group = NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_NO;
-            }
-            else if ((arg_group.len == 14
-                     && ngx_strncasecmp(arg_group.data, (u_char *) "upstream@alone", 14) == 0)
-                     || (arg_group.len == 16
-                     && ngx_strncasecmp(arg_group.data, (u_char *) "upstream%40alone", 16) == 0))
-            {
-                control->group = NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UA;
-            }
-            else if ((arg_group.len == 14
-                     && ngx_strncasecmp(arg_group.data, (u_char *) "upstream@group", 14) == 0)
-                     || (arg_group.len == 16
-                     && ngx_strncasecmp(arg_group.data, (u_char *) "upstream%40group", 16) == 0))
-            {
-                control->group = NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UG;
-            }
-            else if (arg_group.len == 5
-                     && ngx_strncasecmp(arg_group.data, (u_char *) "cache", 5) == 0)
-            {
-                control->group = NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_CC;
-            }
-            else if (arg_group.len == 6
-                     && ngx_strncasecmp(arg_group.data, (u_char *) "filter", 6) == 0)
-            {
-                control->group = NGX_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG;
-            }
-            else {
-                control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_NONE;
-            }
-        }
-
-        if (ngx_http_arg(r, (u_char *) "zone", 4, &arg_zone) != NGX_OK) {
-            if (control->group != -1) {
-                control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_NONE;
-            }
-
-        } else {
-            rc = ngx_http_vhost_traffic_status_copy_str(r->pool, control->zone, &arg_zone);
-            if (rc != NGX_OK) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                              "display_handler_control::copy_str() failed");
-            }
-
-            ngx_str_set(&encoded_ch, "%2A");
-
-            rc = ngx_http_vhost_traffic_status_replace_strc(control->zone, &encoded_ch, '*');
-            if (rc != NGX_OK) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                              "display_handler_control::replace_strc() failed");
-            }
-
-            ngx_str_set(&encoded_ch, "%2a");
-
-            rc = ngx_http_vhost_traffic_status_replace_strc(control->zone, &encoded_ch, '*');
-            if (rc != NGX_OK) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                              "display_handler_control::replace_strc() failed");
-            }
-
-            ngx_str_set(&encoded_ch, "%3A");
-
-            rc = ngx_http_vhost_traffic_status_replace_strc(control->zone, &encoded_ch, ':');
-            if (rc != NGX_OK) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                              "display_handler_control::replace_strc() failed");
-            }
-
-            ngx_str_set(&encoded_ch, "%3a");
-
-            rc = ngx_http_vhost_traffic_status_replace_strc(control->zone, &encoded_ch, ':');
-            if (rc != NGX_OK) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                              "display_handler_control::replace_strc() failed");
-            }
-
-            ngx_str_set(&encoded_ch, "%40");
-
-            rc = ngx_http_vhost_traffic_status_replace_strc(control->zone, &encoded_ch, '@');
-            if (rc != NGX_OK) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                              "display_handler_control::replace_strc() failed");
-            }
-
-            (void) ngx_http_vhost_traffic_status_replace_chrc(control->zone, '@',
-                       NGX_HTTP_VHOST_TRAFFIC_STATUS_KEY_SEPARATOR);
-
-            ngx_str_set(&alpha, "[:alpha:]");
-
-            rc = ngx_http_vhost_traffic_status_replace_strc(control->zone, &alpha, '@');
-            if (rc != NGX_OK) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                              "display_handler_control::replace_strc() failed");
-            }
-        }
-
-        /*
-         * expire selects, among what group and zone already match, the nodes
-         * whose last request is older than the time given. It is read the way
-         * the configuration reads a time: a bare number is seconds, and 1h or
-         * 30m say the same thing shorter. ngx_parse_time() answers in
-         * milliseconds and refuses what it cannot represent, so there is no
-         * multiplication here left to overflow - on a 32 bit build that used
-         * to turn a large expire into a very small one and take the whole
-         * selection with it.
-         *
-         * A value it refuses leaves the command undone rather than falling
-         * back to deleting everything selected, which is the more expensive
-         * way to be wrong.
-         */
-
-        if (ngx_http_arg(r, (u_char *) "expire", 6, &arg_expire) == NGX_OK) {
-            expire = ngx_parse_time(&arg_expire, 0);
-
-            if (expire == NGX_ERROR) {
-                control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_NONE;
-
-            } else {
-                control->expire = (ngx_msec_t) expire;
-            }
-        }
-
-        ngx_http_vhost_traffic_status_node_control_range_set(control);
+        ngx_http_vhost_traffic_status_display_control_args(r, control);
     }
 
     if (control->command == NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_STATUS) {
@@ -354,6 +287,122 @@ ngx_http_vhost_traffic_status_display_handler_control(ngx_http_request_t *r)
     }
 
     return ngx_http_output_filter(r, &out);
+}
+
+
+static void
+ngx_http_vhost_traffic_status_display_control_args(ngx_http_request_t *r,
+    ngx_http_vhost_traffic_status_control_t *control)
+{
+    ngx_int_t                                      expire;
+    ngx_str_t                                      arg_expire;
+    ngx_http_vhost_traffic_status_control_word_t  *w;
+
+    if (ngx_http_arg(r, (u_char *) "cmd", 3, control->arg_cmd) == NGX_OK) {
+        w = ngx_http_vhost_traffic_status_control_word(
+                ngx_http_vhost_traffic_status_control_commands,
+                control->arg_cmd, 0);
+
+        control->command = (w != NULL)
+                           ? (ngx_uint_t) w->value
+                           : NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_NONE;
+    }
+
+    if (ngx_http_arg(r, (u_char *) "group", 5, control->arg_group) == NGX_OK) {
+        w = ngx_http_vhost_traffic_status_control_word(
+                ngx_http_vhost_traffic_status_control_groups,
+                control->arg_group, 1);
+
+        if (w != NULL) {
+            control->group = w->value;
+
+        } else {
+            control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_NONE;
+        }
+    }
+
+    if (ngx_http_arg(r, (u_char *) "zone", 4, control->arg_zone) != NGX_OK) {
+        if (control->group != -1) {
+            control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_NONE;
+        }
+
+    } else {
+        ngx_http_vhost_traffic_status_display_control_zone(r, control);
+    }
+
+    /*
+     * expire selects, among what group and zone already match, the nodes
+     * whose last request is older than the time given. It is read the way
+     * the configuration reads a time: a bare number is seconds, and 1h or
+     * 30m say the same thing shorter. ngx_parse_time() answers in
+     * milliseconds and refuses what it cannot represent, so there is no
+     * multiplication here left to overflow - on a 32 bit build that used
+     * to turn a large expire into a very small one and take the whole
+     * selection with it.
+     *
+     * A value it refuses leaves the command undone rather than falling
+     * back to deleting everything selected, which is the more expensive
+     * way to be wrong.
+     */
+
+    if (ngx_http_arg(r, (u_char *) "expire", 6, &arg_expire) == NGX_OK) {
+        expire = ngx_parse_time(&arg_expire, 0);
+
+        if (expire == NGX_ERROR) {
+            control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_NONE;
+
+        } else {
+            control->expire = (ngx_msec_t) expire;
+        }
+    }
+
+    ngx_http_vhost_traffic_status_node_control_range_set(control);
+}
+
+
+/*
+ * Turns the zone argument into the name the tree is keyed by: the escapes
+ * decoded, an @ taken as the separator, and [:alpha:] put back as an @ that
+ * is part of the name rather than a separator.
+ */
+
+static void
+ngx_http_vhost_traffic_status_display_control_zone(ngx_http_request_t *r,
+    ngx_http_vhost_traffic_status_control_t *control)
+{
+    ngx_int_t                                      rc;
+    ngx_str_t                                      alpha;
+    ngx_http_vhost_traffic_status_control_word_t  *e;
+
+    rc = ngx_http_vhost_traffic_status_copy_str(r->pool, control->zone,
+                                              control->arg_zone);
+    if (rc != NGX_OK) {
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                      "display_handler_control::copy_str() failed");
+    }
+
+    for (e = ngx_http_vhost_traffic_status_control_zone_escapes;
+         e->name.len;
+         e++)
+    {
+        rc = ngx_http_vhost_traffic_status_replace_strc(control->zone, &e->name,
+                                                        (u_char) e->value);
+        if (rc != NGX_OK) {
+            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                          "display_handler_control::replace_strc() failed");
+        }
+    }
+
+    (void) ngx_http_vhost_traffic_status_replace_chrc(control->zone, '@',
+               NGX_HTTP_VHOST_TRAFFIC_STATUS_KEY_SEPARATOR);
+
+    ngx_str_set(&alpha, "[:alpha:]");
+
+    rc = ngx_http_vhost_traffic_status_replace_strc(control->zone, &alpha, '@');
+    if (rc != NGX_OK) {
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                      "display_handler_control::replace_strc() failed");
+    }
 }
 
 
