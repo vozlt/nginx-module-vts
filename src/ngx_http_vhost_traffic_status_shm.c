@@ -255,6 +255,13 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
         vtsn->len = key->len;
         vtsn->ignore_status = vtscf->ignore_status;
 
+        /*
+         * the slab does not clear what it hands out, and node_init() and
+         * node_set() reach the array through these when they are set
+         */
+        vtsn->stat_status_code_counter = NULL;
+        vtsn->stat_status_code_length = 0;
+
         if (ctx->measure_status_codes != NULL) {
             vtsn->stat_status_code_counter = ngx_slab_alloc_locked(shpool, sizeof(ngx_atomic_t) * (ctx->measure_status_codes->nelts + 1));
             if (vtsn->stat_status_code_counter == NULL) {
