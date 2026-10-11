@@ -2014,6 +2014,12 @@ vhost_traffic_status_measure_status_codes all;
 - Status codes must be in ascending order
 - Only valid HTTP status codes between 100 and 599 are accepted
 - When using `all`, every status code will be tracked
+- A zone counts by the codes that were measured when it was first seen, as it
+  keeps its histogram buckets. After a reload that measures other codes, a zone
+  seen before shows a newly measured code as `0` and counts it in `other`, and
+  a code that is no longer measured is shown as part of `other`. Delete the zone
+  with the control API (`cmd=delete`) to count it by the new codes; a reset
+  clears its counters but keeps its codes.
 
 ## Releases
 

@@ -166,13 +166,11 @@ void ngx_http_vhost_traffic_status_node_zero(
  * client request, which is what every other caller wants.
  */
 void ngx_http_vhost_traffic_status_node_init(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t status_code_slot,
-    ngx_http_upstream_state_t *state);
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_http_upstream_state_t *state);
 void ngx_http_vhost_traffic_status_node_set(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_int_t status_code_slot,
-    ngx_http_upstream_state_t *state);
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_http_upstream_state_t *state);
 void ngx_http_vhost_traffic_status_node_update(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_msec_int_t ms, ngx_int_t status_code_slot,
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_msec_int_t ms,
     ngx_http_upstream_state_t *state);
 
 void ngx_http_vhost_traffic_status_node_time_queue_zero(
@@ -204,7 +202,17 @@ void ngx_http_vhost_traffic_status_node_time_queue_merge(
     ngx_http_vhost_traffic_status_node_time_queue_t *a,
     ngx_http_vhost_traffic_status_node_time_queue_t *b,
     ngx_msec_t period);
-void ngx_http_vhost_traffic_status_status_code_merge(ngx_atomic_t *dst, ngx_atomic_t *src, ngx_uint_t n);
+size_t ngx_http_vhost_traffic_status_status_codes_size(ngx_uint_t n);
+void ngx_http_vhost_traffic_status_node_status_codes_init(
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_atomic_t *counter,
+    ngx_array_t *measured);
+ngx_atomic_uint_t ngx_http_vhost_traffic_status_node_status_code_count(
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_uint_t code);
+ngx_atomic_uint_t ngx_http_vhost_traffic_status_node_status_code_other(
+    ngx_http_vhost_traffic_status_node_t *vtsn, ngx_array_t *measured);
+void ngx_http_vhost_traffic_status_status_code_merge(
+    ngx_http_vhost_traffic_status_node_t *dst,
+    ngx_http_vhost_traffic_status_node_t *src, ngx_array_t *measured);
 
 void ngx_http_vhost_traffic_status_node_histogram_bucket_init(
     ngx_http_request_t *r,
