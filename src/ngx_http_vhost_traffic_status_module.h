@@ -113,6 +113,56 @@
 }
 #endif
 
+static ngx_inline void
+ngx_http_vhost_traffic_status_add_cc_bytes(ngx_http_request_t *r, ngx_int_t s,
+    ngx_http_vhost_traffic_status_node_t *n)
+{
+    ngx_atomic_uint_t  downstream, upstream;
+
+    downstream = (ngx_atomic_uint_t) r->connection->sent;
+    upstream = 0;
+
+#if nginx_version >= 1011004
+    if (r->upstream != NULL && r->upstream->state != NULL) {
+        upstream = (ngx_atomic_uint_t) r->upstream->state->bytes_received;
+    }
+#endif
+
+    if (s == NGX_HTTP_CACHE_MISS) {
+        n->stat_cache_miss_downstream_out_bytes += downstream;
+        n->stat_cache_miss_upstream_in_bytes += upstream;
+    }
+    else if (s == NGX_HTTP_CACHE_BYPASS) {
+        n->stat_cache_bypass_downstream_out_bytes += downstream;
+        n->stat_cache_bypass_upstream_in_bytes += upstream;
+    }
+    else if (s == NGX_HTTP_CACHE_EXPIRED) {
+        n->stat_cache_expired_downstream_out_bytes += downstream;
+        n->stat_cache_expired_upstream_in_bytes += upstream;
+    }
+    else if (s == NGX_HTTP_CACHE_STALE) {
+        n->stat_cache_stale_downstream_out_bytes += downstream;
+        n->stat_cache_stale_upstream_in_bytes += upstream;
+    }
+    else if (s == NGX_HTTP_CACHE_UPDATING) {
+        n->stat_cache_updating_downstream_out_bytes += downstream;
+        n->stat_cache_updating_upstream_in_bytes += upstream;
+    }
+#if nginx_version >= 1005007
+    else if (s == NGX_HTTP_CACHE_REVALIDATED) {
+        n->stat_cache_revalidated_downstream_out_bytes += downstream;
+        n->stat_cache_revalidated_upstream_in_bytes += upstream;
+    }
+#endif
+    else if (s == NGX_HTTP_CACHE_HIT) {
+        n->stat_cache_hit_downstream_out_bytes += downstream;
+        n->stat_cache_hit_upstream_in_bytes += upstream;
+    }
+    else if (s == NGX_HTTP_CACHE_SCARCE) {
+        n->stat_cache_scarce_downstream_out_bytes += downstream;
+        n->stat_cache_scarce_upstream_in_bytes += upstream;
+    }
+}
 #endif
 
 /*
@@ -139,6 +189,22 @@
     o->stat_cache_revalidated_counter = c->stat_cache_revalidated_counter;     \
     o->stat_cache_hit_counter = c->stat_cache_hit_counter;                     \
     o->stat_cache_scarce_counter = c->stat_cache_scarce_counter;               \
+    o->stat_cache_miss_downstream_out_bytes = c->stat_cache_miss_downstream_out_bytes; \
+    o->stat_cache_bypass_downstream_out_bytes = c->stat_cache_bypass_downstream_out_bytes; \
+    o->stat_cache_expired_downstream_out_bytes = c->stat_cache_expired_downstream_out_bytes; \
+    o->stat_cache_stale_downstream_out_bytes = c->stat_cache_stale_downstream_out_bytes; \
+    o->stat_cache_updating_downstream_out_bytes = c->stat_cache_updating_downstream_out_bytes; \
+    o->stat_cache_revalidated_downstream_out_bytes = c->stat_cache_revalidated_downstream_out_bytes; \
+    o->stat_cache_hit_downstream_out_bytes = c->stat_cache_hit_downstream_out_bytes; \
+    o->stat_cache_scarce_downstream_out_bytes = c->stat_cache_scarce_downstream_out_bytes; \
+    o->stat_cache_miss_upstream_in_bytes = c->stat_cache_miss_upstream_in_bytes; \
+    o->stat_cache_bypass_upstream_in_bytes = c->stat_cache_bypass_upstream_in_bytes; \
+    o->stat_cache_expired_upstream_in_bytes = c->stat_cache_expired_upstream_in_bytes; \
+    o->stat_cache_stale_upstream_in_bytes = c->stat_cache_stale_upstream_in_bytes; \
+    o->stat_cache_updating_upstream_in_bytes = c->stat_cache_updating_upstream_in_bytes; \
+    o->stat_cache_revalidated_upstream_in_bytes = c->stat_cache_revalidated_upstream_in_bytes; \
+    o->stat_cache_hit_upstream_in_bytes = c->stat_cache_hit_upstream_in_bytes; \
+    o->stat_cache_scarce_upstream_in_bytes = c->stat_cache_scarce_upstream_in_bytes; \
 }
 #else
 #define ngx_http_vhost_traffic_status_copy_oc(o, c) {                          \
@@ -208,6 +274,54 @@
     }                                                                          \
     if (o->stat_cache_scarce_counter > c->stat_cache_scarce_counter) {         \
         c->stat_cache_scarce_counter_oc++;                                     \
+    }                                                                          \
+    if (o->stat_cache_miss_downstream_out_bytes > c->stat_cache_miss_downstream_out_bytes) { \
+        c->stat_cache_miss_downstream_out_bytes_oc++;                          \
+    }                                                                          \
+    if (o->stat_cache_bypass_downstream_out_bytes > c->stat_cache_bypass_downstream_out_bytes) { \
+        c->stat_cache_bypass_downstream_out_bytes_oc++;                        \
+    }                                                                          \
+    if (o->stat_cache_expired_downstream_out_bytes > c->stat_cache_expired_downstream_out_bytes) { \
+        c->stat_cache_expired_downstream_out_bytes_oc++;                       \
+    }                                                                          \
+    if (o->stat_cache_stale_downstream_out_bytes > c->stat_cache_stale_downstream_out_bytes) { \
+        c->stat_cache_stale_downstream_out_bytes_oc++;                         \
+    }                                                                          \
+    if (o->stat_cache_updating_downstream_out_bytes > c->stat_cache_updating_downstream_out_bytes) { \
+        c->stat_cache_updating_downstream_out_bytes_oc++;                      \
+    }                                                                          \
+    if (o->stat_cache_revalidated_downstream_out_bytes > c->stat_cache_revalidated_downstream_out_bytes) { \
+        c->stat_cache_revalidated_downstream_out_bytes_oc++;                   \
+    }                                                                          \
+    if (o->stat_cache_hit_downstream_out_bytes > c->stat_cache_hit_downstream_out_bytes) { \
+        c->stat_cache_hit_downstream_out_bytes_oc++;                           \
+    }                                                                          \
+    if (o->stat_cache_scarce_downstream_out_bytes > c->stat_cache_scarce_downstream_out_bytes) { \
+        c->stat_cache_scarce_downstream_out_bytes_oc++;                        \
+    }                                                                          \
+    if (o->stat_cache_miss_upstream_in_bytes > c->stat_cache_miss_upstream_in_bytes) { \
+        c->stat_cache_miss_upstream_in_bytes_oc++;                             \
+    }                                                                          \
+    if (o->stat_cache_bypass_upstream_in_bytes > c->stat_cache_bypass_upstream_in_bytes) { \
+        c->stat_cache_bypass_upstream_in_bytes_oc++;                           \
+    }                                                                          \
+    if (o->stat_cache_expired_upstream_in_bytes > c->stat_cache_expired_upstream_in_bytes) { \
+        c->stat_cache_expired_upstream_in_bytes_oc++;                          \
+    }                                                                          \
+    if (o->stat_cache_stale_upstream_in_bytes > c->stat_cache_stale_upstream_in_bytes) { \
+        c->stat_cache_stale_upstream_in_bytes_oc++;                            \
+    }                                                                          \
+    if (o->stat_cache_updating_upstream_in_bytes > c->stat_cache_updating_upstream_in_bytes) { \
+        c->stat_cache_updating_upstream_in_bytes_oc++;                         \
+    }                                                                          \
+    if (o->stat_cache_revalidated_upstream_in_bytes > c->stat_cache_revalidated_upstream_in_bytes) { \
+        c->stat_cache_revalidated_upstream_in_bytes_oc++;                      \
+    }                                                                          \
+    if (o->stat_cache_hit_upstream_in_bytes > c->stat_cache_hit_upstream_in_bytes) { \
+        c->stat_cache_hit_upstream_in_bytes_oc++;                              \
+    }                                                                          \
+    if (o->stat_cache_scarce_upstream_in_bytes > c->stat_cache_scarce_upstream_in_bytes) { \
+        c->stat_cache_scarce_upstream_in_bytes_oc++;                           \
     }                                                                          \
 }
 #else

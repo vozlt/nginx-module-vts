@@ -82,7 +82,9 @@
 #if (NGX_HTTP_CACHE)
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_CACHE_S            \
     "# HELP nginx_vts_server_cache_total The requests cache counter\n"         \
-    "# TYPE nginx_vts_server_cache_total counter\n"
+    "# TYPE nginx_vts_server_cache_total counter\n"                            \
+    "# HELP nginx_vts_server_cache_bytes_total The cache status bytes\n"       \
+    "# TYPE nginx_vts_server_cache_bytes_total counter\n"
  
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_CACHE              \
     "nginx_vts_server_cache_total{host=\"%V\",status=\"miss\"} %uA\n"          \
@@ -93,6 +95,10 @@
     "nginx_vts_server_cache_total{host=\"%V\",status=\"revalidated\"} %uA\n"   \
     "nginx_vts_server_cache_total{host=\"%V\",status=\"hit\"} %uA\n"           \
     "nginx_vts_server_cache_total{host=\"%V\",status=\"scarce\"} %uA\n"
+
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_SERVER_CACHE_BYTES        \
+    "nginx_vts_server_cache_bytes_total{host=\"%V\",status=\"%V\","            \
+    "direction=\"%V\"} %uA\n"
 #endif
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_FILTER_S                  \
@@ -148,7 +154,9 @@
 #if (NGX_HTTP_CACHE)
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_FILTER_CACHE_S            \
     "# HELP nginx_vts_filter_cache_total The requests cache counter\n"         \
-    "# TYPE nginx_vts_filter_cache_total counter\n"
+    "# TYPE nginx_vts_filter_cache_total counter\n"                            \
+    "# HELP nginx_vts_filter_cache_bytes_total The cache status bytes\n"       \
+    "# TYPE nginx_vts_filter_cache_bytes_total counter\n"
  
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_FILTER_CACHE              \
     "nginx_vts_filter_cache_total{filter=\"%V\",filter_name=\"%V\","           \
@@ -167,6 +175,10 @@
     "status=\"hit\"} %uA\n"                                                    \
     "nginx_vts_filter_cache_total{filter=\"%V\",filter_name=\"%V\","           \
     "status=\"scarce\"} %uA\n"
+
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_FILTER_CACHE_BYTES        \
+    "nginx_vts_filter_cache_bytes_total{filter=\"%V\",filter_name=\"%V\","     \
+    "status=\"%V\",direction=\"%V\"} %uA\n"
 #endif
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM_S                \
@@ -243,7 +255,9 @@
     "bytes\n"                                                                  \
     "# TYPE nginx_vts_cache_bytes_total counter\n"                             \
     "# HELP nginx_vts_cache_requests_total The cache requests counter\n"       \
-    "# TYPE nginx_vts_cache_requests_total counter\n"
+    "# TYPE nginx_vts_cache_requests_total counter\n"                          \
+    "# HELP nginx_vts_cache_status_bytes_total The cache status bytes\n"       \
+    "# TYPE nginx_vts_cache_status_bytes_total counter\n"
 
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_CACHE                     \
     "nginx_vts_cache_usage_bytes{cache_zone=\"%V\",cache_size=\"max\"} %uA\n"  \
@@ -263,6 +277,10 @@
     "status=\"revalidated\"} %uA\n"                                            \
     "nginx_vts_cache_requests_total{cache_zone=\"%V\",status=\"hit\"} %uA\n"   \
     "nginx_vts_cache_requests_total{cache_zone=\"%V\",status=\"scarce\"} %uA\n"
+
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_CACHE_STATUS_BYTES        \
+    "nginx_vts_cache_status_bytes_total{cache_zone=\"%V\",status=\"%V\","      \
+    "direction=\"%V\"} %uA\n"
 #endif
 
 

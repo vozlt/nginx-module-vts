@@ -95,7 +95,8 @@ ngx_http_vhost_traffic_status_dump_header_write(ngx_event_t *ev, ngx_file_t *fil
     p = file_header.name;
     p = ngx_cpymem(p, ctx->shm_name.data, len);
     file_header.time = ngx_http_vhost_traffic_status_current_msec();
-    file_header.version = nginx_version;
+    file_header.version = NGX_HTTP_VHOST_TRAFFIC_STATUS_DUMP_FORMAT_VERSION;
+    file_header.node_size = sizeof(ngx_http_vhost_traffic_status_node_t);
 
     n = ngx_write_fd(file->fd, &file_header, sizeof(ngx_http_vhost_traffic_status_dump_header_t));
 
@@ -171,6 +172,21 @@ ngx_http_vhost_traffic_status_dump_update_valid(ngx_event_t *ev)
                       len, file_header.name);
         return NGX_OK;
     }
+
+    if (file_header.version != NGX_HTTP_VHOST_TRAFFIC_STATUS_DUMP_FORMAT_VERSION) {
+        ngx_log_error(NGX_LOG_WARN, ev->log, 0,
+                      "dump_update_valid::dump_header_read() version:%ui failed",
+                      file_header.version);
+        return NGX_OK;
+    }
+
+    if (file_header.node_size != sizeof(ngx_http_vhost_traffic_status_node_t)) {
+        ngx_log_error(NGX_LOG_WARN, ev->log, 0,
+                      "dump_update_valid::dump_header_read() node size:%ui failed",
+                      file_header.node_size);
+        return NGX_OK;
+    }
+
 
     current_msec = ngx_http_vhost_traffic_status_current_msec();
 
@@ -385,6 +401,23 @@ ngx_http_vhost_traffic_status_dump_restore(ngx_event_t *ev)
         return;
     }
 
+    offset = sizeof(ngx_http_vhost_traffic_status_dump_header_t);
+
+    if (file_header.version != NGX_HTTP_VHOST_TRAFFIC_STATUS_DUMP_FORMAT_VERSION) {
+        ngx_log_error(NGX_LOG_WARN, ev->log, 0,
+                      "dump_restore::dump_header_read() version:%ui failed",
+                      file_header.version);
+        ngx_http_vhost_traffic_status_file_close(&file);
+        return;
+
+    } else if (file_header.node_size != sizeof(ngx_http_vhost_traffic_status_node_t)) {
+        ngx_log_error(NGX_LOG_WARN, ev->log, 0,
+                      "dump_restore::dump_header_read() node size:%ui failed",
+                      file_header.node_size);
+        ngx_http_vhost_traffic_status_file_close(&file);
+        return;
+    }
+
     buf = ngx_pcalloc(ngx_cycle->pool, NGX_HTTP_VHOST_TRAFFIC_STATUS_DUMP_DATA_BUF_SIZE);
     pad = ngx_pcalloc(ngx_cycle->pool, sizeof(NGX_HTTP_VHOST_TRAFFIC_STATUS_DUMP_DATA_PAD));
     if (buf == NULL || pad == NULL) {
@@ -393,8 +426,6 @@ ngx_http_vhost_traffic_status_dump_restore(ngx_event_t *ev)
         ngx_http_vhost_traffic_status_file_close(&file);
         return;
     }
-
-    offset = n;
 
     for ( ;; ) {
         ngx_memzero(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_DUMP_DATA_BUF_SIZE);

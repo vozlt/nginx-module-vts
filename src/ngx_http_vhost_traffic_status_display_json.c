@@ -198,6 +198,22 @@ ngx_http_vhost_traffic_status_display_set_server_node(
                       vtsn->stat_cache_revalidated_counter,
                       vtsn->stat_cache_hit_counter,
                       vtsn->stat_cache_scarce_counter,
+                      vtsn->stat_cache_miss_downstream_out_bytes,
+                      vtsn->stat_cache_bypass_downstream_out_bytes,
+                      vtsn->stat_cache_expired_downstream_out_bytes,
+                      vtsn->stat_cache_stale_downstream_out_bytes,
+                      vtsn->stat_cache_updating_downstream_out_bytes,
+                      vtsn->stat_cache_revalidated_downstream_out_bytes,
+                      vtsn->stat_cache_hit_downstream_out_bytes,
+                      vtsn->stat_cache_scarce_downstream_out_bytes,
+                      vtsn->stat_cache_miss_upstream_in_bytes,
+                      vtsn->stat_cache_bypass_upstream_in_bytes,
+                      vtsn->stat_cache_expired_upstream_in_bytes,
+                      vtsn->stat_cache_stale_upstream_in_bytes,
+                      vtsn->stat_cache_updating_upstream_in_bytes,
+                      vtsn->stat_cache_revalidated_upstream_in_bytes,
+                      vtsn->stat_cache_hit_upstream_in_bytes,
+                      vtsn->stat_cache_scarce_upstream_in_bytes,
                       vtsn->stat_request_time_counter,
                       ngx_http_vhost_traffic_status_node_time_queue_average(
                           &vtsn->stat_request_times, vtscf->average_method,
@@ -227,6 +243,22 @@ ngx_http_vhost_traffic_status_display_set_server_node(
                       vtsn->stat_cache_revalidated_counter_oc,
                       vtsn->stat_cache_hit_counter_oc,
                       vtsn->stat_cache_scarce_counter_oc,
+                      vtsn->stat_cache_miss_downstream_out_bytes_oc,
+                      vtsn->stat_cache_bypass_downstream_out_bytes_oc,
+                      vtsn->stat_cache_expired_downstream_out_bytes_oc,
+                      vtsn->stat_cache_stale_downstream_out_bytes_oc,
+                      vtsn->stat_cache_updating_downstream_out_bytes_oc,
+                      vtsn->stat_cache_revalidated_downstream_out_bytes_oc,
+                      vtsn->stat_cache_hit_downstream_out_bytes_oc,
+                      vtsn->stat_cache_scarce_downstream_out_bytes_oc,
+                      vtsn->stat_cache_miss_upstream_in_bytes_oc,
+                      vtsn->stat_cache_bypass_upstream_in_bytes_oc,
+                      vtsn->stat_cache_expired_upstream_in_bytes_oc,
+                      vtsn->stat_cache_stale_upstream_in_bytes_oc,
+                      vtsn->stat_cache_updating_upstream_in_bytes_oc,
+                      vtsn->stat_cache_revalidated_upstream_in_bytes_oc,
+                      vtsn->stat_cache_hit_upstream_in_bytes_oc,
+                      vtsn->stat_cache_scarce_upstream_in_bytes_oc,
                       vtsn->stat_request_time_counter_oc);
 #else
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_END,
@@ -330,6 +362,40 @@ ngx_http_vhost_traffic_status_display_set_server(ngx_http_request_t *r,
             vtscf->stats.stat_cache_scarce_counter +=
                                        vtsn->stat_cache_scarce_counter;
 
+            vtscf->stats.stat_cache_miss_downstream_out_bytes +=
+                                       vtsn->stat_cache_miss_downstream_out_bytes;
+            vtscf->stats.stat_cache_bypass_downstream_out_bytes +=
+                                       vtsn->stat_cache_bypass_downstream_out_bytes;
+            vtscf->stats.stat_cache_expired_downstream_out_bytes +=
+                                       vtsn->stat_cache_expired_downstream_out_bytes;
+            vtscf->stats.stat_cache_stale_downstream_out_bytes +=
+                                       vtsn->stat_cache_stale_downstream_out_bytes;
+            vtscf->stats.stat_cache_updating_downstream_out_bytes +=
+                                       vtsn->stat_cache_updating_downstream_out_bytes;
+            vtscf->stats.stat_cache_revalidated_downstream_out_bytes +=
+                                       vtsn->stat_cache_revalidated_downstream_out_bytes;
+            vtscf->stats.stat_cache_hit_downstream_out_bytes +=
+                                       vtsn->stat_cache_hit_downstream_out_bytes;
+            vtscf->stats.stat_cache_scarce_downstream_out_bytes +=
+                                       vtsn->stat_cache_scarce_downstream_out_bytes;
+
+            vtscf->stats.stat_cache_miss_upstream_in_bytes +=
+                                       vtsn->stat_cache_miss_upstream_in_bytes;
+            vtscf->stats.stat_cache_bypass_upstream_in_bytes +=
+                                       vtsn->stat_cache_bypass_upstream_in_bytes;
+            vtscf->stats.stat_cache_expired_upstream_in_bytes +=
+                                       vtsn->stat_cache_expired_upstream_in_bytes;
+            vtscf->stats.stat_cache_stale_upstream_in_bytes +=
+                                       vtsn->stat_cache_stale_upstream_in_bytes;
+            vtscf->stats.stat_cache_updating_upstream_in_bytes +=
+                                       vtsn->stat_cache_updating_upstream_in_bytes;
+            vtscf->stats.stat_cache_revalidated_upstream_in_bytes +=
+                                       vtsn->stat_cache_revalidated_upstream_in_bytes;
+            vtscf->stats.stat_cache_hit_upstream_in_bytes +=
+                                       vtsn->stat_cache_hit_upstream_in_bytes;
+            vtscf->stats.stat_cache_scarce_upstream_in_bytes +=
+                                       vtsn->stat_cache_scarce_upstream_in_bytes;
+
             vtscf->stats.stat_cache_miss_counter_oc +=
                                        vtsn->stat_cache_miss_counter_oc;
             vtscf->stats.stat_cache_bypass_counter_oc +=
@@ -346,6 +412,40 @@ ngx_http_vhost_traffic_status_display_set_server(ngx_http_request_t *r,
                                        vtsn->stat_cache_hit_counter_oc;
             vtscf->stats.stat_cache_scarce_counter_oc +=
                                        vtsn->stat_cache_scarce_counter_oc;
+
+            vtscf->stats.stat_cache_miss_downstream_out_bytes_oc +=
+                                       vtsn->stat_cache_miss_downstream_out_bytes_oc;
+            vtscf->stats.stat_cache_bypass_downstream_out_bytes_oc +=
+                                       vtsn->stat_cache_bypass_downstream_out_bytes_oc;
+            vtscf->stats.stat_cache_expired_downstream_out_bytes_oc +=
+                                       vtsn->stat_cache_expired_downstream_out_bytes_oc;
+            vtscf->stats.stat_cache_stale_downstream_out_bytes_oc +=
+                                       vtsn->stat_cache_stale_downstream_out_bytes_oc;
+            vtscf->stats.stat_cache_updating_downstream_out_bytes_oc +=
+                                       vtsn->stat_cache_updating_downstream_out_bytes_oc;
+            vtscf->stats.stat_cache_revalidated_downstream_out_bytes_oc +=
+                                       vtsn->stat_cache_revalidated_downstream_out_bytes_oc;
+            vtscf->stats.stat_cache_hit_downstream_out_bytes_oc +=
+                                       vtsn->stat_cache_hit_downstream_out_bytes_oc;
+            vtscf->stats.stat_cache_scarce_downstream_out_bytes_oc +=
+                                       vtsn->stat_cache_scarce_downstream_out_bytes_oc;
+
+            vtscf->stats.stat_cache_miss_upstream_in_bytes_oc +=
+                                       vtsn->stat_cache_miss_upstream_in_bytes_oc;
+            vtscf->stats.stat_cache_bypass_upstream_in_bytes_oc +=
+                                       vtsn->stat_cache_bypass_upstream_in_bytes_oc;
+            vtscf->stats.stat_cache_expired_upstream_in_bytes_oc +=
+                                       vtsn->stat_cache_expired_upstream_in_bytes_oc;
+            vtscf->stats.stat_cache_stale_upstream_in_bytes_oc +=
+                                       vtsn->stat_cache_stale_upstream_in_bytes_oc;
+            vtscf->stats.stat_cache_updating_upstream_in_bytes_oc +=
+                                       vtsn->stat_cache_updating_upstream_in_bytes_oc;
+            vtscf->stats.stat_cache_revalidated_upstream_in_bytes_oc +=
+                                       vtsn->stat_cache_revalidated_upstream_in_bytes_oc;
+            vtscf->stats.stat_cache_hit_upstream_in_bytes_oc +=
+                                       vtsn->stat_cache_hit_upstream_in_bytes_oc;
+            vtscf->stats.stat_cache_scarce_upstream_in_bytes_oc +=
+                                       vtsn->stat_cache_scarce_upstream_in_bytes_oc;
 #endif
 
             ngx_http_vhost_traffic_status_add_oc((&ovtsn), (&vtscf->stats));
@@ -829,6 +929,22 @@ u_char
                       vtsn->stat_cache_revalidated_counter,
                       vtsn->stat_cache_hit_counter,
                       vtsn->stat_cache_scarce_counter,
+                      vtsn->stat_cache_miss_downstream_out_bytes,
+                      vtsn->stat_cache_bypass_downstream_out_bytes,
+                      vtsn->stat_cache_expired_downstream_out_bytes,
+                      vtsn->stat_cache_stale_downstream_out_bytes,
+                      vtsn->stat_cache_updating_downstream_out_bytes,
+                      vtsn->stat_cache_revalidated_downstream_out_bytes,
+                      vtsn->stat_cache_hit_downstream_out_bytes,
+                      vtsn->stat_cache_scarce_downstream_out_bytes,
+                      vtsn->stat_cache_miss_upstream_in_bytes,
+                      vtsn->stat_cache_bypass_upstream_in_bytes,
+                      vtsn->stat_cache_expired_upstream_in_bytes,
+                      vtsn->stat_cache_stale_upstream_in_bytes,
+                      vtsn->stat_cache_updating_upstream_in_bytes,
+                      vtsn->stat_cache_revalidated_upstream_in_bytes,
+                      vtsn->stat_cache_hit_upstream_in_bytes,
+                      vtsn->stat_cache_scarce_upstream_in_bytes,
                       ngx_http_vhost_traffic_status_max_integer,
                       vtsn->stat_in_bytes_oc,
                       vtsn->stat_out_bytes_oc,
@@ -839,7 +955,23 @@ u_char
                       vtsn->stat_cache_updating_counter_oc,
                       vtsn->stat_cache_revalidated_counter_oc,
                       vtsn->stat_cache_hit_counter_oc,
-                      vtsn->stat_cache_scarce_counter_oc);
+                      vtsn->stat_cache_scarce_counter_oc,
+                      vtsn->stat_cache_miss_downstream_out_bytes_oc,
+                      vtsn->stat_cache_bypass_downstream_out_bytes_oc,
+                      vtsn->stat_cache_expired_downstream_out_bytes_oc,
+                      vtsn->stat_cache_stale_downstream_out_bytes_oc,
+                      vtsn->stat_cache_updating_downstream_out_bytes_oc,
+                      vtsn->stat_cache_revalidated_downstream_out_bytes_oc,
+                      vtsn->stat_cache_hit_downstream_out_bytes_oc,
+                      vtsn->stat_cache_scarce_downstream_out_bytes_oc,
+                      vtsn->stat_cache_miss_upstream_in_bytes_oc,
+                      vtsn->stat_cache_bypass_upstream_in_bytes_oc,
+                      vtsn->stat_cache_expired_upstream_in_bytes_oc,
+                      vtsn->stat_cache_stale_upstream_in_bytes_oc,
+                      vtsn->stat_cache_updating_upstream_in_bytes_oc,
+                      vtsn->stat_cache_revalidated_upstream_in_bytes_oc,
+                      vtsn->stat_cache_hit_upstream_in_bytes_oc,
+                      vtsn->stat_cache_scarce_upstream_in_bytes_oc);
 
     return buf;
 }
