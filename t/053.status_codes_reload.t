@@ -19,7 +19,7 @@ use Test::Nginx::Socket;
 our @others = map { chr } ord('b') .. ord('h');
 
 repeat_each(1);
-plan tests => 9 + 2 * 4 + 2 * 2;
+plan tests => 9 + 2 * 5 + 2 * 2;
 no_shuffle();
 run_tests();
 
@@ -61,19 +61,30 @@ __DATA__
         }
         return 200 "ok";
     }
+    location /h {
+        vhost_traffic_status_filter_by_host on;
+        return 503;
+    }
     location /status {
         vhost_traffic_status_display;
         vhost_traffic_status_display_format json;
         access_log off;
     }
 --- request eval
-['GET /k?k=a&s=503', 'GET /k?k=a&s=503', 'GET /k?k=a&s=503', 'GET /status']
+['GET /k?k=a&s=503', 'GET /k?k=a&s=503', 'GET /k?k=a&s=503', 'GET /h', 'GET /status']
+--- more_headers eval
+['', '', '', 'Host: new.example', '']
 --- error_code eval
-[503, 503, 503, 200]
+[503, 503, 503, 503, 200]
 --- response_body_like eval
 [
-    qr/503/, qr/503/, qr/503/,
+    qr/503/, qr/503/, qr/503/, qr/503/,
+    # the sum of a server zone made under one code and one made under four;
+    # test-nginx, where Test::Nginx checks the server, only adds to 200
     join('', '(?s)\\A',
+        '(?=.*"localhost":\\{"requestCounter":12,[^{}]*"statusCodes":\\{"other":3,"200":9,"404":0,"500":0,"503":0\\})',
+        '(?=.*"new.example":\\{"requestCounter":1,[^{}]*"statusCodes":\\{"other":0,"200":0,"404":0,"500":0,"503":1\\})',
+        '(?=.*"\\*":\\{"requestCounter":\\d+,[^{}]*"statusCodes":\\{"other":3,"200":\\d+,"404":0,"500":0,"503":1\\})',
         '(?=.*"a":\\{"requestCounter":4,[^{}]*"statusCodes":\\{"other":3,"200":1,"404":0,"500":0,"503":0\\})',
         map { qq/(?=.*"$_":\\{"requestCounter":1,[^{}]*"statusCodes":\\{"other":0,"200":1,"404":0,"500":0,"503":0\\})/ } @main::others),
 ]
@@ -102,6 +113,7 @@ __DATA__
 --- response_body_like eval
 [
     qr/"a":\{"requestCounter":4,[^{}]*"statusCodes":\{"other":4,"404":0\}/,
-    # the server zone was made under 200, and has served 14 requests by now
-    qr/(?s)\A(?!.*code="200")(?=.*host="localhost",code="other"\} 14\n)(?=.*host="localhost",code="404"\} 0\n)/,
+    # localhost was made under 200 and has served 14 requests by now,
+    # new.example under 200 404 500 503 and one 503
+    qr/(?s)\A(?!.*code="200")(?=.*host="localhost",code="other"\} 14\n)(?=.*host="localhost",code="404"\} 0\n)(?=.*host="new.example",code="other"\} 1\n)(?=.*host="new.example",code="404"\} 0\n)(?=.*host="\*",code="404"\} 0\n)/,
 ]
