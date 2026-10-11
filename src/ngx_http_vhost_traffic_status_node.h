@@ -156,6 +156,8 @@ ngx_int_t ngx_http_vhost_traffic_status_node_position_key(ngx_str_t *buf,
 
 ngx_rbtree_node_t *ngx_http_vhost_traffic_status_node_lookup(
     ngx_rbtree_t *rbtree, ngx_str_t *key, uint32_t hash);
+void ngx_http_vhost_traffic_status_node_free(ngx_slab_pool_t *shpool,
+    ngx_rbtree_node_t *node);
 void ngx_http_vhost_traffic_status_node_zero(
     ngx_http_vhost_traffic_status_node_t *vtsn);
 /*

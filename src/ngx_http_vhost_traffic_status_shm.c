@@ -234,7 +234,7 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
                 (ngx_http_vhost_traffic_status_node_t *) &lrun->color, -1);
 
             ngx_rbtree_delete(ctx->rbtree, lrun);
-            ngx_slab_free_locked(shpool, lrun);
+            ngx_http_vhost_traffic_status_node_free(shpool, lrun);
         }
 
         size = offsetof(ngx_rbtree_node_t, color)

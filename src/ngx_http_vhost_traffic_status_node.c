@@ -385,6 +385,24 @@ ngx_http_vhost_traffic_status_node_lookup(ngx_rbtree_t *rbtree, ngx_str_t *key,
 }
 
 
+/* the status code counters are a slab allocation of their own */
+
+void
+ngx_http_vhost_traffic_status_node_free(ngx_slab_pool_t *shpool,
+    ngx_rbtree_node_t *node)
+{
+    ngx_http_vhost_traffic_status_node_t  *vtsn;
+
+    vtsn = (ngx_http_vhost_traffic_status_node_t *) &node->color;
+
+    if (vtsn->stat_status_code_counter != NULL) {
+        ngx_slab_free_locked(shpool, (void *) vtsn->stat_status_code_counter);
+    }
+
+    ngx_slab_free_locked(shpool, node);
+}
+
+
 void
 ngx_http_vhost_traffic_status_node_zero(ngx_http_vhost_traffic_status_node_t *vtsn)
 {
