@@ -251,7 +251,7 @@ __DATA__
 --- request eval
 [
     'GET /storage/vol0/file.txt',
-    'GET /status/control?cmd=status&group=filter&zone=storage%3A%3Alocalhost%40vol0',
+    'GET /status/control?cmd=status&group=filter&zone=storage%3a%3alocalhost%40vol0',
 ]
 --- response_body_like eval
 [
