@@ -117,6 +117,7 @@ ngx_http_vhost_traffic_status_display_set_server_node(
     ngx_uint_t                                 i;
     ngx_str_t                                  tmp, dst;
     ngx_uint_t                                *status_codes;
+    ngx_atomic_uint_t                          count;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
     ngx_http_vhost_traffic_status_ctx_t       *ctx;
 
@@ -165,16 +166,20 @@ ngx_http_vhost_traffic_status_display_set_server_node(
         buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_STATUS_CODE_START);
 
         buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_OTHER_STATUS_CODE,
-            vtsn->stat_status_code_counter[0]);
+            ngx_http_vhost_traffic_status_node_status_code_other(vtsn,
+                ctx->measure_status_codes));
 
         status_codes = (ngx_uint_t *) ctx->measure_status_codes->elts;
 
         for (i = 0; i < ctx->measure_status_codes->nelts; i++) {
-            if (vtsn->stat_status_code_counter[i+1] == 0 && ctx->measure_all_status_codes) {
+            count = ngx_http_vhost_traffic_status_node_status_code_count(vtsn,
+                        status_codes[i]);
+
+            if (count == 0 && ctx->measure_all_status_codes) {
                 continue;
             }
             buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_STATUS_CODE,
-                status_codes[i], vtsn->stat_status_code_counter[i+1]);
+                status_codes[i], count);
         }
 
         buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_SERVER_STATUS_CODE_END);
@@ -297,9 +302,8 @@ ngx_http_vhost_traffic_status_display_set_server(ngx_http_request_t *r,
                 &vtsn->stat_request_times, vtscf->average_period);
 
             if (ctx->measure_status_codes != NULL && vtsn->stat_status_code_counter != NULL) {
-                ngx_http_vhost_traffic_status_status_code_merge(
-                    vtscf->stats.stat_status_code_counter,
-                    vtsn->stat_status_code_counter, ctx->measure_status_codes->nelts+1);
+                ngx_http_vhost_traffic_status_status_code_merge(&vtscf->stats,
+                    vtsn, ctx->measure_status_codes);
             }
 
             vtscf->stats.stat_request_counter_oc += vtsn->stat_request_counter_oc;
@@ -876,6 +880,7 @@ ngx_http_vhost_traffic_status_display_set(ngx_http_request_t *r,
     u_char *buf)
 {
     u_char                                    *o, *s;
+    ngx_atomic_t                              *counter;
     ngx_rbtree_node_t                         *node;
     ngx_http_vhost_traffic_status_ctx_t       *ctx;
     ngx_http_vhost_traffic_status_loc_conf_t  *vtscf;
@@ -891,8 +896,14 @@ ngx_http_vhost_traffic_status_display_set(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_node_time_queue_init(&vtscf->stats.stat_request_times);
 
     if (ctx->measure_status_codes != NULL) {
-        vtscf->stats.stat_status_code_counter = ngx_pcalloc(r->pool, sizeof(ngx_atomic_t) * (ctx->measure_status_codes->nelts +1));
-        vtscf->stats.stat_status_code_length = ctx->measure_status_codes->nelts;
+        counter = ngx_pcalloc(r->pool,
+                      ngx_http_vhost_traffic_status_status_codes_size(
+                          ctx->measure_status_codes->nelts));
+        /* without them, the sum goes without its status codes */
+        if (counter != NULL) {
+            ngx_http_vhost_traffic_status_node_status_codes_init(&vtscf->stats,
+                counter, ctx->measure_status_codes);
+        }
     }
 
     /* main & connections */
