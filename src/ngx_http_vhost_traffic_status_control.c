@@ -546,7 +546,7 @@ ngx_http_vhost_traffic_status_node_delete_all(
         ngx_http_vhost_traffic_status_node_filter_account(ctx, vtsn, -1);
 
         ngx_rbtree_delete(ctx->rbtree, node);
-        ngx_slab_free_locked(shpool, node);
+        ngx_http_vhost_traffic_status_node_free(shpool, node);
 
         control->count++;
 
@@ -602,7 +602,7 @@ ngx_http_vhost_traffic_status_node_delete_group(
         ngx_http_vhost_traffic_status_node_filter_account(ctx, vtsn, -1);
 
         ngx_rbtree_delete(ctx->rbtree, node);
-        ngx_slab_free_locked(shpool, node);
+        ngx_http_vhost_traffic_status_node_free(shpool, node);
 
         control->count++;
     }
@@ -646,7 +646,7 @@ ngx_http_vhost_traffic_status_node_delete_zone(
             ngx_http_vhost_traffic_status_node_filter_account(ctx, vtsn, -1);
 
             ngx_rbtree_delete(ctx->rbtree, node);
-            ngx_slab_free_locked(shpool, node);
+            ngx_http_vhost_traffic_status_node_free(shpool, node);
 
             control->count++;
         }
