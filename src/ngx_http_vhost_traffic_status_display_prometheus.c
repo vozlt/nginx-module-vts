@@ -624,6 +624,10 @@ ngx_http_vhost_traffic_status_display_prometheus_set(ngx_http_request_t *r,
     }
 #endif
 
+    /* the counters of the sum are in r->pool, as in the json writer */
+    vtscf->stats.stat_status_code_counter = NULL;
+    vtscf->stats.stat_status_code_length = 0;
+
     return buf;
 }
 
