@@ -987,6 +987,14 @@ ngx_http_vhost_traffic_status_display_set(ngx_http_request_t *r,
 
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_E);
 
+    /*
+     * The counters of the sum are in r->pool, but vtscf->stats stays after the
+     * request. Clear the pointer, because node_status_group() in control.c
+     * uses vtscf->stats and does not initialize it.
+     */
+    vtscf->stats.stat_status_code_counter = NULL;
+    vtscf->stats.stat_status_code_length = 0;
+
     return buf;
 }
 
