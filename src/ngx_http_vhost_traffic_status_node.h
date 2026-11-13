@@ -71,6 +71,24 @@ typedef struct {
     ngx_atomic_t                                           stat_cache_revalidated_counter;
     ngx_atomic_t                                           stat_cache_hit_counter;
     ngx_atomic_t                                           stat_cache_scarce_counter;
+
+    ngx_atomic_t                                           stat_cache_miss_downstream_out_bytes;
+    ngx_atomic_t                                           stat_cache_bypass_downstream_out_bytes;
+    ngx_atomic_t                                           stat_cache_expired_downstream_out_bytes;
+    ngx_atomic_t                                           stat_cache_stale_downstream_out_bytes;
+    ngx_atomic_t                                           stat_cache_updating_downstream_out_bytes;
+    ngx_atomic_t                                           stat_cache_revalidated_downstream_out_bytes;
+    ngx_atomic_t                                           stat_cache_hit_downstream_out_bytes;
+    ngx_atomic_t                                           stat_cache_scarce_downstream_out_bytes;
+
+    ngx_atomic_t                                           stat_cache_miss_upstream_in_bytes;
+    ngx_atomic_t                                           stat_cache_bypass_upstream_in_bytes;
+    ngx_atomic_t                                           stat_cache_expired_upstream_in_bytes;
+    ngx_atomic_t                                           stat_cache_stale_upstream_in_bytes;
+    ngx_atomic_t                                           stat_cache_updating_upstream_in_bytes;
+    ngx_atomic_t                                           stat_cache_revalidated_upstream_in_bytes;
+    ngx_atomic_t                                           stat_cache_hit_upstream_in_bytes;
+    ngx_atomic_t                                           stat_cache_scarce_upstream_in_bytes;
 #endif
 } ngx_http_vhost_traffic_status_node_oc_t;
 
@@ -131,6 +149,24 @@ typedef struct {
     ngx_atomic_t                                           stat_cache_hit_counter;
     ngx_atomic_t                                           stat_cache_scarce_counter;
 
+    ngx_atomic_t                                           stat_cache_miss_downstream_out_bytes;
+    ngx_atomic_t                                           stat_cache_bypass_downstream_out_bytes;
+    ngx_atomic_t                                           stat_cache_expired_downstream_out_bytes;
+    ngx_atomic_t                                           stat_cache_stale_downstream_out_bytes;
+    ngx_atomic_t                                           stat_cache_updating_downstream_out_bytes;
+    ngx_atomic_t                                           stat_cache_revalidated_downstream_out_bytes;
+    ngx_atomic_t                                           stat_cache_hit_downstream_out_bytes;
+    ngx_atomic_t                                           stat_cache_scarce_downstream_out_bytes;
+
+    ngx_atomic_t                                           stat_cache_miss_upstream_in_bytes;
+    ngx_atomic_t                                           stat_cache_bypass_upstream_in_bytes;
+    ngx_atomic_t                                           stat_cache_expired_upstream_in_bytes;
+    ngx_atomic_t                                           stat_cache_stale_upstream_in_bytes;
+    ngx_atomic_t                                           stat_cache_updating_upstream_in_bytes;
+    ngx_atomic_t                                           stat_cache_revalidated_upstream_in_bytes;
+    ngx_atomic_t                                           stat_cache_hit_upstream_in_bytes;
+    ngx_atomic_t                                           stat_cache_scarce_upstream_in_bytes;
+
     /* deals with the overflow of variables */
     ngx_atomic_t                                           stat_cache_miss_counter_oc;
     ngx_atomic_t                                           stat_cache_bypass_counter_oc;
@@ -140,6 +176,24 @@ typedef struct {
     ngx_atomic_t                                           stat_cache_revalidated_counter_oc;
     ngx_atomic_t                                           stat_cache_hit_counter_oc;
     ngx_atomic_t                                           stat_cache_scarce_counter_oc;
+
+    ngx_atomic_t                                           stat_cache_miss_downstream_out_bytes_oc;
+    ngx_atomic_t                                           stat_cache_bypass_downstream_out_bytes_oc;
+    ngx_atomic_t                                           stat_cache_expired_downstream_out_bytes_oc;
+    ngx_atomic_t                                           stat_cache_stale_downstream_out_bytes_oc;
+    ngx_atomic_t                                           stat_cache_updating_downstream_out_bytes_oc;
+    ngx_atomic_t                                           stat_cache_revalidated_downstream_out_bytes_oc;
+    ngx_atomic_t                                           stat_cache_hit_downstream_out_bytes_oc;
+    ngx_atomic_t                                           stat_cache_scarce_downstream_out_bytes_oc;
+
+    ngx_atomic_t                                           stat_cache_miss_upstream_in_bytes_oc;
+    ngx_atomic_t                                           stat_cache_bypass_upstream_in_bytes_oc;
+    ngx_atomic_t                                           stat_cache_expired_upstream_in_bytes_oc;
+    ngx_atomic_t                                           stat_cache_stale_upstream_in_bytes_oc;
+    ngx_atomic_t                                           stat_cache_updating_upstream_in_bytes_oc;
+    ngx_atomic_t                                           stat_cache_revalidated_upstream_in_bytes_oc;
+    ngx_atomic_t                                           stat_cache_hit_upstream_in_bytes_oc;
+    ngx_atomic_t                                           stat_cache_scarce_upstream_in_bytes_oc;
 #endif
 
     ngx_http_vhost_traffic_status_node_upstream_t          stat_upstream;

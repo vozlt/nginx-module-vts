@@ -19,7 +19,7 @@ add_response_body_check(
         bail_out "variables by set_by_filter error($ll)";
 
         if ($block->name =~ /TEST 5/) {
-            ($req_idx > 1 && $ll !~ /(cacheMaxSize|cacheUsedSize|cacheHit):[0-9]/) and
+            ($req_idx > 1 && $ll !~ /(cacheMaxSize|cacheUsedSize|cacheHit|cacheHitDownstreamOutBytes|cacheHitUpstreamInBytes):[0-9]/) and
             bail_out "variables by set_by_filter error($ll)";
         }
     }
@@ -208,7 +208,9 @@ __DATA__
     log_format basic '[$time_local] requestCounter:$requestCounter '
                      'inBytes:$inBytes outBytes:$outBytes '
                      '2xx:$2xx cacheMaxSize:$cacheMaxSize '
-                     'cacheUsedSize:$cacheUsedSize cacheHit:$cacheHit';
+                     'cacheUsedSize:$cacheUsedSize cacheHit:$cacheHit '
+                     'cacheHitDownstreamOutBytes:$cacheHitDownstreamOutBytes '
+                     'cacheHitUpstreamInBytes:$cacheHitUpstreamInBytes';
     access_log  logs/access.log basic;
     upstream backend {
         server 127.0.0.1:1984;
@@ -229,6 +231,8 @@ __DATA__
         vhost_traffic_status_set_by_filter $cacheMaxSize $group/$zone/cacheMaxSize;
         vhost_traffic_status_set_by_filter $cacheUsedSize $group/$zone/cacheUsedSize;
         vhost_traffic_status_set_by_filter $cacheHit $group/$zone/cacheHit;
+        vhost_traffic_status_set_by_filter $cacheHitDownstreamOutBytes $group/$zone/cacheHitDownstreamOutBytes;
+        vhost_traffic_status_set_by_filter $cacheHitUpstreamInBytes $group/$zone/cacheHitUpstreamInBytes;
 
         proxy_pass http://backend/return;
     }

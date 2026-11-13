@@ -360,6 +360,26 @@ JSON document contains as follows:
                 "revalidated":...,
                 "hit":...,
                 "scarce":...
+            },
+            "downstreamOutBytes":{
+                "miss":...,
+                "bypass":...,
+                "expired":...,
+                "stale":...,
+                "updating":...,
+                "revalidated":...,
+                "hit":...,
+                "scarce":...
+            },
+            "upstreamInBytes":{
+                "miss":...,
+                "bypass":...,
+                "expired":...,
+                "stale":...,
+                "updating":...,
+                "revalidated":...,
+                "hit":...,
+                "scarce":...
             }
         },
         ...
@@ -833,6 +853,10 @@ The following status information is provided in the JSON format:
       * The number of cache hit.
     * scarce
       * The number of cache scare.
+  * downstreamOutBytes
+    * The number of bytes sent to clients, grouped by cache status. It uses the same keys as `responses`.
+  * upstreamInBytes
+    * The number of bytes read from upstream, grouped by cache status. It counts only the final upstream attempt; earlier attempts redirected by `proxy_next_upstream` are not included. `hit` is usually 0 because no upstream response body is read; `revalidated` is usually small while `downstreamOutBytes.revalidated` stays large. The same two objects also appear in `serverZones` and `filterZones` when cache statuses are present.
 
 ### Json used by control
 /*`{status_uri}`*/control?cmd=reset&...
@@ -885,6 +909,38 @@ The following embedded variables are provided:
   * The number of cache hit.
 * **$vts_cache_scarce_counter**
   * The number of cache scare.
+* **$vts_cache_miss_downstream_out_bytes**
+  * The number of bytes sent to clients for cache miss.
+* **$vts_cache_bypass_downstream_out_bytes**
+  * The number of bytes sent to clients for cache bypass.
+* **$vts_cache_expired_downstream_out_bytes**
+  * The number of bytes sent to clients for cache expired.
+* **$vts_cache_stale_downstream_out_bytes**
+  * The number of bytes sent to clients for cache stale.
+* **$vts_cache_updating_downstream_out_bytes**
+  * The number of bytes sent to clients for cache updating.
+* **$vts_cache_revalidated_downstream_out_bytes**
+  * The number of bytes sent to clients for cache revalidated.
+* **$vts_cache_hit_downstream_out_bytes**
+  * The number of bytes sent to clients for cache hit.
+* **$vts_cache_scarce_downstream_out_bytes**
+  * The number of bytes sent to clients for cache scarce.
+* **$vts_cache_miss_upstream_in_bytes**
+  * The number of bytes read from upstream for cache miss.
+* **$vts_cache_bypass_upstream_in_bytes**
+  * The number of bytes read from upstream for cache bypass.
+* **$vts_cache_expired_upstream_in_bytes**
+  * The number of bytes read from upstream for cache expired.
+* **$vts_cache_stale_upstream_in_bytes**
+  * The number of bytes read from upstream for cache stale.
+* **$vts_cache_updating_upstream_in_bytes**
+  * The number of bytes read from upstream for cache updating.
+* **$vts_cache_revalidated_upstream_in_bytes**
+  * The number of bytes read from upstream for cache revalidated.
+* **$vts_cache_hit_upstream_in_bytes**
+  * The number of bytes read from upstream for cache hit.
+* **$vts_cache_scarce_upstream_in_bytes**
+  * The number of bytes read from upstream for cache scarce.
 * **$vts_request_time_counter**
   * The number of accumulated request processing time.
 * **$vts_request_time**
@@ -1806,6 +1862,10 @@ It can acquire almost all status values and the obtained value is stored in *$va
     * The number of cache hit.
   * cacheScarce
     * The number of cache scare.
+  * cacheMissDownstreamOutBytes, cacheBypassDownstreamOutBytes, cacheExpiredDownstreamOutBytes, cacheStaleDownstreamOutBytes, cacheUpdatingDownstreamOutBytes, cacheRevalidatedDownstreamOutBytes, cacheHitDownstreamOutBytes, cacheScarceDownstreamOutBytes
+    * The number of bytes sent to clients for each cache status.
+  * cacheMissUpstreamInBytes, cacheBypassUpstreamInBytes, cacheExpiredUpstreamInBytes, cacheStaleUpstreamInBytes, cacheUpdatingUpstreamInBytes, cacheRevalidatedUpstreamInBytes, cacheHitUpstreamInBytes, cacheScarceUpstreamInBytes
+    * The number of bytes read from upstream for each cache status.
   * weight
     * Current weight setting of the server.
   * maxFails
@@ -1830,6 +1890,8 @@ For examples:
   * **vhost_traffic_status_set_by_filter** `$requestCounter` `upstream@alone/10.10.10.11:80/requestCounter`
 * cacheHit in cacheZones
   * **vhost_traffic_status_set_by_filter** `$cacheHit` `cache/my_cache_name/cacheHit`
+* cacheHitDownstreamOutBytes in cacheZones
+  * **vhost_traffic_status_set_by_filter** `$cacheHitDownstreamOutBytes` `cache/my_cache_name/cacheHitDownstreamOutBytes`
 
 ### vhost_traffic_status_average_method
 
