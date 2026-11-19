@@ -462,6 +462,12 @@ http {
 If it set as above, then the control uri is like `example.org/status/control`.
 
 The available request arguments are as follows:
+
+The `group` and `zone` arguments are percent-decoded before the lookup. A
+literal `%` in a group or zone name must be sent as `%25`; for example a zone
+stored as `test%7Cvalue` is selected by `zone=test%257Cvalue`, not by
+`zone=test%7Cvalue`.
+
 * **cmd**=\<`status`\|`reset`\|`delete`\>
   * status
     * It returns status of traffic zones to json format like `status/format/json`.
