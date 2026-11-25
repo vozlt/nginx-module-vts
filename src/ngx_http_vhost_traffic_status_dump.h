@@ -11,11 +11,19 @@
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_DUMP_HEADER_NAME_SIZE  128
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_DUMP_DATA_BUF_SIZE     1024
 
+/*
+ * This version is owned by the module, not by nginx. Bump it whenever
+ * ngx_http_vhost_traffic_status_node_t changes layout, even when sizeof()
+ * happens to stay the same.
+ */
+#define NGX_HTTP_VHOST_TRAFFIC_STATUS_DUMP_FORMAT_VERSION    2
+
 
 typedef struct {
     u_char           name[NGX_HTTP_VHOST_TRAFFIC_STATUS_DUMP_HEADER_NAME_SIZE];
     ngx_msec_t       time;
     ngx_uint_t       version;
+    ngx_uint_t       node_size;
 } ngx_http_vhost_traffic_status_dump_header_t;
 
 

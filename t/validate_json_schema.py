@@ -9,6 +9,17 @@ import json
 import sys
 
 
+CACHE_STATUS_KEYS = [
+    "miss", "bypass", "expired", "stale", "updating",
+    "revalidated", "hit", "scarce",
+]
+CACHE_STATUS_BYTE_OVER_COUNT_KEYS = [
+    f"{status}{suffix}"
+    for status in CACHE_STATUS_KEYS
+    for suffix in ("DownstreamOutBytes", "UpstreamInBytes")
+]
+
+
 def error(msg):
     print(f"SCHEMA ERROR: {msg}", file=sys.stderr)
 
@@ -29,11 +40,7 @@ def validate_responses(obj, path):
 
 def validate_cache_responses(obj, path):
     """Validate a CacheZone Responses object."""
-    required = [
-        "miss", "bypass", "expired", "stale", "updating",
-        "revalidated", "hit", "scarce",
-    ]
-    return check_keys(obj, required, path)
+    return check_keys(obj, CACHE_STATUS_KEYS, path)
 
 
 def validate_over_counts(obj, path):
@@ -41,8 +48,8 @@ def validate_over_counts(obj, path):
     required = [
         "maxIntegerSize", "requestCounter", "inBytes", "outBytes",
         "1xx", "2xx", "3xx", "4xx", "5xx",
-        "miss", "bypass", "expired", "stale", "updating",
-        "revalidated", "hit", "scarce", "requestMsecCounter",
+    ] + CACHE_STATUS_KEYS + CACHE_STATUS_BYTE_OVER_COUNT_KEYS + [
+        "requestMsecCounter",
     ]
     return check_keys(obj, required, path)
 
@@ -61,11 +68,18 @@ def validate_server_zone(obj, path):
     """Validate a ServerZone object."""
     errors = check_keys(
         obj,
-        ["requestCounter", "inBytes", "outBytes", "responses", "overCounts"],
+        ["requestCounter", "inBytes", "outBytes", "responses",
+         "downstreamOutBytes", "upstreamInBytes", "overCounts"],
         path,
     )
     if "responses" in obj:
         errors.extend(validate_responses(obj["responses"], f"{path}.responses"))
+    if "downstreamOutBytes" in obj:
+        errors.extend(validate_cache_responses(
+            obj["downstreamOutBytes"], f"{path}.downstreamOutBytes"))
+    if "upstreamInBytes" in obj:
+        errors.extend(validate_cache_responses(
+            obj["upstreamInBytes"], f"{path}.upstreamInBytes"))
     if "overCounts" in obj:
         errors.extend(validate_over_counts(obj["overCounts"], f"{path}.overCounts"))
     return errors
@@ -89,18 +103,25 @@ def validate_cache_over_counts(obj, path):
     """Validate an OverCounts object for cacheZones."""
     required = [
         "maxIntegerSize", "inBytes", "outBytes",
-        "miss", "bypass", "expired", "stale", "updating",
-        "revalidated", "hit", "scarce",
-    ]
+    ] + CACHE_STATUS_KEYS + CACHE_STATUS_BYTE_OVER_COUNT_KEYS
     return check_keys(obj, required, path)
 
 
 def validate_cache_zone(obj, path):
     """Validate a CacheZone object."""
-    required = ["maxSize", "usedSize", "inBytes", "outBytes", "responses"]
+    required = [
+        "maxSize", "usedSize", "inBytes", "outBytes", "responses",
+        "downstreamOutBytes", "upstreamInBytes",
+    ]
     errors = check_keys(obj, required, path)
     if "responses" in obj:
         errors.extend(validate_cache_responses(obj["responses"], f"{path}.responses"))
+    if "downstreamOutBytes" in obj:
+        errors.extend(validate_cache_responses(
+            obj["downstreamOutBytes"], f"{path}.downstreamOutBytes"))
+    if "upstreamInBytes" in obj:
+        errors.extend(validate_cache_responses(
+            obj["upstreamInBytes"], f"{path}.upstreamInBytes"))
     if "overCounts" in obj:
         errors.extend(validate_cache_over_counts(obj["overCounts"], f"{path}.overCounts"))
     return errors
