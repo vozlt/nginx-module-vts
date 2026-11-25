@@ -75,18 +75,6 @@ static ngx_http_vhost_traffic_status_control_word_t
 };
 
 
-static ngx_http_vhost_traffic_status_control_word_t
-    ngx_http_vhost_traffic_status_control_zone_escapes[] = {
-
-    { ngx_string("%2A"), '*' },
-    { ngx_string("%2a"), '*' },
-    { ngx_string("%3A"), ':' },
-    { ngx_string("%3a"), ':' },
-    { ngx_string("%40"), '@' },
-    { ngx_null_string, 0 }
-};
-
-
 static ngx_http_vhost_traffic_status_control_word_t *
 ngx_http_vhost_traffic_status_control_word(
     ngx_http_vhost_traffic_status_control_word_t *words, ngx_str_t *name,
@@ -294,8 +282,8 @@ static void
 ngx_http_vhost_traffic_status_display_control_args(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_control_t *control)
 {
-    ngx_int_t                                      expire;
-    ngx_str_t                                      arg_expire;
+    ngx_int_t                                      expire, rc;
+    ngx_str_t                                      arg_expire, decoded_group;
     ngx_http_vhost_traffic_status_control_word_t  *w;
 
     if (ngx_http_arg(r, (u_char *) "cmd", 3, control->arg_cmd) == NGX_OK) {
@@ -309,6 +297,26 @@ ngx_http_vhost_traffic_status_display_control_args(ngx_http_request_t *r,
     }
 
     if (ngx_http_arg(r, (u_char *) "group", 5, control->arg_group) == NGX_OK) {
+
+        rc = ngx_http_vhost_traffic_status_copy_str(r->pool, &decoded_group,
+                                                   control->arg_group);
+        if (rc != NGX_OK) {
+            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                          "display_handler_control::copy_str() failed");
+            control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_NONE;
+            return;
+        }
+
+        rc = ngx_http_vhost_traffic_status_url_decode(&decoded_group);
+        if (rc != NGX_OK) {
+            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                          "display_handler_control::url_decode() failed");
+            control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_NONE;
+            return;
+        }
+
+        *control->arg_group = decoded_group;
+
         w = ngx_http_vhost_traffic_status_control_word(
                 ngx_http_vhost_traffic_status_control_groups,
                 control->arg_group, 1);
@@ -370,27 +378,24 @@ static void
 ngx_http_vhost_traffic_status_display_control_zone(ngx_http_request_t *r,
     ngx_http_vhost_traffic_status_control_t *control)
 {
-    ngx_int_t                                      rc;
-    ngx_str_t                                      alpha;
-    ngx_http_vhost_traffic_status_control_word_t  *e;
+    ngx_int_t  rc;
+    ngx_str_t  alpha;
 
     rc = ngx_http_vhost_traffic_status_copy_str(r->pool, control->zone,
                                               control->arg_zone);
     if (rc != NGX_OK) {
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                       "display_handler_control::copy_str() failed");
+        control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_NONE;
+        return;
     }
 
-    for (e = ngx_http_vhost_traffic_status_control_zone_escapes;
-         e->name.len;
-         e++)
-    {
-        rc = ngx_http_vhost_traffic_status_replace_strc(control->zone, &e->name,
-                                                        (u_char) e->value);
-        if (rc != NGX_OK) {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
-                          "display_handler_control::replace_strc() failed");
-        }
+    rc = ngx_http_vhost_traffic_status_url_decode(control->zone);
+    if (rc != NGX_OK) {
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                      "display_handler_control::url_decode() failed");
+        control->command = NGX_HTTP_VHOST_TRAFFIC_STATUS_CONTROL_CMD_NONE;
+        return;
     }
 
     (void) ngx_http_vhost_traffic_status_replace_chrc(control->zone, '@',
