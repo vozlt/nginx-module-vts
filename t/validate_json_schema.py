@@ -53,6 +53,7 @@ def validate_upstream_over_counts(obj, path):
         "maxIntegerSize", "requestCounter", "inBytes", "outBytes",
         "1xx", "2xx", "3xx", "4xx", "5xx",
         "requestMsecCounter", "responseMsecCounter",
+        "receivedBytes", "sentBytes",
     ]
     return check_keys(obj, required, path)
 
@@ -75,6 +76,7 @@ def validate_upstream_peer(obj, path):
     """Validate an UpstreamPeer object."""
     required = [
         "server", "requestCounter", "inBytes", "outBytes", "responses",
+        "receivedBytes", "sentBytes",
         "weight", "maxFails", "failTimeout", "backup", "down",
     ]
     errors = check_keys(obj, required, path)

@@ -172,6 +172,9 @@
 #define NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM_S                \
     "# HELP nginx_vts_upstream_bytes_total The request/response bytes\n"       \
     "# TYPE nginx_vts_upstream_bytes_total counter\n"                          \
+    "# HELP nginx_vts_upstream_peer_bytes_total The bytes read from and "      \
+    "written to the upstream server, every attempt included\n"                 \
+    "# TYPE nginx_vts_upstream_peer_bytes_total counter\n"                     \
     "# HELP nginx_vts_upstream_requests_total The upstream requests counter\n" \
     "# TYPE nginx_vts_upstream_requests_total counter\n"                       \
     "# HELP nginx_vts_upstream_request_seconds_total The request Processing "  \
@@ -198,6 +201,10 @@
     "direction=\"in\"} %uA\n"                                                  \
     "nginx_vts_upstream_bytes_total{upstream=\"%V\",backend=\"%V\","           \
     "direction=\"out\"} %uA\n"                                                 \
+    "nginx_vts_upstream_peer_bytes_total{upstream=\"%V\",backend=\"%V\","      \
+    "direction=\"received\"} %uA\n"                                            \
+    "nginx_vts_upstream_peer_bytes_total{upstream=\"%V\",backend=\"%V\","      \
+    "direction=\"sent\"} %uA\n"                                                \
     "nginx_vts_upstream_requests_total{upstream=\"%V\",backend=\"%V\","        \
     "code=\"1xx\"} %uA\n"                                                      \
     "nginx_vts_upstream_requests_total{upstream=\"%V\",backend=\"%V\","        \

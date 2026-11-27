@@ -425,6 +425,8 @@ ngx_http_vhost_traffic_status_node_zero(ngx_http_vhost_traffic_status_node_t *vt
     vtsn->stat_last_seen = 0;
     vtsn->stat_upstream.response_time_counter = 0;
     vtsn->stat_upstream.response_time = 0;
+    vtsn->stat_upstream.received_bytes = 0;
+    vtsn->stat_upstream.sent_bytes = 0;
 
     vtsn->stat_request_counter_oc = 0;
     vtsn->stat_in_bytes_oc = 0;
@@ -436,6 +438,8 @@ ngx_http_vhost_traffic_status_node_zero(ngx_http_vhost_traffic_status_node_t *vt
     vtsn->stat_5xx_counter_oc = 0;
     vtsn->stat_request_time_counter_oc = 0;
     vtsn->stat_response_time_counter_oc = 0;
+    vtsn->stat_received_bytes_oc = 0;
+    vtsn->stat_sent_bytes_oc = 0;
 
     /*
      * slot 0 counts the codes that are not measured, so there is one
@@ -1084,7 +1088,7 @@ ngx_http_vhost_traffic_status_member_t
       ngx_vts_member(stat_request_times) },
 
     /*
-     * These two have no variable because there is nothing for one to read.
+     * These have no variable because there is nothing for one to read.
      * A variable is answered from the server zone of the request, and the
      * upstream times are written to the node of the peer that served it, in
      * shm.c. On a server zone they are the zeroes the node was created with,
@@ -1101,6 +1105,14 @@ ngx_http_vhost_traffic_status_member_t
     { ngx_null_string, ngx_string("responseMsec"), ngx_null_string,
       NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_QUEUE,
       ngx_vts_member(stat_upstream.response_times) },
+
+    { ngx_null_string, ngx_string("receivedBytes"), ngx_null_string,
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_upstream.received_bytes) },
+
+    { ngx_null_string, ngx_string("sentBytes"), ngx_null_string,
+      NGX_HTTP_VHOST_TRAFFIC_STATUS_MEMBER_COUNTER,
+      ngx_vts_member(stat_upstream.sent_bytes) },
 
 #if (NGX_HTTP_CACHE)
 

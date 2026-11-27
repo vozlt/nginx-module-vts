@@ -336,6 +336,8 @@ JSON document contains as follows:
                     "msecs":[...],
                     "counters":[...]
                 },
+                "receivedBytes":...,
+                "sentBytes":...,
                 "weight":...,
                 "maxFails":...,
                 "failTimeout":...,
@@ -402,6 +404,7 @@ Traffic calculation as follows:
   * in += requested_bytes via the ServerZones
   * out += sent_bytes via the ServerZones
   * an attempt that `proxy_next_upstream` passed on adds neither, having served no client request. It is still counted in `requestCounter` and in `responses`, and its own time in `responseMsecCounter`.
+  * receivedBytes += bytes read from the server, sentBytes += bytes written to it, for every attempt, the one that was passed on included
 * cacheZones
   * in += requested_bytes via the ServerZones
   * out += sent_bytes via the ServerZones
@@ -798,6 +801,10 @@ The following status information is provided in the JSON format:
       * The bucket values of histogram set by `vhost_traffic_status_histogram_buckets` directive.
     * counters
       * The cumulative values for the reason that each bucket value is greater than or equal to the only upstream response processing time.
+  * receivedBytes
+    * The total number of bytes read from this server, headers included. Unlike `inBytes` and `outBytes`, which describe the client request, this is the traffic between nginx and the server, the value `$upstream_bytes_received` logs. Every attempt adds to the server it was made on, including one that `proxy_next_upstream` passed on. Requires nginx 1.11.4 or later, 0 before.
+  * sentBytes
+    * The total number of bytes written to this server, the value `$upstream_bytes_sent` logs. Counted the same way as `receivedBytes`. Requires nginx 1.15.8 or later, 0 before.
   * weight
     * Current `weight` setting of the server.
   * maxFails
@@ -1781,6 +1788,10 @@ It can acquire almost all status values and the obtained value is stored in *$va
     * The number of accumulated only upstream response processing time in milliseconds.
   * responseMsec
     * The average of only upstream response processing times in milliseconds.
+  * receivedBytes
+    * The total number of bytes read from the upstream server.
+  * sentBytes
+    * The total number of bytes written to the upstream server.
   * inBytes
     * The total number of bytes received from clients.
   * outBytes
