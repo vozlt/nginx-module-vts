@@ -160,6 +160,8 @@
     "\"msecs\":[%s],"                                                          \
     "\"counters\":[%s]"                                                        \
     "},"                                                                       \
+    "\"receivedBytes\":%uA,"                                                   \
+    "\"sentBytes\":%uA,"                                                       \
     "\"weight\":%ui,"                                                          \
     "\"maxFails\":%ui,"                                                        \
     "\"failTimeout\":%T,"                                                      \
@@ -176,7 +178,9 @@
     "\"4xx\":%uA,"                                                             \
     "\"5xx\":%uA,"                                                             \
     "\"requestMsecCounter\":%uA,"                                              \
-    "\"responseMsecCounter\":%uA"                                              \
+    "\"responseMsecCounter\":%uA,"                                             \
+    "\"receivedBytes\":%uA,"                                                   \
+    "\"sentBytes\":%uA"                                                        \
     "}"                                                                        \
     "},"
 

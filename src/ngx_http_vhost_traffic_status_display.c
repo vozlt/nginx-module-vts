@@ -701,7 +701,7 @@ ngx_http_vhost_traffic_status_display_node_name_repeat(ngx_http_request_t *r,
      *
      *     serverZone   : 9 + 8 (cache) + status codes + (histogram + 3)
      *     filterZone   : 9 + 8 (cache) + (histogram + 3)
-     *     upstreamZone : 11 + 2 * (histogram + 3)
+     *     upstreamZone : 13 + 2 * (histogram + 3)
      *     cacheZone    : 12
      */
     n = 17 + nsc;

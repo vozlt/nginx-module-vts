@@ -370,6 +370,8 @@ ngx_http_vhost_traffic_status_display_prometheus_set_upstream_node(
     buf = ngx_sprintf(buf, NGX_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM,
                       &upstream, &upstream_server, vtsn->stat_in_bytes,
                       &upstream, &upstream_server, vtsn->stat_out_bytes,
+                      &upstream, &upstream_server, vtsn->stat_upstream.received_bytes,
+                      &upstream, &upstream_server, vtsn->stat_upstream.sent_bytes,
                       &upstream, &upstream_server, vtsn->stat_1xx_counter,
                       &upstream, &upstream_server, vtsn->stat_2xx_counter,
                       &upstream, &upstream_server, vtsn->stat_3xx_counter,

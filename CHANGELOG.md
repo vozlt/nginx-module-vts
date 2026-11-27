@@ -1,6 +1,12 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Feat
+- count the bytes read from and written to each upstream server, every attempt included
+
+### Changed
+- the node layout changes, so replacing the module needs a restart of nginx rather than a reload, and a dump written before it is not restored
+
 ### Fix
 - pass the cache-zone overCounts arguments in the same order as the JSON format
 

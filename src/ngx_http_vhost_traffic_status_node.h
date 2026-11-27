@@ -42,6 +42,8 @@ typedef struct {
     unsigned                                               type;
     ngx_atomic_t                                           response_time_counter;
     ngx_msec_t                                             response_time;
+    ngx_atomic_t                                           received_bytes;
+    ngx_atomic_t                                           sent_bytes;
     ngx_http_vhost_traffic_status_node_time_queue_t        response_times;
     ngx_http_vhost_traffic_status_node_histogram_bucket_t  response_buckets;
 } ngx_http_vhost_traffic_status_node_upstream_t;
@@ -118,6 +120,8 @@ typedef struct {
     ngx_atomic_t                                           stat_5xx_counter_oc;
     ngx_atomic_t                                           stat_request_time_counter_oc;
     ngx_atomic_t                                           stat_response_time_counter_oc;
+    ngx_atomic_t                                           stat_received_bytes_oc;
+    ngx_atomic_t                                           stat_sent_bytes_oc;
 
 #if (NGX_HTTP_CACHE)
     ngx_atomic_t                                           stat_cache_max_size;

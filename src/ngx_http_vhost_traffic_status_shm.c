@@ -12,7 +12,8 @@
 static ngx_int_t ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
     ngx_str_t *key, unsigned type, ngx_http_upstream_state_t *state);
 static ngx_int_t ngx_http_vhost_traffic_status_shm_add_node_upstream(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, unsigned init, ngx_msec_int_t ms);
+    ngx_http_vhost_traffic_status_node_t *vtsn, unsigned init, ngx_msec_int_t ms,
+    ngx_http_upstream_state_t *state);
 
 #if (NGX_HTTP_CACHE)
 static void ngx_http_vhost_traffic_status_shm_get_cache_size(ngx_http_request_t *r,
@@ -300,7 +301,8 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
 
         ms = ngx_http_vhost_traffic_status_upstream_state_response_time(ustate);
 
-        (void) ngx_http_vhost_traffic_status_shm_add_node_upstream(r, vtsn, init, ms);
+        (void) ngx_http_vhost_traffic_status_shm_add_node_upstream(r, vtsn, init, ms,
+                                                                   ustate);
         break;
 
 #if (NGX_HTTP_CACHE)
@@ -322,12 +324,28 @@ ngx_http_vhost_traffic_status_shm_add_node(ngx_http_request_t *r,
 
 static ngx_int_t
 ngx_http_vhost_traffic_status_shm_add_node_upstream(ngx_http_request_t *r,
-    ngx_http_vhost_traffic_status_node_t *vtsn, unsigned init, ngx_msec_int_t ms)
+    ngx_http_vhost_traffic_status_node_t *vtsn, unsigned init, ngx_msec_int_t ms,
+    ngx_http_upstream_state_t *state)
 {
-    ngx_atomic_t    oresponse_time_counter;
+    ngx_atomic_t             oresponse_time_counter, oreceived_bytes, osent_bytes;
+    ngx_atomic_uint_t        received, sent;
 
-    /* only the response time counter is compared below */
+    received = 0;
+    sent = 0;
+
+    if (state != NULL) {
+#if defined(nginx_version) && nginx_version >= 1011004
+        received = (ngx_atomic_uint_t) state->bytes_received;
+#endif
+#if defined(nginx_version) && nginx_version >= 1015008
+        sent = (ngx_atomic_uint_t) state->bytes_sent;
+#endif
+    }
+
+    /* the counters compared below */
     oresponse_time_counter = vtsn->stat_upstream.response_time_counter;
+    oreceived_bytes = vtsn->stat_upstream.received_bytes;
+    osent_bytes = vtsn->stat_upstream.sent_bytes;
 
     ngx_http_vhost_traffic_status_node_time_queue_insert(&vtsn->stat_upstream.response_times,
                                                          ms);
@@ -337,9 +355,13 @@ ngx_http_vhost_traffic_status_shm_add_node_upstream(ngx_http_request_t *r,
     if (init == NGX_HTTP_VHOST_TRAFFIC_STATUS_NODE_NONE) {
         vtsn->stat_upstream.response_time_counter = (ngx_atomic_uint_t) ms;
         vtsn->stat_upstream.response_time = (ngx_msec_t) ms;
+        vtsn->stat_upstream.received_bytes = received;
+        vtsn->stat_upstream.sent_bytes = sent;
 
     } else {
         vtsn->stat_upstream.response_time_counter += (ngx_atomic_uint_t) ms;
+        vtsn->stat_upstream.received_bytes += received;
+        vtsn->stat_upstream.sent_bytes += sent;
 
         /*
          * response_time is not kept up to date here either, for the same
@@ -351,6 +373,14 @@ ngx_http_vhost_traffic_status_shm_add_node_upstream(ngx_http_request_t *r,
         if (oresponse_time_counter > vtsn->stat_upstream.response_time_counter)
         { 
             vtsn->stat_response_time_counter_oc++;
+        }
+
+        if (oreceived_bytes > vtsn->stat_upstream.received_bytes) {
+            vtsn->stat_received_bytes_oc++;
+        }
+
+        if (osent_bytes > vtsn->stat_upstream.sent_bytes) {
+            vtsn->stat_sent_bytes_oc++;
         }
     }
 
